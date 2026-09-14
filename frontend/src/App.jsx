@@ -626,9 +626,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <Footer 
-        onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
-      />
+      <Footer />
 
       {/* Step-by-Step Guided Search Modal */}
       <GuidedSearchModal

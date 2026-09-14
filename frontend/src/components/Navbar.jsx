@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Heart, Search, User, Menu, X, Wrench, ChevronDown, ChevronRight, Layers, Sparkles, Lock, LogOut, MapPin } from 'lucide-react';
+import { ShoppingBag, Heart, Search, User, Menu, X, Wrench, ChevronDown, ChevronRight, Layers, Sparkles, Lock, LogOut, MapPin, Phone } from 'lucide-react';
 import { VW_NAV_CATEGORIES } from '../data/vwNavigationData';
 import MegaMenu from './MegaMenu';
 
@@ -121,9 +121,19 @@ export default function Navbar({
           </div>
         </div>
 
-        {/* Action Buttons: Cart, Wishlist, Location, Auth / Dashboard */}
+        {/* Action Buttons: Phone Call, Cart, Wishlist, Location, Auth / Dashboard */}
         <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
           
+          {/* Direct Phone Call Button (desktop) */}
+          <a
+            href="tel:13472268235"
+            className="hidden xl:flex items-center gap-1.5 font-technical-data text-xs text-[#e0c0b1] hover:text-[#ff7a1a] bg-[#201f20] hover:bg-[#2c2b2d] border border-[#584236]/40 px-2.5 py-2 min-h-[40px] sm:min-h-[44px] rounded-xs transition-all shadow-sm shrink-0"
+            title="Call Workshop Support: 1347-226-8235"
+          >
+            <Phone className="w-3.5 h-3.5 text-[#ff7a1a]" />
+            <span className="font-mono font-bold">1347-226-8235</span>
+          </a>
+
           {/* Cart Button */}
           <button 
             onClick={onOpenCart}
@@ -405,11 +415,20 @@ export default function Navbar({
             })}
           </div>
 
-          {/* Mobile Workshop Location Link */}
+          {/* Mobile Direct Call & Workshop Location Links */}
+          <a
+            href="tel:13472268235"
+            onClick={() => setMobileMenuOpen(false)}
+            className="w-full min-h-[44px] mt-2 font-label-caps text-xs text-black bg-[#ff7a1a] hover:bg-[#ffb68e] py-3 px-3 uppercase font-bold tracking-wider flex items-center justify-center gap-2 rounded-xs transition-all shadow-md"
+          >
+            <Phone className="w-4 h-4 text-black" />
+            <span>Call Workshop: 1347-226-8235</span>
+          </a>
+
           <a
             href="#workshop-location"
             onClick={() => setMobileMenuOpen(false)}
-            className="w-full min-h-[44px] mt-2 font-label-caps text-xs text-[#ffb68e] bg-[#201f20] hover:bg-[#282729] border border-[#ff7a1a]/40 py-3 px-3 uppercase font-bold tracking-wider flex items-center justify-center gap-2 rounded-xs transition-all"
+            className="w-full min-h-[44px] font-label-caps text-xs text-[#ffb68e] bg-[#201f20] hover:bg-[#282729] border border-[#ff7a1a]/40 py-3 px-3 uppercase font-bold tracking-wider flex items-center justify-center gap-2 rounded-xs transition-all"
           >
             <MapPin className="w-4 h-4 text-[#ff7a1a]" />
             <span>Visit Houston Workshop (14826 Yarberry St)</span>

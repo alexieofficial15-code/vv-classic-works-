@@ -16,7 +16,8 @@ import {
   Package, 
   Compass, 
   Building2, 
-  Sparkles 
+  Sparkles,
+  Phone
 } from 'lucide-react';
 
 const WORKSHOP_INFO = {
@@ -26,6 +27,9 @@ const WORKSHOP_INFO = {
   cityStateZip: 'Houston, TX 77039',
   country: 'United States',
   fullAddress: '14826 Yarberry St, Houston, TX 77039, USA',
+  phone: '1347-226-8235',
+  phoneFormatted: '+1 (347) 226-8235',
+  phoneTel: 'tel:13472268235',
   coordinates: {
     lat: 29.9045,
     lng: -95.3341
@@ -175,10 +179,32 @@ export default function LocationMapSection() {
                     <div className="text-[#a78b7d] font-technical-data text-[11px] sm:text-xs">{WORKSHOP_INFO.cityStateZip}, {WORKSHOP_INFO.country}</div>
                   </div>
                 </div>
+
+                {/* Direct Telephone Contact */}
+                <div className="pt-1 flex items-center gap-2.5 sm:gap-3 text-xs sm:text-sm text-[#e0c0b1]">
+                  <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-[#ff7a1a] shrink-0" />
+                  <div>
+                    <div className="text-[10px] sm:text-[11px] text-[#a78b7d] font-technical-data uppercase">Direct Phone Support</div>
+                    <a 
+                      href={WORKSHOP_INFO.phoneTel} 
+                      className="font-bold text-white hover:text-[#ff7a1a] text-sm sm:text-base font-mono transition-colors"
+                    >
+                      {WORKSHOP_INFO.phone}
+                    </a>
+                  </div>
+                </div>
               </div>
 
-              {/* Action Buttons: Copy Address & Get Directions */}
-              <div className="grid grid-cols-2 gap-3 pt-2">
+              {/* Action Buttons: Call, Copy Address & Get Directions */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
+                <a
+                  href={WORKSHOP_INFO.phoneTel}
+                  className="flex items-center justify-center gap-2 py-2.5 px-3 bg-[#ff7a1a] hover:bg-[#ffb68e] text-black font-label-caps text-xs uppercase font-bold tracking-wider transition-all glow-button rounded-xs cursor-pointer shadow-md col-span-1 sm:col-span-2"
+                >
+                  <Phone className="w-3.5 h-3.5 text-black" />
+                  <span>Call Workshop: {WORKSHOP_INFO.phone}</span>
+                </a>
+
                 <button
                   onClick={handleCopyAddress}
                   className="flex items-center justify-center gap-2 py-2.5 px-3 bg-[#201f20] hover:bg-[#2c2b2d] border border-[#584236]/40 text-[#e0c0b1] hover:text-white font-label-caps text-xs uppercase tracking-wider transition-all cursor-pointer rounded-xs group"
@@ -200,9 +226,9 @@ export default function LocationMapSection() {
                   href={googleMapsDirectionsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 py-2.5 px-3 bg-[#ff7a1a] hover:bg-[#ffb68e] text-black font-label-caps text-xs uppercase font-bold tracking-wider transition-all glow-button rounded-xs"
+                  className="flex items-center justify-center gap-2 py-2.5 px-3 bg-[#201f20] hover:bg-[#2c2b2d] border border-[#584236]/40 text-[#83cffb] hover:text-white font-label-caps text-xs uppercase font-bold tracking-wider transition-all rounded-xs"
                 >
-                  <Navigation className="w-3.5 h-3.5 text-black" />
+                  <Navigation className="w-3.5 h-3.5 text-[#83cffb]" />
                   <span>Get Directions</span>
                 </a>
               </div>
