@@ -18,6 +18,13 @@ import {
   ADMIN_CONDITION_PRESETS,
   ADMIN_PERFORMANCE_PRESETS,
   ADMIN_STORAGE_PRESETS,
+  ADMIN_VEHICLE_CONDITION_PRESETS,
+  ADMIN_ENGINE_CONDITION_PRESETS,
+  ADMIN_TRANSMISSION_PRESETS,
+  ADMIN_ENGINE_CASE_PRESETS,
+  ADMIN_INDUCTION_PRESETS,
+  ADMIN_COOLING_SHROUD_PRESETS,
+  ADMIN_TITLE_STATUS_PRESETS,
   ENGINE_COMPATIBILITIES 
 } from '../data/vwNavigationData';
 
@@ -241,36 +248,49 @@ export default function AdminPanel({
 
   const totalUnreadChatCount = conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
 
-  // 10-Section Form State
+  // 10-Section Form State (Context-Aware for Spare Parts, Complete Engines, and Complete Vehicles)
   const [formData, setFormData] = useState({
     // Section 1: Product Type
     listingType: 'spare-part', // 'spare-part' | 'engine' | 'vehicle'
 
-    // Section 2: Vehicle Classification
+    // Section 2: Vehicle Classification / Engine Platform
     vehicleCategory: 'type-1',
     modelYearRange: 'Beetle 1968–1979',
 
-    // Section 3: System Classification
+    // Section 2.5: Complete Vehicle Specifications (for listingType === 'vehicle')
+    vinNumber: '',
+    mileage: '',
+    engineInstalled: '1600cc Dual Port',
+    transmissionType: '4-Speed Manual Swing Axle',
+    exteriorColor: '',
+    interiorColor: '',
+    titleStatus: 'Clean Title (Ready to Transfer)',
+
+    // Section 3: System Classification (for listingType === 'spare-part')
     mainSystem: 'engine-system',
     subcategory: 'Cylinder Heads',
 
-    // Section 4: Product Details
+    // Section 4: Product / Vehicle / Engine Details
     partName: 'Dual Port Cylinder Head 1600cc',
     sku: '043-101-375-H',
     description: 'Factory original specification dual port cylinder head casting for Type 1 air-cooled engines.',
 
-    // Section 5: Specifications
+    // Section 5: Specifications (for listingType === 'spare-part')
     material: 'Aluminum Alloy',
     weight: '4.8',
     dimensions: '32 x 24 x 18 cm',
     finish: 'Bare Aluminum',
 
-    // Section 6: Engine-Specific (Conditional)
+    // Section 6: Engine-Specific (for listingType === 'engine' or engine spare part)
     engineSize: '1600cc',
-    performanceType: 'Stock', // 'Stock' | 'Performance' | 'Racing'
+    performanceType: 'Stock OEM Replacement', // 'Stock OEM Replacement' | 'Street Performance' | etc.
+    caseType: 'AS41 Magnesium Universal Dual Relief',
+    inductionSetup: 'Single Solex 34-PICT-3',
+    coolingShroud: 'Stock Type 1 Doghouse Shroud with Flaps',
+    dynoHorsepower: '',
 
     // Section 7: Condition & Status
-    condition: 'New', // 'New' | 'Used' | 'Rebuilt / Restored'
+    condition: 'NOS (New Old Stock - Rare Vintage)',
     status: 'Available', // 'Available' | 'Sold' | 'Reserved'
 
     // Section 8: Pricing & Inventory
@@ -296,7 +316,7 @@ export default function AdminPanel({
   const availableSubcategories = ADMIN_SYSTEM_SUBCATEGORIES[formData.mainSystem] || [];
 
   // Conditional logic for Engine Section 6
-  const isEngineSectionVisible = formData.listingType === 'engine' || formData.mainSystem === 'engine-system';
+  const isEngineSectionVisible = formData.listingType === 'engine' || (formData.listingType === 'spare-part' && formData.mainSystem === 'engine-system');
 
   // Fetch admin catalog items (Treating server database as authoritative single source of truth)
   const fetchAdminData = async () => {
@@ -343,6 +363,40 @@ export default function AdminPanel({
     
     if (type === 'checkbox') {
       setFormData(prev => ({ ...prev, [name]: checked }));
+    } else if (name === 'listingType') {
+      const newType = value;
+      let newCondition = formData.condition;
+      let newPartName = formData.partName;
+      let newStock = formData.stockQuantity;
+
+      if (newType === 'vehicle') {
+        if (!formData.condition || ADMIN_CONDITION_PRESETS.includes(formData.condition)) {
+          newCondition = 'Turnkey Daily Driver (Running & Registered)';
+        }
+        if (formData.partName === 'Dual Port Cylinder Head 1600cc' || !formData.partName) {
+          newPartName = '';
+        }
+        newStock = '1';
+      } else if (newType === 'engine') {
+        if (!formData.condition || ADMIN_CONDITION_PRESETS.includes(formData.condition)) {
+          newCondition = 'Brand New Turnkey Crate Engine (Zero Miles - Dyno Tested)';
+        }
+        if (formData.partName === 'Dual Port Cylinder Head 1600cc' || !formData.partName) {
+          newPartName = '';
+        }
+      } else {
+        if (!formData.condition || ADMIN_VEHICLE_CONDITION_PRESETS.includes(formData.condition) || ADMIN_ENGINE_CONDITION_PRESETS.includes(formData.condition)) {
+          newCondition = 'NOS (New Old Stock - Rare Vintage)';
+        }
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        listingType: newType,
+        condition: newCondition,
+        partName: newPartName,
+        stockQuantity: newStock
+      }));
     } else if (name === 'vehicleCategory') {
       const categoryObj = ADMIN_VEHICLE_CATEGORIES.find(c => c.id === value);
       const firstModel = categoryObj && categoryObj.models.length > 0 ? categoryObj.models[0] : '';
@@ -499,6 +553,13 @@ export default function AdminPanel({
       listingType: 'spare-part',
       vehicleCategory: 'type-1',
       modelYearRange: 'Beetle 1968–1979',
+      vinNumber: '',
+      mileage: '',
+      engineInstalled: '1600cc Dual Port',
+      transmissionType: '4-Speed Manual Swing Axle',
+      exteriorColor: '',
+      interiorColor: '',
+      titleStatus: 'Clean Title (Ready to Transfer)',
       mainSystem: 'engine-system',
       subcategory: 'Cylinder Heads',
       partName: '',
@@ -510,6 +571,10 @@ export default function AdminPanel({
       finish: '',
       engineSize: '1600cc',
       performanceType: 'Stock OEM Replacement',
+      caseType: 'AS41 Magnesium Universal Dual Relief',
+      inductionSetup: 'Single Solex 34-PICT-3',
+      coolingShroud: 'Stock Type 1 Doghouse Shroud with Flaps',
+      dynoHorsepower: '',
       condition: 'NOS (New Old Stock - Rare Vintage)',
       status: 'Available',
       retailPrice: '',
@@ -538,7 +603,8 @@ export default function AdminPanel({
     const isEngCustom = part.engineSize && !ENGINE_COMPATIBILITIES.includes(part.engineSize);
     setIsCustomEngine(Boolean(isEngCustom));
 
-    const isCondCustom = part.condition && !ADMIN_CONDITION_PRESETS.includes(part.condition);
+    const allConditions = [...ADMIN_CONDITION_PRESETS, ...ADMIN_VEHICLE_CONDITION_PRESETS, ...ADMIN_ENGINE_CONDITION_PRESETS];
+    const isCondCustom = part.condition && !allConditions.includes(part.condition);
     setIsCustomCondition(Boolean(isCondCustom));
 
     const isPerfCustom = part.performanceType && !ADMIN_PERFORMANCE_PRESETS.includes(part.performanceType);
@@ -548,6 +614,13 @@ export default function AdminPanel({
       listingType: part.listingType || 'spare-part',
       vehicleCategory: part.vehicleCategory || 'type-1',
       modelYearRange: part.modelYearRange || 'Beetle 1968–1979',
+      vinNumber: part.vinNumber || part.vin || '',
+      mileage: part.mileage ? part.mileage.toString() : '',
+      engineInstalled: part.engineInstalled || '',
+      transmissionType: part.transmissionType || '',
+      exteriorColor: part.exteriorColor || '',
+      interiorColor: part.interiorColor || '',
+      titleStatus: part.titleStatus || 'Clean Title (Ready to Transfer)',
       mainSystem: part.partSystem || part.systemCategory || 'engine-system',
       subcategory: part.partSubcategory || part.subcategory || part.subcatId || 'Cylinder Heads',
       partName: part.title || '',
@@ -559,7 +632,11 @@ export default function AdminPanel({
       finish: part.finish || '',
       engineSize: part.engineSize || '1600cc',
       performanceType: part.performanceType || 'Stock OEM Replacement',
-      condition: part.condition || 'NOS (New Old Stock - Rare Vintage)',
+      caseType: part.caseType || 'AS41 Magnesium Universal Dual Relief',
+      inductionSetup: part.inductionSetup || 'Single Solex 34-PICT-3',
+      coolingShroud: part.coolingShroud || 'Stock Type 1 Doghouse Shroud with Flaps',
+      dynoHorsepower: part.dynoHorsepower || '',
+      condition: part.condition || (part.listingType === 'vehicle' ? 'Turnkey Daily Driver (Running & Registered)' : part.listingType === 'engine' ? 'Brand New Turnkey Crate Engine (Zero Miles - Dyno Tested)' : 'NOS (New Old Stock - Rare Vintage)'),
       status: part.status || 'Available',
       retailPrice: part.price ? part.price.toString() : '',
       wholesalePrice: part.wholesalePrice ? part.wholesalePrice.toString() : '',
@@ -575,19 +652,22 @@ export default function AdminPanel({
 
   // Form Validation & Publish Submit
   const handleSaveProduct = async (saveStatus = 'Available') => {
+    const isVehicle = formData.listingType === 'vehicle';
+    const isEngine = formData.listingType === 'engine';
+
     if (!formData.partName.trim()) {
-      alert('⚠️ Required Field Missing: Please enter Part Name (Section 4).');
+      alert(`⚠️ Required Field Missing: Please enter ${isVehicle ? 'Vehicle Title' : isEngine ? 'Engine Model Title' : 'Part Name'} (Section 4).`);
       return;
     }
     if (!formData.description.trim()) {
-      alert('⚠️ Required Field Missing: Please enter Product Description (Section 4).');
+      alert(`⚠️ Required Field Missing: Please enter ${isVehicle ? 'Vehicle Overview & History' : 'Description'} (Section 4).`);
       return;
     }
     if (!formData.retailPrice || parseFloat(formData.retailPrice) <= 0) {
-      alert('⚠️ Required Field Missing: Please enter valid Retail Price (Section 8).');
+      alert(`⚠️ Required Field Missing: Please enter valid ${isVehicle ? 'Asking Price' : 'Retail Price'} (Section 8).`);
       return;
     }
-    if (!formData.stockQuantity) {
+    if (!formData.stockQuantity && !isVehicle) {
       alert('⚠️ Required Field Missing: Please enter Stock Quantity (Section 8).');
       return;
     }
@@ -597,33 +677,47 @@ export default function AdminPanel({
     const newPart = {
       id: targetId,
       title: formData.partName,
-      sku: formData.sku,
-      oemNumber: formData.sku,
+      sku: formData.sku || (isVehicle ? `VIN-${formData.vinNumber || targetId.slice(-6)}` : targetId),
+      oemNumber: formData.sku || formData.vinNumber || '',
       description: formData.description,
       listingType: formData.listingType,
       vehicleCategory: formData.vehicleCategory,
       modelYearRange: formData.modelYearRange,
-      systemCategory: formData.mainSystem,
-      partSystem: formData.mainSystem,
-      subcatId: formData.subcategory,
-      partSubcategory: formData.subcategory,
-      specificPartCategory: formData.subcategory,
-      material: formData.material,
-      weight: formData.weight,
-      dimensions: formData.dimensions,
-      finish: formData.finish,
+      // Complete Vehicle Specifics
+      vinNumber: formData.vinNumber,
+      mileage: formData.mileage,
+      engineInstalled: formData.engineInstalled,
+      transmissionType: formData.transmissionType,
+      exteriorColor: formData.exteriorColor,
+      interiorColor: formData.interiorColor,
+      titleStatus: formData.titleStatus,
+      // Crate Engine Specifics
+      caseType: formData.caseType,
+      inductionSetup: formData.inductionSetup,
+      coolingShroud: formData.coolingShroud,
+      dynoHorsepower: formData.dynoHorsepower,
+      // Systems & Spare Part Attributes
+      systemCategory: isVehicle ? 'vehicle-complete' : (isEngine ? 'engine-system' : formData.mainSystem),
+      partSystem: isVehicle ? 'vehicle-complete' : (isEngine ? 'engine-system' : formData.mainSystem),
+      subcatId: isVehicle ? 'complete-vehicle' : (isEngine ? 'complete-engines' : formData.subcategory),
+      partSubcategory: isVehicle ? 'Complete Vehicle' : (isEngine ? 'Complete Crate Engines' : formData.subcategory),
+      specificPartCategory: isVehicle ? 'Complete Vehicle' : (isEngine ? 'Complete Crate Engines' : formData.subcategory),
+      material: isVehicle || isEngine ? '' : formData.material,
+      weight: isVehicle || isEngine ? '' : formData.weight,
+      dimensions: isVehicle || isEngine ? '' : formData.dimensions,
+      finish: isVehicle || isEngine ? '' : formData.finish,
       engineSize: formData.engineSize,
       performanceType: formData.performanceType,
       condition: formData.condition,
       status: saveStatus,
       price: parseFloat(formData.retailPrice) || 0,
       wholesalePrice: parseFloat(formData.wholesalePrice) || 0,
-      stock: parseInt(formData.stockQuantity) || 1,
-      inStock: (parseInt(formData.stockQuantity) || 1) > 0,
+      stock: isVehicle ? 1 : (parseInt(formData.stockQuantity) || 1),
+      inStock: (isVehicle ? 1 : (parseInt(formData.stockQuantity) || 1)) > 0,
       storageLocation: formData.storageLocation,
-      compatibleEngineSizes: formData.compatibleEngineSizes,
-      compatibleModels: formData.compatibleModels,
-      image: formData.mediaImages[0] || 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80',
+      compatibleEngineSizes: isVehicle ? [] : formData.compatibleEngineSizes,
+      compatibleModels: isVehicle ? [formData.modelYearRange] : formData.compatibleModels,
+      image: formData.mediaImages[0] || (isVehicle ? 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=800&q=80' : 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80'),
       additionalImages: formData.mediaImages,
       videoUrl: formData.videoUrl,
       createdAt: new Date().toISOString()
@@ -1023,41 +1117,100 @@ export default function AdminPanel({
                   <div className="flex items-center gap-2">
                     <Box className="w-5 h-5 text-[#ff7a1a]" />
                     <h3 className="text-base font-bold text-white uppercase tracking-wider font-mono">
-                      SECTION 1: PRODUCT TYPE
+                      SECTION 1: LISTING TYPE
                     </h3>
                   </div>
                   <span className="text-[10px] text-[#ff7a1a] bg-[#ff7a1a]/10 border border-[#ff7a1a]/30 px-2 py-0.5 rounded font-mono font-bold flex items-center gap-1">
-                    🔒 Protected Placement
+                    🔒 Tailored Dynamic Fields
                   </span>
                 </div>
 
                 <div>
-                  <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold font-mono">
-                    LISTING TYPE <span className="text-[#ff7a1a]">*</span>
+                  <label className="text-xs text-[#a78b7d] uppercase block mb-2 font-bold font-mono">
+                    CHOOSE WHAT YOU ARE LISTING <span className="text-[#ff7a1a]">*</span>
                   </label>
-                  <select
-                    name="listingType"
-                    value={formData.listingType}
-                    onChange={handleInputChange}
-                    className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs cursor-pointer font-mono"
-                  >
-                    {ADMIN_LISTING_TYPES.map(type => (
-                      <option key={type.id} value={type.id}>{type.name}</option>
-                    ))}
-                  </select>
-                  <p className="text-[10px] text-[#a78b7d] mt-1.5 font-mono">
-                    Determines top-level showcase placement (Spare Parts Catalog, Complete Engines, or Vehicle Sales). Strictly structured to maintain navigation routing.
-                  </p>
+                  
+                  {/* Visual 3-Card Listing Type Selector */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono">
+                    <button
+                      type="button"
+                      onClick={() => handleInputChange({ target: { name: 'listingType', value: 'vehicle' } })}
+                      className={`p-4 rounded-xs border text-left transition-all flex flex-col justify-between ${
+                        formData.listingType === 'vehicle'
+                          ? 'bg-[#ff7a1a]/15 border-[#ff7a1a] shadow-[0_0_20px_rgba(255,122,26,0.2)]'
+                          : 'bg-[#131314] border-[#584236]/50 hover:border-[#ff7a1a]/50 text-[#a78b7d]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">🚗</span>
+                          <strong className="text-sm text-white font-bold">Complete Vehicle</strong>
+                        </div>
+                        {formData.listingType === 'vehicle' && (
+                          <span className="w-2 h-2 rounded-full bg-[#ff7a1a]"></span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-[#e0c0b1] leading-relaxed">
+                        Complete cars, rolling project chassis, survivor classics & restored VWs with VIN, mileage & title specs.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleInputChange({ target: { name: 'listingType', value: 'engine' } })}
+                      className={`p-4 rounded-xs border text-left transition-all flex flex-col justify-between ${
+                        formData.listingType === 'engine'
+                          ? 'bg-[#ff7a1a]/15 border-[#ff7a1a] shadow-[0_0_20px_rgba(255,122,26,0.2)]'
+                          : 'bg-[#131314] border-[#584236]/50 hover:border-[#ff7a1a]/50 text-[#a78b7d]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">⚙️</span>
+                          <strong className="text-sm text-white font-bold">Turnkey Engine</strong>
+                        </div>
+                        {formData.listingType === 'engine' && (
+                          <span className="w-2 h-2 rounded-full bg-[#ff7a1a]"></span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-[#e0c0b1] leading-relaxed">
+                        Turnkey crate engines, longblocks, dyno-tested builds, induction carbs & core exchange deposits.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleInputChange({ target: { name: 'listingType', value: 'spare-part' } })}
+                      className={`p-4 rounded-xs border text-left transition-all flex flex-col justify-between ${
+                        formData.listingType === 'spare-part'
+                          ? 'bg-[#ff7a1a]/15 border-[#ff7a1a] shadow-[0_0_20px_rgba(255,122,26,0.2)]'
+                          : 'bg-[#131314] border-[#584236]/50 hover:border-[#ff7a1a]/50 text-[#a78b7d]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">🔩</span>
+                          <strong className="text-sm text-white font-bold">Spare Part / NOS</strong>
+                        </div>
+                        {formData.listingType === 'spare-part' && (
+                          <span className="w-2 h-2 rounded-full bg-[#ff7a1a]"></span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-[#e0c0b1] leading-relaxed">
+                        Individual components, NOS stock, wheels & rims, brake kits, suspension, electrical & hardware.
+                      </p>
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* 📌 SECTION 2: VEHICLE CLASSIFICATION */}
+              {/* 📌 SECTION 2: VEHICLE CLASSIFICATION / ENGINE PLATFORM */}
               <div className="bg-[#181719]/80 border border-[#584236]/40 backdrop-blur-md rounded-md p-6 shadow-xl space-y-4 hover:border-[#ff7a1a]/50 transition-all">
                 <div className="flex items-center justify-between border-b border-[#584236]/30 pb-3">
                   <div className="flex items-center gap-2">
                     <Car className="w-5 h-5 text-[#ff7a1a]" />
                     <h3 className="text-base font-bold text-white uppercase tracking-wider font-mono">
-                      SECTION 2: VEHICLE CLASSIFICATION
+                      {formData.listingType === 'vehicle' ? 'SECTION 2: VEHICLE PLATFORM & MODEL' : formData.listingType === 'engine' ? 'SECTION 2: ENGINE PLATFORM FITMENT' : 'SECTION 2: VEHICLE CLASSIFICATION'}
                     </h3>
                   </div>
                   <span className="text-[10px] text-[#83cffb] bg-[#83cffb]/10 border border-[#83cffb]/30 px-2 py-0.5 rounded font-mono font-bold">
@@ -1070,7 +1223,7 @@ export default function AdminPanel({
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="text-xs text-[#a78b7d] uppercase font-bold font-mono">
-                        VEHICLE CATEGORY <span className="text-[#ff7a1a]">*</span>
+                        {formData.listingType === 'engine' ? 'PRIMARY ENGINE PLATFORM' : 'VEHICLE PLATFORM'} <span className="text-[#ff7a1a]">*</span>
                       </label>
                       <span className="text-[10px] text-[#ff7a1a] font-mono">🔒 Locked Category</span>
                     </div>
@@ -1085,7 +1238,7 @@ export default function AdminPanel({
                       ))}
                     </select>
                     <p className="text-[10px] text-[#a78b7d] mt-1.5 font-mono">
-                      Categorization determines vehicle catalog filter tabs.
+                      Categorization determines catalog platform filter tabs.
                     </p>
                   </div>
 
@@ -1093,7 +1246,7 @@ export default function AdminPanel({
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="text-xs text-[#a78b7d] uppercase font-bold font-mono">
-                        MODEL / YEAR RANGE <span className="text-[#ff7a1a]">*</span>
+                        {formData.listingType === 'engine' ? 'DEFAULT CHASSIS / MODEL FITMENT' : 'MODEL / YEAR RANGE'} <span className="text-[#ff7a1a]">*</span>
                       </label>
                       <button
                         type="button"
@@ -1147,121 +1300,310 @@ export default function AdminPanel({
                 </div>
               </div>
 
-              {/* 📌 SECTION 3: SYSTEM CLASSIFICATION */}
-              <div className="bg-[#181719]/80 border border-[#584236]/40 backdrop-blur-md rounded-md p-6 shadow-xl space-y-4 hover:border-[#ff7a1a]/50 transition-all">
-                <div className="flex items-center justify-between border-b border-[#584236]/30 pb-3">
-                  <div className="flex items-center gap-2">
-                    <Layers className="w-5 h-5 text-[#ff7a1a]" />
-                    <h3 className="text-base font-bold text-white uppercase tracking-wider font-mono">
-                      SECTION 3: SYSTEM CLASSIFICATION
-                    </h3>
-                  </div>
-                  <span className="text-[10px] text-[#83cffb] bg-[#83cffb]/10 border border-[#83cffb]/30 px-2 py-0.5 rounded font-mono font-bold">
-                    Standard System + Custom Subcategory
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Main System: LOCKED TAXONOMY */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs text-[#a78b7d] uppercase font-bold font-mono">
-                        MAIN SYSTEM <span className="text-[#ff7a1a]">*</span>
-                      </label>
-                      <span className="text-[10px] text-[#ff7a1a] font-mono">🔒 Locked System</span>
+              {/* 📌 SECTION 2.5: COMPLETE VEHICLE SPECIFICATIONS (ONLY VISIBLE FOR VEHICLE LISTINGS) */}
+              {formData.listingType === 'vehicle' && (
+                <div className="bg-[#181719]/80 border border-[#ff7a1a]/60 backdrop-blur-md rounded-md p-6 shadow-xl space-y-5 animate-in fade-in duration-300">
+                  <div className="flex items-center justify-between border-b border-[#ff7a1a]/30 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Car className="w-5 h-5 text-[#ff7a1a]" />
+                      <h3 className="text-base font-bold text-white uppercase tracking-wider font-mono">
+                        SECTION 3: VEHICLE SPECIFICATIONS & PROVENANCE
+                      </h3>
                     </div>
-                    <select
-                      name="mainSystem"
-                      value={formData.mainSystem}
-                      onChange={handleInputChange}
-                      className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs cursor-pointer font-mono"
-                    >
-                      {VEHICLE_SYSTEMS.map(sys => (
-                        <option key={sys.id} value={sys.id}>{sys.emoji || '⚙️'} {sys.name}</option>
-                      ))}
-                    </select>
-                    <p className="text-[10px] text-[#a78b7d] mt-1.5 font-mono">
-                      Controls the system catalog filter buttons (Engine, Brakes, Transmission, etc.).
-                    </p>
+                    <span className="text-[10px] text-[#ff7a1a] bg-[#ff7a1a]/10 border border-[#ff7a1a]/30 px-2 py-0.5 rounded font-mono font-bold">
+                      Vehicle-Specific Specs
+                    </span>
                   </div>
 
-                  {/* Subcategory: DUAL PRESET + WRITE-IN */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs text-[#a78b7d] uppercase font-bold font-mono">
-                        SUBCATEGORY <span className="text-[#ff7a1a]">*</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 font-mono">
+                    {/* VIN / Chassis # */}
+                    <div>
+                      <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">
+                        VIN / CHASSIS NUMBER
                       </label>
-                      <button
-                        type="button"
-                        onClick={() => setIsCustomSubcat(!isCustomSubcat)}
-                        className="text-[10px] text-[#83cffb] hover:text-[#ff7a1a] hover:underline font-mono uppercase font-bold"
-                      >
-                        {isCustomSubcat ? '← Use Presets' : '✍️ Write Custom'}
-                      </button>
+                      <input
+                        type="text"
+                        name="vinNumber"
+                        placeholder="e.g., 117 842 901"
+                        value={formData.vinNumber}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs"
+                      />
                     </div>
 
-                    {isCustomSubcat ? (
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          name="subcategory"
-                          placeholder="e.g., Custom CNC Billet Intake Plenum"
-                          value={formData.subcategory}
-                          onChange={handleInputChange}
-                          className="w-full bg-[#131314] border border-[#ff7a1a] p-3 text-xs text-white focus:outline-none rounded-xs font-mono"
-                        />
-                        <div className="flex flex-wrap gap-1.5">
-                          {availableSubcategories.slice(0, 4).map(sub => (
-                            <button
-                              key={sub}
-                              type="button"
-                              onClick={() => setFormData(prev => ({ ...prev, subcategory: sub }))}
-                              className="text-[10px] px-2 py-0.5 bg-[#201f20] hover:bg-[#ff7a1a] hover:text-black text-[#e0c0b1] rounded border border-[#584236]/40 font-mono"
-                            >
-                              {sub}
-                            </button>
-                          ))}
-                        </div>
+                    {/* Odometer Mileage */}
+                    <div>
+                      <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">
+                        ODOMETER MILEAGE
+                      </label>
+                      <input
+                        type="text"
+                        name="mileage"
+                        placeholder="e.g., 64,250 Miles (Original TMU)"
+                        value={formData.mileage}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs"
+                      />
+                    </div>
+
+                    {/* Title Status */}
+                    <div>
+                      <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">
+                        TITLE STATUS & DOCUMENTATION
+                      </label>
+                      <input
+                        type="text"
+                        name="titleStatus"
+                        placeholder="Type title status or click chip..."
+                        value={formData.titleStatus}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs mb-1.5"
+                      />
+                      <div className="flex flex-wrap gap-1">
+                        {ADMIN_TITLE_STATUS_PRESETS.slice(0, 3).map(status => (
+                          <button
+                            key={status}
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, titleStatus: status }))}
+                            className={`text-[9px] px-1.5 py-0.5 rounded border ${
+                              formData.titleStatus === status
+                                ? 'bg-[#ff7a1a] text-black border-[#ff7a1a] font-bold'
+                                : 'bg-[#201f20] text-[#e0c0b1] border-[#584236]/40 hover:border-[#ff7a1a]'
+                            }`}
+                          >
+                            {status.split('(')[0]}
+                          </button>
+                        ))}
                       </div>
-                    ) : (
+                    </div>
+
+                    {/* Engine Installed */}
+                    <div>
+                      <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">
+                        ENGINE INSTALLED
+                      </label>
+                      <input
+                        type="text"
+                        name="engineInstalled"
+                        placeholder="e.g., 1600cc Dual Port (Solex 34-PICT)"
+                        value={formData.engineInstalled}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs mb-1.5"
+                      />
+                      <div className="flex flex-wrap gap-1">
+                        {['1200cc Single', '1600cc Dual Port', '1776cc Street', '2110cc Stroker'].map(eng => (
+                          <button
+                            key={eng}
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, engineInstalled: eng }))}
+                            className={`text-[9px] px-1.5 py-0.5 rounded border ${
+                              formData.engineInstalled === eng
+                                ? 'bg-[#ff7a1a] text-black border-[#ff7a1a] font-bold'
+                                : 'bg-[#201f20] text-[#e0c0b1] border-[#584236]/40 hover:border-[#ff7a1a]'
+                            }`}
+                          >
+                            {eng}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Transmission Type */}
+                    <div>
+                      <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">
+                        TRANSMISSION / TRANSAXLE
+                      </label>
+                      <input
+                        type="text"
+                        name="transmissionType"
+                        placeholder="e.g., 4-Speed Manual Swing Axle"
+                        value={formData.transmissionType}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs mb-1.5"
+                      />
+                      <div className="flex flex-wrap gap-1">
+                        {ADMIN_TRANSMISSION_PRESETS.slice(0, 3).map(trans => (
+                          <button
+                            key={trans}
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, transmissionType: trans }))}
+                            className={`text-[9px] px-1.5 py-0.5 rounded border ${
+                              formData.transmissionType === trans
+                                ? 'bg-[#ff7a1a] text-black border-[#ff7a1a] font-bold'
+                                : 'bg-[#201f20] text-[#e0c0b1] border-[#584236]/40 hover:border-[#ff7a1a]'
+                            }`}
+                          >
+                            {trans}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Exterior Paint & Interior Upholstery */}
+                    <div>
+                      <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">
+                        EXTERIOR COLOR & PAINT CODE
+                      </label>
+                      <input
+                        type="text"
+                        name="exteriorColor"
+                        placeholder="e.g., L87 Pearl White (Glasurit German Paint)"
+                        value={formData.exteriorColor}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs mb-1.5"
+                      />
+                      <div className="flex flex-wrap gap-1">
+                        {['L87 Pearl White', 'L390 Gulf Blue', 'L41 Black', 'L568 Signal Orange'].map(col => (
+                          <button
+                            key={col}
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, exteriorColor: col }))}
+                            className={`text-[9px] px-1.5 py-0.5 rounded border ${
+                              formData.exteriorColor === col
+                                ? 'bg-[#ff7a1a] text-black border-[#ff7a1a] font-bold'
+                                : 'bg-[#201f20] text-[#e0c0b1] border-[#584236]/40 hover:border-[#ff7a1a]'
+                            }`}
+                          >
+                            {col}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="sm:col-span-2 lg:col-span-3">
+                      <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">
+                        INTERIOR UPHOLSTERY & CABIN SPEC
+                      </label>
+                      <input
+                        type="text"
+                        name="interiorColor"
+                        placeholder="e.g., Basketweave Brick Red Vinyl Seats / Oatmeal German Square-weave Carpet"
+                        value={formData.interiorColor}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 📌 SECTION 3: SYSTEM CLASSIFICATION (ONLY VISIBLE FOR SPARE PARTS) */}
+              {formData.listingType === 'spare-part' && (
+                <div className="bg-[#181719]/80 border border-[#584236]/40 backdrop-blur-md rounded-md p-6 shadow-xl space-y-4 hover:border-[#ff7a1a]/50 transition-all">
+                  <div className="flex items-center justify-between border-b border-[#584236]/30 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Layers className="w-5 h-5 text-[#ff7a1a]" />
+                      <h3 className="text-base font-bold text-white uppercase tracking-wider font-mono">
+                        SECTION 3: SYSTEM CLASSIFICATION
+                      </h3>
+                    </div>
+                    <span className="text-[10px] text-[#83cffb] bg-[#83cffb]/10 border border-[#83cffb]/30 px-2 py-0.5 rounded font-mono font-bold">
+                      Standard System + Custom Subcategory
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Main System: LOCKED TAXONOMY */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs text-[#a78b7d] uppercase font-bold font-mono">
+                          MAIN SYSTEM <span className="text-[#ff7a1a]">*</span>
+                        </label>
+                        <span className="text-[10px] text-[#ff7a1a] font-mono">🔒 Locked System</span>
+                      </div>
                       <select
-                        name="subcategory"
-                        value={availableSubcategories.includes(formData.subcategory) ? formData.subcategory : '__CUSTOM__'}
+                        name="mainSystem"
+                        value={formData.mainSystem}
                         onChange={handleInputChange}
                         className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs cursor-pointer font-mono"
                       >
-                        {availableSubcategories.map(sub => (
-                          <option key={sub} value={sub}>{sub}</option>
+                        {VEHICLE_SYSTEMS.map(sys => (
+                          <option key={sys.id} value={sys.id}>{sys.emoji || '⚙️'} {sys.name}</option>
                         ))}
-                        <option value="__CUSTOM__">✍️ + Write Custom Subcategory...</option>
                       </select>
-                    )}
-                    <p className="text-[10px] text-[#a78b7d] mt-1.5 font-mono">
-                      {isCustomSubcat ? 'Custom subcategory active.' : 'Filtered by selected system.'}
-                    </p>
+                      <p className="text-[10px] text-[#a78b7d] mt-1.5 font-mono">
+                        Controls the system catalog filter buttons (Engine, Brakes, Wheels & Rims, Transmission, etc.).
+                      </p>
+                    </div>
+
+                    {/* Subcategory: DUAL PRESET + WRITE-IN */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs text-[#a78b7d] uppercase font-bold font-mono">
+                          SUBCATEGORY <span className="text-[#ff7a1a]">*</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setIsCustomSubcat(!isCustomSubcat)}
+                          className="text-[10px] text-[#83cffb] hover:text-[#ff7a1a] hover:underline font-mono uppercase font-bold"
+                        >
+                          {isCustomSubcat ? '← Use Presets' : '✍️ Write Custom'}
+                        </button>
+                      </div>
+
+                      {isCustomSubcat ? (
+                        <div className="space-y-2">
+                          <input
+                            type="text"
+                            name="subcategory"
+                            placeholder="e.g., Custom CNC Billet Intake Plenum"
+                            value={formData.subcategory}
+                            onChange={handleInputChange}
+                            className="w-full bg-[#131314] border border-[#ff7a1a] p-3 text-xs text-white focus:outline-none rounded-xs font-mono"
+                          />
+                          <div className="flex flex-wrap gap-1.5">
+                            {availableSubcategories.slice(0, 4).map(sub => (
+                              <button
+                                key={sub}
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, subcategory: sub }))}
+                                className="text-[10px] px-2 py-0.5 bg-[#201f20] hover:bg-[#ff7a1a] hover:text-black text-[#e0c0b1] rounded border border-[#584236]/40 font-mono"
+                              >
+                                {sub}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <select
+                          name="subcategory"
+                          value={availableSubcategories.includes(formData.subcategory) ? formData.subcategory : '__CUSTOM__'}
+                          onChange={handleInputChange}
+                          className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs cursor-pointer font-mono"
+                        >
+                          {availableSubcategories.map(sub => (
+                            <option key={sub} value={sub}>{sub}</option>
+                          ))}
+                          <option value="__CUSTOM__">✍️ + Write Custom Subcategory...</option>
+                        </select>
+                      )}
+                      <p className="text-[10px] text-[#a78b7d] mt-1.5 font-mono">
+                        {isCustomSubcat ? 'Custom subcategory active.' : 'Filtered by selected system.'}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* 📌 SECTION 4: PRODUCT DETAILS */}
+              {/* 📌 SECTION 4: PRODUCT / VEHICLE / ENGINE DETAILS */}
               <div className="bg-[#181719]/80 border border-[#584236]/40 backdrop-blur-md rounded-md p-6 shadow-xl space-y-4 hover:border-[#ff7a1a]/50 transition-all">
                 <div className="flex items-center gap-2 border-b border-[#584236]/30 pb-3">
                   <FileText className="w-5 h-5 text-[#ff7a1a]" />
                   <h3 className="text-base font-bold text-white uppercase tracking-wider font-mono">
-                    SECTION 4: PRODUCT DETAILS
+                    {formData.listingType === 'vehicle' ? 'SECTION 4: VEHICLE TITLE & HISTORY' : formData.listingType === 'engine' ? 'SECTION 4: CRATE ENGINE MODEL & OVERVIEW' : 'SECTION 4: PRODUCT DETAILS'}
                   </h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="md:col-span-2">
                     <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold font-mono">
-                      PART NAME <span className="text-[#ff7a1a]">*</span>
+                      {formData.listingType === 'vehicle' ? 'VEHICLE TITLE (YEAR MAKE MODEL SPEC)' : formData.listingType === 'engine' ? 'CRATE ENGINE MODEL TITLE' : 'PART NAME'} <span className="text-[#ff7a1a]">*</span>
                     </label>
                     <input
                       type="text"
                       name="partName"
                       required
-                      placeholder="e.g., Dual Port Cylinder Head 1600cc"
+                      placeholder={formData.listingType === 'vehicle' ? 'e.g., 1967 Volkswagen Beetle Sunroof Sedan' : formData.listingType === 'engine' ? 'e.g., 1776cc Turnkey Crate Engine (Dual Weber 40 IDF)' : 'e.g., Dual Port Cylinder Head 1600cc'}
                       value={formData.partName}
                       onChange={handleInputChange}
                       className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs font-mono"
@@ -1270,12 +1612,12 @@ export default function AdminPanel({
 
                   <div>
                     <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold font-mono">
-                      SKU / PART NUMBER
+                      {formData.listingType === 'vehicle' ? 'STOCK / INVENTORY #' : formData.listingType === 'engine' ? 'SERIAL / BUILD NUMBER' : 'SKU / PART NUMBER'}
                     </label>
                     <input
                       type="text"
                       name="sku"
-                      placeholder="e.g., 043-101-375-H"
+                      placeholder={formData.listingType === 'vehicle' ? 'e.g., VW-VEH-1967-01' : formData.listingType === 'engine' ? 'e.g., ENG-1776-SN492' : 'e.g., 043-101-375-H'}
                       value={formData.sku}
                       onChange={handleInputChange}
                       className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs font-mono"
@@ -1285,13 +1627,13 @@ export default function AdminPanel({
 
                 <div>
                   <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold font-mono">
-                    DESCRIPTION <span className="text-[#ff7a1a]">*</span>
+                    {formData.listingType === 'vehicle' ? 'RESTORATION & VEHICLE HISTORY OVERVIEW' : formData.listingType === 'engine' ? 'ENGINE BUILD SPECIFICATIONS & PROVENANCE' : 'DESCRIPTION'} <span className="text-[#ff7a1a]">*</span>
                   </label>
                   <textarea
                     name="description"
                     rows="3"
                     required
-                    placeholder="Enter detailed technical description, casting numbers, valve specifications, and vehicle compatibility notes..."
+                    placeholder={formData.listingType === 'vehicle' ? 'Enter detailed vehicle provenance, restoration history, floorpan condition, mechanical overhaul notes, and included documentation...' : formData.listingType === 'engine' ? 'Enter build sheet specifications, valve sizing, camshaft grind, dyno run notes, and break-in recommendations...' : 'Enter detailed technical description, casting numbers, valve specifications, and vehicle compatibility notes...'}
                     value={formData.description}
                     onChange={handleInputChange}
                     className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs font-mono"
@@ -1299,113 +1641,115 @@ export default function AdminPanel({
                 </div>
               </div>
 
-              {/* 📌 SECTION 5: SPECIFICATIONS (WITH QUICK PRESET PILLS + MANUAL WRITE-IN) */}
-              <div className="bg-[#181719]/80 border border-[#584236]/40 backdrop-blur-md rounded-md p-6 shadow-xl space-y-4 hover:border-[#ff7a1a]/50 transition-all">
-                <div className="flex items-center justify-between border-b border-[#584236]/30 pb-3">
-                  <div className="flex items-center gap-2">
-                    <Wrench className="w-5 h-5 text-[#ff7a1a]" />
-                    <h3 className="text-base font-bold text-white uppercase tracking-wider font-mono">
-                      SECTION 5: SPECIFICATIONS
-                    </h3>
+              {/* 📌 SECTION 5: SPECIFICATIONS (ONLY VISIBLE FOR SPARE PARTS) */}
+              {formData.listingType === 'spare-part' && (
+                <div className="bg-[#181719]/80 border border-[#584236]/40 backdrop-blur-md rounded-md p-6 shadow-xl space-y-4 hover:border-[#ff7a1a]/50 transition-all">
+                  <div className="flex items-center justify-between border-b border-[#584236]/30 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Wrench className="w-5 h-5 text-[#ff7a1a]" />
+                      <h3 className="text-base font-bold text-white uppercase tracking-wider font-mono">
+                        SECTION 5: SPECIFICATIONS
+                      </h3>
+                    </div>
+                    <span className="text-[10px] text-[#83cffb] font-mono">Click chips to fill or type freely</span>
                   </div>
-                  <span className="text-[10px] text-[#83cffb] font-mono">Click chips to fill or type freely</span>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono">
-                  {/* Material with Quick Preset Chips */}
-                  <div>
-                    <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">MATERIAL</label>
-                    <input
-                      type="text"
-                      name="material"
-                      placeholder="Type custom material or click preset..."
-                      value={formData.material}
-                      onChange={handleInputChange}
-                      className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs mb-2"
-                    />
-                    <div className="flex flex-wrap gap-1.5">
-                      {ADMIN_MATERIAL_PRESETS.map(mat => (
-                        <button
-                          key={mat}
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, material: mat }))}
-                          className={`text-[10px] px-2 py-0.5 rounded border transition-all ${
-                            formData.material === mat
-                              ? 'bg-[#ff7a1a] text-black border-[#ff7a1a] font-bold'
-                              : 'bg-[#201f20] text-[#e0c0b1] border-[#584236]/40 hover:border-[#ff7a1a]'
-                          }`}
-                        >
-                          {mat}
-                        </button>
-                      ))}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono">
+                    {/* Material with Quick Preset Chips */}
+                    <div>
+                      <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">MATERIAL</label>
+                      <input
+                        type="text"
+                        name="material"
+                        placeholder="Type custom material or click preset..."
+                        value={formData.material}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs mb-2"
+                      />
+                      <div className="flex flex-wrap gap-1.5">
+                        {ADMIN_MATERIAL_PRESETS.map(mat => (
+                          <button
+                            key={mat}
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, material: mat }))}
+                            className={`text-[10px] px-2 py-0.5 rounded border transition-all ${
+                              formData.material === mat
+                                ? 'bg-[#ff7a1a] text-black border-[#ff7a1a] font-bold'
+                                : 'bg-[#201f20] text-[#e0c0b1] border-[#584236]/40 hover:border-[#ff7a1a]'
+                            }`}
+                          >
+                            {mat}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Finish with Quick Preset Chips */}
+                    <div>
+                      <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">FINISH / COATING</label>
+                      <input
+                        type="text"
+                        name="finish"
+                        placeholder="Type custom finish or click preset..."
+                        value={formData.finish}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs mb-2"
+                      />
+                      <div className="flex flex-wrap gap-1.5">
+                        {ADMIN_FINISH_PRESETS.map(fin => (
+                          <button
+                            key={fin}
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, finish: fin }))}
+                            className={`text-[10px] px-2 py-0.5 rounded border transition-all ${
+                              formData.finish === fin
+                                ? 'bg-[#ff7a1a] text-black border-[#ff7a1a] font-bold'
+                                : 'bg-[#201f20] text-[#e0c0b1] border-[#584236]/40 hover:border-[#ff7a1a]'
+                            }`}
+                          >
+                            {fin}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Finish with Quick Preset Chips */}
-                  <div>
-                    <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">FINISH / COATING</label>
-                    <input
-                      type="text"
-                      name="finish"
-                      placeholder="Type custom finish or click preset..."
-                      value={formData.finish}
-                      onChange={handleInputChange}
-                      className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs mb-2"
-                    />
-                    <div className="flex flex-wrap gap-1.5">
-                      {ADMIN_FINISH_PRESETS.map(fin => (
-                        <button
-                          key={fin}
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, finish: fin }))}
-                          className={`text-[10px] px-2 py-0.5 rounded border transition-all ${
-                            formData.finish === fin
-                              ? 'bg-[#ff7a1a] text-black border-[#ff7a1a] font-bold'
-                              : 'bg-[#201f20] text-[#e0c0b1] border-[#584236]/40 hover:border-[#ff7a1a]'
-                          }`}
-                        >
-                          {fin}
-                        </button>
-                      ))}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono pt-2 border-t border-[#584236]/20">
+                    <div>
+                      <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">WEIGHT (KG / LBS)</label>
+                      <input
+                        type="text"
+                        name="weight"
+                        placeholder="e.g., 4.8 kg / 10.5 lbs"
+                        value={formData.weight}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">DIMENSIONS</label>
+                      <input
+                        type="text"
+                        name="dimensions"
+                        placeholder="e.g., 32 x 24 x 18 cm"
+                        value={formData.dimensions}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs"
+                      />
                     </div>
                   </div>
                 </div>
+              )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono pt-2 border-t border-[#584236]/20">
-                  <div>
-                    <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">WEIGHT (KG / LBS)</label>
-                    <input
-                      type="text"
-                      name="weight"
-                      placeholder="e.g., 4.8 kg / 10.5 lbs"
-                      value={formData.weight}
-                      onChange={handleInputChange}
-                      className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">DIMENSIONS</label>
-                    <input
-                      type="text"
-                      name="dimensions"
-                      placeholder="e.g., 32 x 24 x 18 cm"
-                      value={formData.dimensions}
-                      onChange={handleInputChange}
-                      className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 📌 SECTION 6: ENGINE-SPECIFIC (CONDITIONAL WITH PRESET + WRITE-IN) */}
+              {/* 📌 SECTION 6: CRATE ENGINE SPECIFICATIONS & PERFORMANCE */}
               {isEngineSectionVisible && (
-                <div className="bg-[#181719]/80 border border-[#ff7a1a]/60 backdrop-blur-md rounded-md p-6 shadow-xl space-y-4 animate-in fade-in duration-300">
+                <div className="bg-[#181719]/80 border border-[#ff7a1a]/60 backdrop-blur-md rounded-md p-6 shadow-xl space-y-5 animate-in fade-in duration-300">
                   <div className="flex items-center justify-between border-b border-[#ff7a1a]/30 pb-3">
                     <div className="flex items-center gap-2">
                       <Cpu className="w-5 h-5 text-[#ff7a1a]" />
                       <h3 className="text-base font-bold text-white uppercase tracking-wider font-mono">
-                        SECTION 6: ENGINE-SPECIFIC (ACTIVE)
+                        {formData.listingType === 'engine' ? 'SECTION 5: CRATE ENGINE TECHNICAL SPECIFICATIONS' : 'SECTION 6: ENGINE-SPECIFIC SPECIFICATIONS'}
                       </h3>
                     </div>
                     <span className="text-[10px] text-[#ff7a1a] font-mono font-bold">Preset + Custom Write-in</span>
@@ -1416,7 +1760,7 @@ export default function AdminPanel({
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <label className="text-xs text-[#a78b7d] uppercase font-bold">
-                          ENGINE SIZE / DISPLACEMENT
+                          ENGINE DISPLACEMENT <span className="text-[#ff7a1a]">*</span>
                         </label>
                         <button
                           type="button"
@@ -1469,7 +1813,7 @@ export default function AdminPanel({
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <label className="text-xs text-[#a78b7d] uppercase font-bold">
-                          PERFORMANCE CATEGORY
+                          BUILD CATEGORY
                         </label>
                         <button
                           type="button"
@@ -1490,13 +1834,13 @@ export default function AdminPanel({
                           className="w-full bg-[#131314] border border-[#ff7a1a] p-3 text-xs text-white focus:outline-none rounded-xs font-mono"
                         />
                       ) : (
-                        <div className="flex flex-wrap gap-2 pt-1">
+                        <div className="flex flex-wrap gap-1.5 pt-1">
                           {ADMIN_PERFORMANCE_PRESETS.map(type => (
                             <button
                               key={type}
                               type="button"
                               onClick={() => setFormData(prev => ({ ...prev, performanceType: type }))}
-                              className={`text-xs px-2.5 py-1.5 font-bold rounded-xs border transition-all ${
+                              className={`text-[10px] px-2 py-1 font-bold rounded-xs border transition-all ${
                                 formData.performanceType === type
                                   ? 'bg-[#ff7a1a] text-black border-[#ff7a1a]'
                                   : 'bg-[#131314] text-[#e0c0b1] border-[#584236]/60 hover:border-[#ff7a1a]'
@@ -1509,6 +1853,119 @@ export default function AdminPanel({
                       )}
                     </div>
                   </div>
+
+                  {/* Engine-Listing Specific Subfields (Casing, Induction, Shroud, Dyno HP) */}
+                  {formData.listingType === 'engine' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-[#ff7a1a]/20 font-mono">
+                      {/* Engine Case Type */}
+                      <div>
+                        <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">
+                          CRANKCASE TYPE & ALLOY
+                        </label>
+                        <input
+                          type="text"
+                          name="caseType"
+                          placeholder="e.g., AS41 Magnesium Universal Dual Relief"
+                          value={formData.caseType}
+                          onChange={handleInputChange}
+                          className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs mb-1.5"
+                        />
+                        <div className="flex flex-wrap gap-1">
+                          {ADMIN_ENGINE_CASE_PRESETS.map(cs => (
+                            <button
+                              key={cs}
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, caseType: cs }))}
+                              className={`text-[9px] px-1.5 py-0.5 rounded border ${
+                                formData.caseType === cs
+                                  ? 'bg-[#ff7a1a] text-black border-[#ff7a1a] font-bold'
+                                  : 'bg-[#201f20] text-[#e0c0b1] border-[#584236]/40 hover:border-[#ff7a1a]'
+                              }`}
+                            >
+                              {cs}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Induction & Carburetion */}
+                      <div>
+                        <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">
+                          INDUCTION / CARBURETOR SETUP
+                        </label>
+                        <input
+                          type="text"
+                          name="inductionSetup"
+                          placeholder="e.g., Dual Weber 40 IDF Carburetors"
+                          value={formData.inductionSetup}
+                          onChange={handleInputChange}
+                          className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs mb-1.5"
+                        />
+                        <div className="flex flex-wrap gap-1">
+                          {ADMIN_INDUCTION_PRESETS.map(ind => (
+                            <button
+                              key={ind}
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, inductionSetup: ind }))}
+                              className={`text-[9px] px-1.5 py-0.5 rounded border ${
+                                formData.inductionSetup === ind
+                                  ? 'bg-[#ff7a1a] text-black border-[#ff7a1a] font-bold'
+                                  : 'bg-[#201f20] text-[#e0c0b1] border-[#584236]/40 hover:border-[#ff7a1a]'
+                              }`}
+                            >
+                              {ind}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Cooling Shroud */}
+                      <div>
+                        <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">
+                          FAN SHROUD & COOLING SETUP
+                        </label>
+                        <input
+                          type="text"
+                          name="coolingShroud"
+                          placeholder="e.g., Stock Type 1 Doghouse Shroud with Flaps"
+                          value={formData.coolingShroud}
+                          onChange={handleInputChange}
+                          className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs mb-1.5"
+                        />
+                        <div className="flex flex-wrap gap-1">
+                          {ADMIN_COOLING_SHROUD_PRESETS.map(shr => (
+                            <button
+                              key={shr}
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, coolingShroud: shr }))}
+                              className={`text-[9px] px-1.5 py-0.5 rounded border ${
+                                formData.coolingShroud === shr
+                                  ? 'bg-[#ff7a1a] text-black border-[#ff7a1a] font-bold'
+                                  : 'bg-[#201f20] text-[#e0c0b1] border-[#584236]/40 hover:border-[#ff7a1a]'
+                              }`}
+                            >
+                              {shr}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Dyno Horsepower & Torque */}
+                      <div>
+                        <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">
+                          DYNO HORSEPOWER & TORQUE RATING
+                        </label>
+                        <input
+                          type="text"
+                          name="dynoHorsepower"
+                          placeholder="e.g., 85 HP @ 5200 RPM / 105 lb-ft Torque"
+                          value={formData.dynoHorsepower}
+                          onChange={handleInputChange}
+                          className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1518,7 +1975,7 @@ export default function AdminPanel({
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-5 h-5 text-[#ff7a1a]" />
                     <h3 className="text-base font-bold text-white uppercase tracking-wider font-mono">
-                      SECTION 7: CONDITION & STATUS
+                      {formData.listingType === 'vehicle' ? 'SECTION 5: CONDITION & SALE STATUS' : formData.listingType === 'engine' ? 'SECTION 6: BUILD CONDITION & STATUS' : 'SECTION 7: CONDITION & STATUS'}
                     </h3>
                   </div>
                   <span className="text-[10px] text-[#83cffb] font-mono">Standardized Condition + Write-in</span>
@@ -1551,7 +2008,7 @@ export default function AdminPanel({
                           className="w-full bg-[#131314] border border-[#ff7a1a] p-3 text-xs text-white focus:outline-none rounded-xs font-mono"
                         />
                         <div className="flex flex-wrap gap-1.5">
-                          {ADMIN_CONDITION_PRESETS.slice(0, 3).map(cond => (
+                          {(formData.listingType === 'vehicle' ? ADMIN_VEHICLE_CONDITION_PRESETS : formData.listingType === 'engine' ? ADMIN_ENGINE_CONDITION_PRESETS : ADMIN_CONDITION_PRESETS).slice(0, 3).map(cond => (
                             <button
                               key={cond}
                               type="button"
@@ -1566,11 +2023,11 @@ export default function AdminPanel({
                     ) : (
                       <select
                         name="condition"
-                        value={ADMIN_CONDITION_PRESETS.includes(formData.condition) ? formData.condition : '__CUSTOM__'}
+                        value={formData.condition}
                         onChange={handleInputChange}
                         className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs cursor-pointer font-mono"
                       >
-                        {ADMIN_CONDITION_PRESETS.map(cond => (
+                        {(formData.listingType === 'vehicle' ? ADMIN_VEHICLE_CONDITION_PRESETS : formData.listingType === 'engine' ? ADMIN_ENGINE_CONDITION_PRESETS : ADMIN_CONDITION_PRESETS).map(cond => (
                           <option key={cond} value={cond}>{cond}</option>
                         ))}
                         <option value="__CUSTOM__">✍️ + Write Custom Condition...</option>
@@ -1603,7 +2060,7 @@ export default function AdminPanel({
                   <div className="flex items-center gap-2">
                     <DollarSign className="w-5 h-5 text-[#ff7a1a]" />
                     <h3 className="text-base font-bold text-white uppercase tracking-wider font-mono">
-                      SECTION 8: PRICING & INVENTORY
+                      {formData.listingType === 'vehicle' ? 'SECTION 6: VEHICLE PRICING & LOCATION' : formData.listingType === 'engine' ? 'SECTION 7: ENGINE PRICING & CORE EXCHANGE' : 'SECTION 8: PRICING & INVENTORY'}
                     </h3>
                   </div>
                   <span className="text-[10px] text-[#83cffb] font-mono">Prices, Stocks & Bin Locations</span>
@@ -1612,14 +2069,14 @@ export default function AdminPanel({
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 font-mono">
                   <div>
                     <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">
-                      RETAIL PRICE ($) <span className="text-[#ff7a1a]">*</span>
+                      {formData.listingType === 'vehicle' ? 'ASKING PRICE ($)' : formData.listingType === 'engine' ? 'TURNKEY PRICE ($)' : 'RETAIL PRICE ($)'} <span className="text-[#ff7a1a]">*</span>
                     </label>
                     <input
                       type="number"
                       step="0.01"
                       name="retailPrice"
                       required
-                      placeholder="289.00"
+                      placeholder={formData.listingType === 'vehicle' ? '18500.00' : formData.listingType === 'engine' ? '4890.00' : '289.00'}
                       value={formData.retailPrice}
                       onChange={handleInputChange}
                       className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs"
@@ -1627,12 +2084,14 @@ export default function AdminPanel({
                   </div>
 
                   <div>
-                    <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">WHOLESALE PRICE ($)</label>
+                    <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">
+                      {formData.listingType === 'vehicle' ? 'RESERVE / MIN PRICE ($)' : formData.listingType === 'engine' ? 'CORE EXCHANGE DEPOSIT ($)' : 'WHOLESALE PRICE ($)'}
+                    </label>
                     <input
                       type="number"
                       step="0.01"
                       name="wholesalePrice"
-                      placeholder="210.00"
+                      placeholder={formData.listingType === 'vehicle' ? '16000.00' : formData.listingType === 'engine' ? '500.00' : '210.00'}
                       value={formData.wholesalePrice}
                       onChange={handleInputChange}
                       className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs"
@@ -1641,16 +2100,17 @@ export default function AdminPanel({
 
                   <div>
                     <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">
-                      STOCK QUANTITY <span className="text-[#ff7a1a]">*</span>
+                      {formData.listingType === 'vehicle' ? 'VEHICLE COUNT' : 'STOCK QUANTITY'} <span className="text-[#ff7a1a]">*</span>
                     </label>
                     <input
                       type="number"
                       name="stockQuantity"
                       required
-                      placeholder="12"
-                      value={formData.stockQuantity}
+                      disabled={formData.listingType === 'vehicle'}
+                      placeholder="1"
+                      value={formData.listingType === 'vehicle' ? '1' : formData.stockQuantity}
                       onChange={handleInputChange}
-                      className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs"
+                      className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs disabled:opacity-60"
                     />
                   </div>
                 </div>
@@ -1658,12 +2118,12 @@ export default function AdminPanel({
                 {/* Storage Location with Quick Presets */}
                 <div className="pt-2 border-t border-[#584236]/20 font-mono">
                   <label className="text-xs text-[#a78b7d] uppercase block mb-1.5 font-bold">
-                    STORAGE LOCATION / WAREHOUSE BIN
+                    {formData.listingType === 'vehicle' ? 'GARAGE / SHOWROOM LOCATION' : formData.listingType === 'engine' ? 'CRATE & ASSEMBLY BAY LOCATION' : 'STORAGE LOCATION / WAREHOUSE BIN'}
                   </label>
                   <input
                     type="text"
                     name="storageLocation"
-                    placeholder="Type custom bin/bay or click preset..."
+                    placeholder={formData.listingType === 'vehicle' ? 'e.g., Houston Restoration Showroom (Bay 3)' : 'Type custom location or click preset...'}
                     value={formData.storageLocation}
                     onChange={handleInputChange}
                     className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs mb-2"
@@ -1687,121 +2147,125 @@ export default function AdminPanel({
                 </div>
               </div>
 
-              {/* 📌 SECTION 9: COMPATIBILITY MATRIX (MULTI-SELECT + CUSTOM TAG ADDER) */}
-              <div className="bg-[#181719]/80 border border-[#584236]/40 backdrop-blur-md rounded-md p-6 shadow-xl space-y-6 hover:border-[#ff7a1a]/50 transition-all">
-                <div className="flex items-center justify-between border-b border-[#584236]/30 pb-3">
-                  <div className="flex items-center gap-2">
-                    <Sliders className="w-5 h-5 text-[#ff7a1a]" />
-                    <h3 className="text-base font-bold text-white uppercase tracking-wider font-mono">
-                      SECTION 9: COMPATIBILITY MATRIX
-                    </h3>
+              {/* 📌 SECTION 9: COMPATIBILITY MATRIX (ONLY VISIBLE FOR SPARE PARTS AND ENGINES) */}
+              {formData.listingType !== 'vehicle' && (
+                <div className="bg-[#181719]/80 border border-[#584236]/40 backdrop-blur-md rounded-md p-6 shadow-xl space-y-6 hover:border-[#ff7a1a]/50 transition-all">
+                  <div className="flex items-center justify-between border-b border-[#584236]/30 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Sliders className="w-5 h-5 text-[#ff7a1a]" />
+                      <h3 className="text-base font-bold text-white uppercase tracking-wider font-mono">
+                        {formData.listingType === 'engine' ? 'SECTION 8: CHASSIS FITMENT MATRIX' : 'SECTION 9: COMPATIBILITY MATRIX'}
+                      </h3>
+                    </div>
+                    <span className="text-[10px] text-[#83cffb] font-mono">Presets + Add Custom Tags</span>
                   </div>
-                  <span className="text-[10px] text-[#83cffb] font-mono">Presets + Add Custom Tags</span>
-                </div>
 
-                <div className="space-y-6 font-mono">
-                  {/* Compatible Engine Sizes */}
-                  <div>
-                    <label className="text-xs text-[#a78b7d] uppercase block mb-2 font-bold flex items-center justify-between">
-                      <span>COMPATIBLE ENGINE SIZES ({formData.compatibleEngineSizes.length} selected)</span>
-                      <span className="text-[10px] text-[#83cffb]">Toggle chips or add custom tag below</span>
-                    </label>
+                  <div className="space-y-6 font-mono">
+                    {/* Compatible Engine Sizes (Only for Spare Parts) */}
+                    {formData.listingType === 'spare-part' && (
+                      <div>
+                        <label className="text-xs text-[#a78b7d] uppercase block mb-2 font-bold flex items-center justify-between">
+                          <span>COMPATIBLE ENGINE SIZES ({formData.compatibleEngineSizes.length} selected)</span>
+                          <span className="text-[10px] text-[#83cffb]">Toggle chips or add custom tag below</span>
+                        </label>
 
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {Array.from(new Set([...ENGINE_COMPATIBILITIES, ...formData.compatibleEngineSizes])).map(size => {
-                        const isSelected = formData.compatibleEngineSizes.includes(size);
-                        return (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {Array.from(new Set([...ENGINE_COMPATIBILITIES, ...formData.compatibleEngineSizes])).map(size => {
+                            const isSelected = formData.compatibleEngineSizes.includes(size);
+                            return (
+                              <button
+                                key={size}
+                                type="button"
+                                onClick={() => toggleArrayItem('compatibleEngineSizes', size)}
+                                className={`text-xs px-3 py-1.5 rounded-xs font-bold border transition-all ${
+                                  isSelected
+                                    ? 'bg-[#ff7a1a] text-black border-[#ff7a1a]'
+                                    : 'bg-[#131314] text-[#e0c0b1] border-[#584236]/60 hover:border-[#ff7a1a]'
+                                }`}
+                              >
+                                {size} {isSelected && '✓'}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Inline Custom Engine Tag Adder */}
+                        <div className="flex gap-2 max-w-md">
+                          <input
+                            type="text"
+                            placeholder="Type custom engine size (e.g., 2442cc Drag Spec)..."
+                            value={newCustomEngineTag}
+                            onChange={(e) => setNewCustomEngineTag(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCustomEngineTag(); } }}
+                            className="flex-1 bg-[#131314] border border-[#584236]/60 p-2 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs"
+                          />
                           <button
-                            key={size}
                             type="button"
-                            onClick={() => toggleArrayItem('compatibleEngineSizes', size)}
-                            className={`text-xs px-3 py-1.5 rounded-xs font-bold border transition-all ${
-                              isSelected
-                                ? 'bg-[#ff7a1a] text-black border-[#ff7a1a]'
-                                : 'bg-[#131314] text-[#e0c0b1] border-[#584236]/60 hover:border-[#ff7a1a]'
-                            }`}
+                            onClick={handleAddCustomEngineTag}
+                            className="bg-[#201f20] hover:bg-[#ff7a1a] hover:text-black text-[#83cffb] border border-[#584236]/60 px-3 text-xs font-bold rounded-xs transition-all font-mono"
                           >
-                            {size} {isSelected && '✓'}
+                            + Add Tag
                           </button>
-                        );
-                      })}
-                    </div>
+                        </div>
+                      </div>
+                    )}
 
-                    {/* Inline Custom Engine Tag Adder */}
-                    <div className="flex gap-2 max-w-md">
-                      <input
-                        type="text"
-                        placeholder="Type custom engine size (e.g., 2442cc Drag Spec)..."
-                        value={newCustomEngineTag}
-                        onChange={(e) => setNewCustomEngineTag(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCustomEngineTag(); } }}
-                        className="flex-1 bg-[#131314] border border-[#584236]/60 p-2 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddCustomEngineTag}
-                        className="bg-[#201f20] hover:bg-[#ff7a1a] hover:text-black text-[#83cffb] border border-[#584236]/60 px-3 text-xs font-bold rounded-xs transition-all font-mono"
-                      >
-                        + Add Tag
-                      </button>
-                    </div>
-                  </div>
+                    {/* Compatible Vehicle Models */}
+                    <div className={formData.listingType === 'spare-part' ? "pt-4 border-t border-[#584236]/20" : ""}>
+                      <label className="text-xs text-[#a78b7d] uppercase block mb-2 font-bold flex items-center justify-between">
+                        <span>COMPATIBLE VEHICLE MODELS ({formData.compatibleModels.length} selected)</span>
+                        <span className="text-[10px] text-[#83cffb]">Platform: {currentVehCategoryObj?.name}</span>
+                      </label>
 
-                  {/* Compatible Vehicle Models */}
-                  <div className="pt-4 border-t border-[#584236]/20">
-                    <label className="text-xs text-[#a78b7d] uppercase block mb-2 font-bold flex items-center justify-between">
-                      <span>COMPATIBLE VEHICLE MODELS ({formData.compatibleModels.length} selected)</span>
-                      <span className="text-[10px] text-[#83cffb]">Platform: {currentVehCategoryObj?.name}</span>
-                    </label>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {Array.from(new Set([...availableModelYearRanges, ...formData.compatibleModels])).map(mod => {
+                          const isSelected = formData.compatibleModels.includes(mod);
+                          return (
+                            <button
+                              key={mod}
+                              type="button"
+                              onClick={() => toggleArrayItem('compatibleModels', mod)}
+                              className={`text-xs px-3 py-1.5 rounded-xs font-bold border transition-all ${
+                                isSelected
+                                  ? 'bg-[#ff7a1a] text-black border-[#ff7a1a]'
+                                  : 'bg-[#131314] text-[#e0c0b1] border-[#584236]/60 hover:border-[#ff7a1a]'
+                              }`}
+                            >
+                              {mod} {isSelected && '✓'}
+                            </button>
+                          );
+                        })}
+                      </div>
 
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {Array.from(new Set([...availableModelYearRanges, ...formData.compatibleModels])).map(mod => {
-                        const isSelected = formData.compatibleModels.includes(mod);
-                        return (
-                          <button
-                            key={mod}
-                            type="button"
-                            onClick={() => toggleArrayItem('compatibleModels', mod)}
-                            className={`text-xs px-3 py-1.5 rounded-xs font-bold border transition-all ${
-                              isSelected
-                                ? 'bg-[#ff7a1a] text-black border-[#ff7a1a]'
-                                : 'bg-[#131314] text-[#e0c0b1] border-[#584236]/60 hover:border-[#ff7a1a]'
-                            }`}
-                          >
-                            {mod} {isSelected && '✓'}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Inline Custom Model Tag Adder */}
-                    <div className="flex gap-2 max-w-md">
-                      <input
-                        type="text"
-                        placeholder="Type custom vehicle model/year tag..."
-                        value={newCustomModelTag}
-                        onChange={(e) => setNewCustomModelTag(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCustomModelTag(); } }}
-                        className="flex-1 bg-[#131314] border border-[#584236]/60 p-2 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddCustomModelTag}
-                        className="bg-[#201f20] hover:bg-[#ff7a1a] hover:text-black text-[#83cffb] border border-[#584236]/60 px-3 text-xs font-bold rounded-xs transition-all font-mono"
-                      >
-                        + Add Tag
-                      </button>
+                      {/* Inline Custom Model Tag Adder */}
+                      <div className="flex gap-2 max-w-md">
+                        <input
+                          type="text"
+                          placeholder="Type custom vehicle model/year tag..."
+                          value={newCustomModelTag}
+                          onChange={(e) => setNewCustomModelTag(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCustomModelTag(); } }}
+                          className="flex-1 bg-[#131314] border border-[#584236]/60 p-2 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddCustomModelTag}
+                          className="bg-[#201f20] hover:bg-[#ff7a1a] hover:text-black text-[#83cffb] border border-[#584236]/60 px-3 text-xs font-bold rounded-xs transition-all font-mono"
+                        >
+                          + Add Tag
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* 📌 SECTION 10: MEDIA */}
+              {/* 📌 SECTION 10: MEDIA & ASSETS */}
               <div className="bg-[#181719]/80 border border-[#584236]/40 backdrop-blur-md rounded-md p-6 shadow-xl space-y-4 hover:border-[#ff7a1a]/50 transition-all">
                 <div className="flex items-center gap-2 border-b border-[#584236]/30 pb-3">
                   <ImageIcon className="w-5 h-5 text-[#ff7a1a]" />
                   <h3 className="text-base font-bold text-white uppercase tracking-wider font-mono">
-                    SECTION 10: MEDIA & IMAGES
+                    {formData.listingType === 'vehicle' ? 'SECTION 10: VEHICLE PHOTO GALLERY & WALKAROUND VIDEO' : formData.listingType === 'engine' ? 'SECTION 10: ENGINE PHOTOS & DYNO TEST VIDEO' : 'SECTION 10: MEDIA & IMAGES'}
                   </h3>
                 </div>
 
@@ -1817,9 +2281,11 @@ export default function AdminPanel({
                     />
                     <UploadCloud className="w-10 h-10 text-[#ff7a1a] mx-auto mb-2" />
                     <p className="text-xs text-[#e5e2e3] font-bold">
-                      Drag & Drop Product Photos here, or <span className="text-[#ff7a1a]">Browse Files</span>
+                      Drag & Drop {formData.listingType === 'vehicle' ? 'Vehicle Gallery Photos' : formData.listingType === 'engine' ? 'Engine Photos' : 'Product Photos'} here, or <span className="text-[#ff7a1a]">Browse Files</span>
                     </p>
-                    <p className="text-[10px] text-[#a78b7d] mt-1">Supports PNG, JPG, WEBP formats</p>
+                    <p className="text-[10px] text-[#a78b7d] mt-1">
+                      {formData.listingType === 'vehicle' ? 'Upload front 3/4, rear, interior cabin, dashboard, engine bay, and undercarriage pans.' : 'Supports PNG, JPG, WEBP formats (automatically optimized)'}
+                    </p>
                   </div>
 
                   {/* URL Image Input Option */}
@@ -1866,7 +2332,7 @@ export default function AdminPanel({
                   {/* Optional Video URL */}
                   <div>
                     <label className="text-xs text-[#a78b7d] uppercase block mb-1 font-bold">
-                      OPTIONAL DEMO VIDEO URL
+                      {formData.listingType === 'vehicle' ? 'OPTIONAL WALKAROUND & COLD-START VIDEO URL' : formData.listingType === 'engine' ? 'OPTIONAL ENGINE DYNO RUN / IDLE TEST VIDEO URL' : 'OPTIONAL DEMO VIDEO URL'}
                     </label>
                     <input
                       type="url"
@@ -2205,14 +2671,26 @@ export default function AdminPanel({
                           </div>
                         )}
                         <div>
-                          <span className="text-[10px] text-[#ff7a1a] font-bold block uppercase">
-                            SKU: {part.sku || 'N/A'} • {part.systemCategory || part.partSystem || 'Part'}
-                          </span>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase ${
+                              part.listingType === 'vehicle' 
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' 
+                                : part.listingType === 'engine' 
+                                ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40' 
+                                : 'bg-[#ff7a1a]/20 text-[#ff7a1a] border border-[#ff7a1a]/40'
+                            }`}>
+                              {part.listingType === 'vehicle' ? '🚗 Vehicle' : part.listingType === 'engine' ? '⚙️ Engine' : '🔩 Part'}
+                            </span>
+                            <span className="text-[10px] text-[#a78b7d] font-bold uppercase">
+                              SKU: {part.sku || 'N/A'} • {part.modelYearRange || part.vehicleCategory || ''}
+                            </span>
+                          </div>
                           <h4 className="text-sm font-bold text-white line-clamp-1">{part.title}</h4>
                           <div className="flex items-center gap-4 text-xs text-[#a78b7d] mt-1">
                             <span>PRICE: <strong className="text-green-400">${part.price}</strong></span>
                             <span>STOCK: <strong className="text-white">{part.stock || 1}</strong></span>
                             <span>STATUS: <strong className="text-[#ff7a1a]">{part.status || 'Available'}</strong></span>
+                            {part.vinNumber && <span className="text-[10px] text-[#83cffb] hidden sm:inline">VIN: {part.vinNumber}</span>}
                           </div>
                         </div>
                       </div>

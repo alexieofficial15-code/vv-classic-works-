@@ -67,6 +67,21 @@ export const ADMIN_VEHICLE_CATEGORIES = [
     id: 'custom-kit-cars',
     name: 'Custom & Kit Cars (Meyers Manx)',
     models: ['Meyers Manx Dune Buggy', 'Deserter / Fiberglass Buggy', 'Sterling / Nova Kit Car', 'Bradley GT']
+  },
+  {
+    id: 'type-147-fridolin',
+    name: 'Type 147 Fridolin (Postal & Commercial)',
+    models: ['Fridolin (Type 147 Kleinlieferwagen)', 'Swiss Postal Edition', 'German Bundespost Van', 'High-Roof Commercial Van']
+  },
+  {
+    id: 'brazilian-aircooled',
+    name: 'Brazilian Air-Cooled (SP2 / Brasilia)',
+    models: ['VW SP2 Sport Coupé (1972–1976)', 'VW Brasilia (1973–1982)', 'VW Gol Air-Cooled (1980–1986)', 'VW Variant II (1977–1981)']
+  },
+  {
+    id: 'puma-specialty',
+    name: 'Puma & Specialty Air-Cooled Sports',
+    models: ['Puma GT / GTE Sports Coupé', 'Puma GTS Convertible', 'VW Country Buggy (Type 197 Australia)', 'Volksrod / Custom Chassis']
   }
 ];
 
@@ -122,6 +137,59 @@ export const ADMIN_STORAGE_PRESETS = [
   'Overflow Distribution Hub (Aisle 4)'
 ];
 
+export const ADMIN_VEHICLE_CONDITION_PRESETS = [
+  'Concours 100-pt Restored (Show Quality)',
+  'Turnkey Daily Driver (Running & Registered)',
+  'Original Survivor / Patina (Solid Vintage Unrestored)',
+  'Rolling Project Car (Solid Body & Chassis)',
+  'Barn Find / Restoration Candidate (Rust Repair Needed)'
+];
+
+export const ADMIN_ENGINE_CONDITION_PRESETS = [
+  'Brand New Turnkey Crate Engine (Zero Miles - Dyno Tested)',
+  'Professionally Rebuilt Longblock (New Internals & Balanced)',
+  'Good Running Tested Take-Out Engine',
+  'Rebuildable Core Engine (Complete Longblock)'
+];
+
+export const ADMIN_TRANSMISSION_PRESETS = [
+  '4-Speed Manual Swing Axle',
+  '4-Speed Manual IRS (Double Joint)',
+  'Automatic Stickshift (Saxomat / Semi-Auto)',
+  '091 6-Rib Heavy Duty Bus 4-Speed',
+  'Freeway Flyer 3.88 Ring & Pinion Manual'
+];
+
+export const ADMIN_ENGINE_CASE_PRESETS = [
+  'AS41 Magnesium Universal Dual Relief',
+  'Aluminum HD Super Case (Autolinea/CB)',
+  'Original German VW Case (Line Bored)',
+  'Type 4 2.0L Bus Case'
+];
+
+export const ADMIN_INDUCTION_PRESETS = [
+  'Single Solex 34-PICT-3',
+  'Dual Weber 40 IDF Carburetors',
+  'Dual Weber 44 IDF Carburetors',
+  'Dual Dellorto 36 DRLA Carburetors',
+  'Dual EMPI 44 HPMX Carburetors',
+  'CB Performance EFI Electronic Fuel Injection'
+];
+
+export const ADMIN_COOLING_SHROUD_PRESETS = [
+  'Stock Type 1 Doghouse Shroud with Flaps',
+  '36hp Style Round Shroud (No Doghouse)',
+  'Porsche 911 Style Billet Fan & Shroud',
+  'CSP Flattop Race Shroud'
+];
+
+export const ADMIN_TITLE_STATUS_PRESETS = [
+  'Clean Title (Ready to Transfer)',
+  'Historic Registration (Transferable)',
+  'Bill of Sale Only (Project Car)',
+  'Imported with Customs Clearance (Duties Paid)'
+];
+
 export const ADMIN_SYSTEM_SUBCATEGORIES = {
   'engine-system': [
     'Complete Engines', 'Cylinder Heads', 'Pistons & Cylinders', 'Camshafts & Lifters', 'Crankshafts & Rods', 'Engine Cases', 'Oil System & Deep Sumps', 'Cooling Fan Shrouds & Tins'
@@ -149,6 +217,9 @@ export const ADMIN_SYSTEM_SUBCATEGORIES = {
   ],
   'interior-system': [
     'Pro-Street & Vintage Lowback Seats', 'TMI Seat Upholstery Covers', 'German Loop Carpet Kits', 'Padded Dashboard Tops & Vents', 'Custom Door & Quarter Panels'
+  ],
+  'wheels-system': [
+    'EMPI 5-Spoke & 8-Spoke Wheels', 'Fuchs & Porsche Style Alloys', 'Stock Steel Wheels & Chrome Hubcaps', 'BRM & Sprint Star Vintage Wheels', 'Whitewall & Vintage Radial Tires', 'Lug Nuts, Studs & Wheel Adapters', 'Center Caps & Trim Rings'
   ],
   'restoration-system': [
     'Vintage Wolfsburg Crest Badges', 'Billet Engine Dress-Up Accessories', 'Stainless Steel Hardware Kits', 'Vintage Luggage Racks & Visors'
@@ -298,6 +369,21 @@ export const VEHICLE_SYSTEMS = [
       { id: 'dash-components', name: 'Dash Components' },
       { id: 'carpets', name: 'Carpets' },
       { id: 'door-panels', name: 'Door Panels' }
+    ]
+  },
+  {
+    id: 'wheels-system',
+    name: 'Wheels, Rims & Tires',
+    description: 'EMPI alloys, Fuchs, vintage steel rims, whitewall tires, lug nuts, adapters',
+    icon: 'Disc',
+    emoji: '🛞',
+    subcategories: [
+      { id: 'empi-wheels', name: 'EMPI 5-Spoke & 8-Spoke Wheels' },
+      { id: 'fuchs-alloys', name: 'Fuchs & Porsche Style Alloys' },
+      { id: 'stock-steel-wheels', name: 'Stock Steel Wheels & Chrome Hubcaps' },
+      { id: 'brm-sprint-star', name: 'BRM & Sprint Star Vintage Wheels' },
+      { id: 'vintage-tires', name: 'Whitewall & Vintage Radial Tires' },
+      { id: 'wheel-adapters-hardware', name: 'Lug Nuts, Studs & Wheel Adapters' }
     ]
   }
 ];
