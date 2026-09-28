@@ -7,7 +7,6 @@ import {
   Sliders, Settings, ShoppingCart, ArrowLeft, Image as ImageIcon, Flame, Disc, Menu,
   Video, UploadCloud, Layers3, Sparkles, LogOut, MessageSquare, Send, Mail, Phone, Clock
 } from 'lucide-react';
-import { SPARE_PARTS } from '../data/partsData';
 import { 
   VW_NAV_CATEGORIES, 
   VEHICLE_SYSTEMS, 
@@ -324,14 +323,8 @@ export default function AdminPanel({
       setParts([...unsyncedLocal, ...filteredServerParts]);
     } else {
       // Offline fallback only when backend server is completely unreachable
-      const combinedMap = new Map();
-      localParts.forEach(p => {
-        if (!deletedIds.has(p.id)) combinedMap.set(p.id, p);
-      });
-      SPARE_PARTS.forEach(p => {
-        if (!deletedIds.has(p.id) && !combinedMap.has(p.id)) combinedMap.set(p.id, p);
-      });
-      setParts(Array.from(combinedMap.values()));
+      const filteredLocal = localParts.filter(p => !deletedIds.has(p.id));
+      setParts(filteredLocal);
     }
     setIsLoading(false);
   };

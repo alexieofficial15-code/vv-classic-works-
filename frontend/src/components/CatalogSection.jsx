@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Filter, Search, ShoppingBag, Eye, Heart, Layers, Check, CheckCircle2, Car, X, Image as ImageIcon, SlidersHorizontal, RotateCcw, ShieldCheck, Wrench, Box } from 'lucide-react';
-import { SPARE_PARTS } from '../data/partsData';
 import { VW_NAV_CATEGORIES, VEHICLE_SYSTEMS, ENGINE_COMPATIBILITIES, USAGE_TYPES } from '../data/vwNavigationData';
 import { API_BASE_URL } from '../config/api';
 
@@ -40,11 +39,26 @@ export default function CatalogSection({
   const availableModels = currentCategoryObj ? currentCategoryObj.models : [];
 
   const currentSystemObj = VEHICLE_SYSTEMS.find(s => s.id === selectedSystem);
-  const [catalogItems, setCatalogItems] = useState(SPARE_PARTS);
+  
+  // Initialize ONLY from real cached DB items (or empty array) - NEVER hardcoded mock items
+  const [catalogItems, setCatalogItems] = useState(() => {
+    try {
+      const cached = localStorage.getItem('cached_db_parts');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      const localParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
+      if (Array.isArray(localParts) && localParts.length > 0) return localParts;
+    } catch (e) {}
+    return [];
+  });
+  const [isLoadingParts, setIsLoadingParts] = useState(false);
 
-  // Fetch dynamic items posted via Admin Panel / Backend DB / Local Storage
+  // Fetch dynamic items posted via Admin Panel / Supabase DB
   useEffect(() => {
     const fetchCatalogParts = async () => {
+      setIsLoadingParts(true);
       let serverParts = null;
       try {
         const res = await fetch(`${API_BASE_URL}/api/admin/parts`);
@@ -53,29 +67,28 @@ export default function CatalogSection({
           serverParts = data.data;
         }
       } catch (err) {
-        console.warn('Backend server unreachable, reading from local store.');
+        console.warn('Backend server unreachable, reading from local cache.');
       }
 
       const localParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
       const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
 
       if (serverParts !== null && Array.isArray(serverParts)) {
-        // When server database is online, it is the authoritative source of truth across all devices
+        // Server Supabase database is the sole authoritative source of truth across all devices
         const filteredServerParts = serverParts.filter(p => !deletedIds.has(p.id));
         const serverIdSet = new Set(serverParts.map(p => p.id));
         const unsyncedLocal = localParts.filter(p => !deletedIds.has(p.id) && !serverIdSet.has(p.id));
-        setCatalogItems([...unsyncedLocal, ...filteredServerParts]);
+        const finalParts = [...unsyncedLocal, ...filteredServerParts];
+        setCatalogItems(finalParts);
+        try {
+          localStorage.setItem('cached_db_parts', JSON.stringify(finalParts));
+        } catch (e) {}
       } else {
-        // Complete offline fallback only when backend server is completely unreachable
-        const combinedMap = new Map();
-        localParts.forEach(p => {
-          if (!deletedIds.has(p.id)) combinedMap.set(p.id, p);
-        });
-        SPARE_PARTS.forEach(p => {
-          if (!deletedIds.has(p.id) && !combinedMap.has(p.id)) combinedMap.set(p.id, p);
-        });
-        setCatalogItems(Array.from(combinedMap.values()));
+        // Local cache fallback when server is completely offline
+        const filteredLocal = localParts.filter(p => !deletedIds.has(p.id));
+        setCatalogItems(filteredLocal);
       }
+      setIsLoadingParts(false);
     };
     fetchCatalogParts();
   }, []);
@@ -259,7 +272,20 @@ export default function CatalogSection({
             )}
           </div>
         </div>
-        {filteredParts.length === 0 ? (
+        {isLoadingParts && catalogItems.length === 0 ? (
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4 md:gap-6 animate-pulse">
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n} className="bg-[#201f20]/60 border border-[#584236]/30 p-4 rounded-xs space-y-3">
+                <div className="h-44 bg-[#141415] rounded-xs flex items-center justify-center text-[#a78b7d] text-xs font-mono">
+                  Loading Live Inventory...
+                </div>
+                <div className="h-4 bg-[#141415] rounded w-3/4"></div>
+                <div className="h-3 bg-[#141415] rounded w-1/2"></div>
+                <div className="h-8 bg-[#ff7a1a]/20 rounded w-full mt-3"></div>
+              </div>
+            ))}
+          </div>
+        ) : filteredParts.length === 0 ? (
           <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
             {/* Notification Banner */}
             <div className="text-center py-6 sm:py-8 bg-[#181719] border border-dashed border-[#584236]/60 rounded-xs p-4 sm:p-6 max-w-3xl mx-auto shadow-xl">
