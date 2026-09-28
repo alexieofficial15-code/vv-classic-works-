@@ -12,13 +12,14 @@ const getApiBaseUrl = () => {
   
   if (typeof window !== 'undefined' && window.location && window.location.hostname) {
     const hostname = window.location.hostname;
-    // In local development or LAN testing (localhost, 127.0.0.1, or local IP like 192.168.x.x)
-    if (import.meta.env.DEV || hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('10.') || hostname.startsWith('172.')) {
+    // In local development or LAN testing (localhost, 127.0.0.1)
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return `http://${hostname}:5000`;
     }
   }
   
-  return '';
+  // Production default fallback to live Render backend
+  return 'https://vv-classic-works.onrender.com';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

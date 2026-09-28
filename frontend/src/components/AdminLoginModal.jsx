@@ -28,7 +28,7 @@ export default function AdminLoginModal({ isOpen, onClose, onAdminSuccess }) {
     ) {
       setTimeout(() => {
         setIsLoading(false);
-        onAdminSuccess('admin-session-token-2026', { name: 'Master Engineer', email: MASTER_EMAIL, role: 'admin' });
+        onAdminSuccess('master-admin-token-2026', { name: 'Master Engineer', email: MASTER_EMAIL, role: 'admin' });
         onClose();
         // Reset form inputs after successful login
         setEmail('');

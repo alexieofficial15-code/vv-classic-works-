@@ -726,11 +726,6 @@ export default function AdminPanel({
     try {
       setIsLoading(true);
       
-      // Save to LocalStorage immediately for instant offline/frontend persistence
-      const localParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
-      const filteredLocal = localParts.filter(p => p.id !== targetId);
-      localStorage.setItem('custom_parts', JSON.stringify([newPart, ...filteredLocal]));
-
       const method = editingPartId ? 'PUT' : 'POST';
       const apiUrl = editingPartId 
         ? `${API_BASE_URL}/api/admin/parts/${editingPartId}` 
@@ -749,19 +744,35 @@ export default function AdminPanel({
       });
       const data = await res.json();
       const actionText = editingPartId ? 'Updated' : 'Published';
-      if (data.success) {
-        setStatusMessage(`✅ Successfully ${actionText} "${formData.partName}" to Catalog!`);
+
+      if (res.ok && data.success) {
+        // Clear any old local temp override so DB is source of truth
+        const localParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
+        const filteredLocal = localParts.filter(p => p.id !== targetId);
+        localStorage.setItem('custom_parts', JSON.stringify(filteredLocal));
+
+        setStatusMessage(`✅ Successfully ${actionText} "${formData.partName}" to Cloud Database!`);
       } else {
-        setStatusMessage(`✅ ${actionText} "${formData.partName}" to Landing Page!`);
+        // Fallback save to LocalStorage if server returns an error
+        const localParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
+        const filteredLocal = localParts.filter(p => p.id !== targetId);
+        localStorage.setItem('custom_parts', JSON.stringify([newPart, ...filteredLocal]));
+
+        setStatusMessage(`⚠️ ${actionText} locally (${data?.message || 'Server error'}).`);
       }
     } catch (err) {
+      // Offline fallback
+      const localParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
+      const filteredLocal = localParts.filter(p => p.id !== targetId);
+      localStorage.setItem('custom_parts', JSON.stringify([newPart, ...filteredLocal]));
+
       const actionText = editingPartId ? 'Updated' : 'Published';
-      setStatusMessage(`✅ ${actionText} "${formData.partName}" to Landing Page!`);
+      setStatusMessage(`⚠️ Network offline: ${actionText} to local browser cache.`);
     } finally {
       setIsLoading(false);
       setEditingPartId(null);
-      setTimeout(() => setStatusMessage(null), 3000);
-      fetchAdminData();
+      setTimeout(() => setStatusMessage(null), 3500);
+      await fetchAdminData();
       if (onRefreshCatalog) onRefreshCatalog();
       setActiveTab('parts-list');
     }
