@@ -1086,26 +1086,26 @@ export default function AdminPanel({
         )}
 
         {/* WORKSPACE CONTENT SCROLL AREA */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 pb-24">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 md:p-8 space-y-4 sm:space-y-6 pb-28">
           
           {/* TAB 1: 10-SECTION GLASSMORPHISM ADMIN FORM */}
           {activeTab === 'add-part' && (
-            <form onSubmit={(e) => { e.preventDefault(); handleSaveProduct('Available'); }} className="max-w-5xl mx-auto space-y-6">
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveProduct('Available'); }} className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
               
               {/* Form Title Banner */}
-              <div className="bg-[#181719]/80 border border-[#584236]/40 backdrop-blur-md rounded-md p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+              <div className="bg-[#181719]/80 border border-[#584236]/40 backdrop-blur-md rounded-md p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 shadow-xl">
                 <div>
                   <span className="text-[10px] text-[#ff7a1a] uppercase font-bold tracking-widest font-mono block mb-1">
                     AUTOMOTIVE PARTS & VEHICLE MARKETPLACE // INVENTORY FORM
                   </span>
-                  <h1 className="text-2xl font-bold font-h2 text-white">
+                  <h1 className="text-xl sm:text-2xl font-bold font-h2 text-white break-words">
                     Add Automotive Part / Vehicle Listing
                   </h1>
                 </div>
                 <button
                   type="button"
                   onClick={handleResetForm}
-                  className="text-xs text-[#83cffb] hover:underline font-mono uppercase font-bold self-start md:self-auto"
+                  className="text-xs text-[#83cffb] hover:underline font-mono uppercase font-bold self-start md:self-auto min-h-[32px] flex items-center"
                 >
                   Reset All Fields
                 </button>
@@ -2289,18 +2289,18 @@ export default function AdminPanel({
                   </div>
 
                   {/* URL Image Input Option */}
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2 w-full">
                     <input
                       type="url"
                       placeholder="Or paste Direct Image URL (https://...)"
                       value={imageUrlInput}
                       onChange={(e) => setImageUrlInput(e.target.value)}
-                      className="flex-1 bg-[#131314] border border-[#584236]/60 p-2.5 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs"
+                      className="flex-1 bg-[#131314] border border-[#584236]/60 p-2.5 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs w-full"
                     />
                     <button
                       type="button"
                       onClick={handleAddImageUrl}
-                      className="bg-[#201f20] hover:bg-[#ff7a1a] text-[#e0c0b1] hover:text-black border border-[#584236]/60 px-4 text-xs font-bold rounded-xs transition-all"
+                      className="w-full sm:w-auto bg-[#201f20] hover:bg-[#ff7a1a] text-[#e0c0b1] hover:text-black border border-[#584236]/60 px-4 py-2.5 sm:py-2 text-xs font-bold rounded-xs transition-all text-center justify-center flex items-center min-h-[38px] sm:min-h-0"
                     >
                       Add URL
                     </button>
@@ -2312,16 +2312,16 @@ export default function AdminPanel({
                       <span className="text-xs text-[#a78b7d] uppercase block mb-2 font-bold">
                         Uploaded Photos ({formData.mediaImages.length})
                       </span>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
                         {formData.mediaImages.map((imgSrc, idx) => (
                           <div key={idx} className="relative group h-24 bg-black border border-[#584236]/50 rounded-xs overflow-hidden">
                             <img src={imgSrc} alt={`Upload ${idx+1}`} className="w-full h-full object-cover" />
                             <button
                               type="button"
                               onClick={() => handleRemoveImage(idx)}
-                              className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-xs opacity-80 hover:opacity-100 transition-opacity"
+                              className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-xs opacity-90 sm:opacity-80 hover:opacity-100 transition-opacity"
                             >
-                              <X className="w-3 h-3" />
+                              <X className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         ))}
@@ -2347,8 +2347,8 @@ export default function AdminPanel({
               </div>
 
               {/* 📌 STICKY BOTTOM ACTION BAR */}
-              <div className="sticky bottom-0 bg-[#141416]/95 border-t border-[#ff7a1a]/40 p-4 rounded-t-md flex items-center justify-between gap-4 shadow-2xl backdrop-blur-xl z-30">
-                <div className="text-xs font-mono text-[#a78b7d] hidden sm:block">
+              <div className="sticky bottom-0 bg-[#141416]/95 border-t border-[#ff7a1a]/40 p-3 sm:p-4 rounded-t-md flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 shadow-2xl backdrop-blur-xl z-30">
+                <div className="text-xs font-mono text-[#a78b7d] hidden sm:block truncate max-w-xs">
                   <span className="text-[#ff7a1a] font-bold">Ready:</span> {formData.partName || 'New Product Form'}
                 </div>
 
@@ -2356,7 +2356,7 @@ export default function AdminPanel({
                   <button
                     type="button"
                     onClick={() => handleSaveProduct('Reserved')}
-                    className="border border-[#584236] hover:border-[#ff7a1a] text-[#e0c0b1] hover:text-white bg-[#201f20] px-3.5 py-2 text-xs font-mono font-bold uppercase rounded-xs transition-all"
+                    className="flex-1 sm:flex-initial border border-[#584236] hover:border-[#ff7a1a] text-[#e0c0b1] hover:text-white bg-[#201f20] px-3.5 py-2.5 sm:py-2 text-xs font-mono font-bold uppercase rounded-xs transition-all text-center justify-center flex items-center min-h-[42px] sm:min-h-0 cursor-pointer"
                   >
                     Save Draft
                   </button>
@@ -2365,7 +2365,7 @@ export default function AdminPanel({
                     type="button"
                     onClick={() => handleSaveProduct('Available')}
                     disabled={isLoading}
-                    className="bg-[#ff7a1a] hover:bg-[#ffb68e] text-black font-mono font-bold px-4 py-2 text-xs uppercase rounded-xs transition-all shadow-[0_0_20px_rgba(255,122,26,0.4)] glow-button flex items-center justify-center gap-1.5"
+                    className="flex-1 sm:flex-initial bg-[#ff7a1a] hover:bg-[#ffb68e] text-black font-mono font-bold px-4 py-2.5 sm:py-2 text-xs uppercase rounded-xs transition-all shadow-[0_0_20px_rgba(255,122,26,0.4)] glow-button flex items-center justify-center gap-1.5 min-h-[42px] sm:min-h-0 cursor-pointer"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>{isLoading ? 'Saving...' : editingPartId ? 'Update Item' : 'Publish Product'}</span>
@@ -2661,17 +2661,17 @@ export default function AdminPanel({
                   </div>
                 ) : (
                   filteredParts.map((part) => (
-                    <div key={part.id} className="p-4 hover:bg-[#1c1b1c] flex items-center justify-between gap-4 transition-all">
-                      <div className="flex items-center gap-4">
+                    <div key={part.id} className="p-3.5 sm:p-4 hover:bg-[#1c1b1c] flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 transition-all">
+                      <div className="flex items-start sm:items-center gap-3 sm:gap-4 w-full">
                         {part.image ? (
-                          <img src={part.image} alt={part.title} className="w-12 h-12 object-cover rounded-xs border border-[#3a383a]" />
+                          <img src={part.image} alt={part.title} className="w-14 h-14 sm:w-12 sm:h-12 object-cover rounded-xs border border-[#3a383a] shrink-0" />
                         ) : (
-                          <div className="w-12 h-12 bg-[#1c1b1c] border border-[#3a383a] flex items-center justify-center text-[#584236]">
+                          <div className="w-14 h-14 sm:w-12 sm:h-12 bg-[#1c1b1c] border border-[#3a383a] flex items-center justify-center text-[#584236] shrink-0">
                             <Package className="w-5 h-5" />
                           </div>
                         )}
-                        <div>
-                          <div className="flex items-center gap-2 mb-0.5">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-0.5">
                             <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase ${
                               part.listingType === 'vehicle' 
                                 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' 
@@ -2681,12 +2681,12 @@ export default function AdminPanel({
                             }`}>
                               {part.listingType === 'vehicle' ? '🚗 Vehicle' : part.listingType === 'engine' ? '⚙️ Engine' : '🔩 Part'}
                             </span>
-                            <span className="text-[10px] text-[#a78b7d] font-bold uppercase">
+                            <span className="text-[10px] text-[#a78b7d] font-bold uppercase truncate max-w-[200px] sm:max-w-none">
                               SKU: {part.sku || 'N/A'} • {part.modelYearRange || part.vehicleCategory || ''}
                             </span>
                           </div>
                           <h4 className="text-sm font-bold text-white line-clamp-1">{part.title}</h4>
-                          <div className="flex items-center gap-4 text-xs text-[#a78b7d] mt-1">
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#a78b7d] mt-1">
                             <span>PRICE: <strong className="text-green-400">${part.price}</strong></span>
                             <span>STOCK: <strong className="text-white">{part.stock || 1}</strong></span>
                             <span>STATUS: <strong className="text-[#ff7a1a]">{part.status || 'Available'}</strong></span>
@@ -2695,17 +2695,17 @@ export default function AdminPanel({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 self-end sm:self-center shrink-0 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t border-[#262426]/60 sm:border-t-0">
                         <button
                           onClick={() => handleEditPart(part)}
-                          className="bg-[#ff7a1a]/20 hover:bg-[#ff7a1a] text-[#ff7a1a] hover:text-black border border-[#ff7a1a]/40 text-xs px-3 py-1.5 rounded-xs flex items-center gap-1 transition-all"
+                          className="flex-1 sm:flex-initial bg-[#ff7a1a]/20 hover:bg-[#ff7a1a] text-[#ff7a1a] hover:text-black border border-[#ff7a1a]/40 text-xs px-3 py-2 sm:py-1.5 rounded-xs flex items-center justify-center gap-1 transition-all min-h-[36px] sm:min-h-0"
                         >
                           <Edit3 className="w-3.5 h-3.5" /> Edit / Modify
                         </button>
 
                         <button
                           onClick={() => handleDeletePart(part.id, part.title)}
-                          className="bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-black border border-red-500/40 text-xs px-3 py-1.5 rounded-xs flex items-center gap-1 transition-all"
+                          className="bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-black border border-red-500/40 text-xs px-3 py-2 sm:py-1.5 rounded-xs flex items-center justify-center gap-1 transition-all min-h-[36px] sm:min-h-0"
                         >
                           <Trash2 className="w-3.5 h-3.5" /> Delete
                         </button>
