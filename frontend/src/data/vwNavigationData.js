@@ -40,56 +40,118 @@ export const ADMIN_LISTING_TYPES = [
 export const ADMIN_VEHICLE_CATEGORIES = [
   {
     id: 'type-1',
-    name: 'Type 1 (Beetle)',
+    name: 'Type 1 (Beetle & Super Beetle)',
     models: ['Beetle 1946–1957', 'Beetle 1958–1967', 'Beetle 1968–1979', 'Super Beetle (1302/1303)', 'Convertible Beetle', 'Baja Bug', 'Cal-Look Beetle']
   },
   {
     id: 'type-2',
-    name: 'Type 2 (Bus / Van)',
+    name: 'Type 2 (Bus / Transporter / Westfalia)',
     models: ['Bus T1 Split Screen (1950–1967)', 'Bus T2 Bay Window (1967–1979)', 'Single Cab Pickup', 'Double Cab Pickup', 'Westfalia Camper']
   },
   {
-    id: 'type-3',
-    name: 'Type 3',
-    models: ['Notchback (1961–1973)', 'Squareback (1962–1973)', 'Fastback (1965–1973)']
+    id: 'classic-sports',
+    name: 'Classic Sports (Karmann Ghia / 356)',
+    models: ['Karmann Ghia Coupé (1955–1974)', 'Karmann Ghia Convertible (1957–1974)', 'Type 34 Ghia (1961–1969)', '356 Speedster / Coupe Platform']
   },
   {
-    id: 'type-14',
-    name: 'Type 14 (Karmann Ghia)',
-    models: ['Karmann Ghia Coupé (1955–1974)', 'Karmann Ghia Convertible (1957–1974)', 'Type 34 Ghia (1961–1969)']
+    id: 'type-3-type-4',
+    name: 'Type 3 & Type 4 (Squareback / Fastback)',
+    models: ['Notchback (1961–1973)', 'Squareback Variant (1962–1973)', 'Fastback (1965–1973)', 'Type 4 (411 / 412 Sedan & Variant)']
+  },
+  {
+    id: 'military-offroad',
+    name: 'Military & Off-Road (Thing 181 / Kübelwagen)',
+    models: ['VW Thing (Type 181 / Trekker)', 'Kübelwagen (Type 82)', 'Schwimmwagen (Type 166)', 'Sand Rail / Dune Buggy Chassis']
+  },
+  {
+    id: 'custom-kit-cars',
+    name: 'Custom & Kit Cars (Meyers Manx)',
+    models: ['Meyers Manx Dune Buggy', 'Deserter / Fiberglass Buggy', 'Sterling / Nova Kit Car', 'Bradley GT']
   }
+];
+
+export const ADMIN_MATERIAL_PRESETS = [
+  'Aluminum Alloy',
+  'Cast Iron',
+  'Forged 4140 Chromoly Steel',
+  'Magnesium Alloy AS41',
+  'Stainless Steel 304',
+  'Billet 6061-T6 Aluminum',
+  'Urethane / Polyurethane',
+  'High-Grade Nitrile Rubber',
+  'Brass / Phosphor Bronze',
+  'Carbon Steel / Phenolic'
+];
+
+export const ADMIN_FINISH_PRESETS = [
+  'Bare Aluminum',
+  'Black Powdercoat',
+  'Chrome Plated (Triple Plate)',
+  'Zinc Plated (Gold/Clear)',
+  'Polished Mirror Billet',
+  'Ceramic Coated (Header Grade)',
+  'Vapor Blasted OEM Matte',
+  'Anodized Orange',
+  'Anodized Black',
+  'Cast Natural'
+];
+
+export const ADMIN_CONDITION_PRESETS = [
+  'NOS (New Old Stock - Rare Vintage)',
+  'New (Factory OEM / Reproduction)',
+  'Factory Restored / Rebuilt (Bench Tested)',
+  'Original Vintage Used (Inspected)',
+  'Precision Remanufactured',
+  'Core for Rebuilding'
+];
+
+export const ADMIN_PERFORMANCE_PRESETS = [
+  'Stock OEM Replacement',
+  'Street Performance (Mild Road)',
+  'Track & Competition Racing',
+  'Turbocharged / Forced Induction',
+  'Off-Road / Baja Extreme',
+  'Vintage Authentic Restoration'
+];
+
+export const ADMIN_STORAGE_PRESETS = [
+  'Main Warehouse A (Bin 12-B)',
+  'Restoration Bay 1 (Houston Garage)',
+  'Cleanroom Engine Assembly Lab',
+  'Dyno Testing & Tuning Bay',
+  'Overflow Distribution Hub (Aisle 4)'
 ];
 
 export const ADMIN_SYSTEM_SUBCATEGORIES = {
   'engine-system': [
-    'Complete Engines', 'Cylinder Heads', 'Pistons & Cylinders', 'Camshafts & Lifters', 'Crankshafts', 'Engine Cases', 'Oil System', 'Cooling Components'
+    'Complete Engines', 'Cylinder Heads', 'Pistons & Cylinders', 'Camshafts & Lifters', 'Crankshafts & Rods', 'Engine Cases', 'Oil System & Deep Sumps', 'Cooling Fan Shrouds & Tins'
   ],
   'fuel-system': [
-    'Carburetors', 'Dual Weber Carburetors', 'Solex Carburetors', 'Fuel Pumps', 'Fuel Tanks', 'Fuel Lines', 'Air Filters & Cleaners'
+    'Dual Weber IDF / Dellorto Carbs', 'Solex Stock Carburetors', 'Intake Manifolds & Cross-bars', 'Velocity Stacks & Air Cleaners', 'Fuel Pumps & Regulators', 'Fuel Tanks & Senders', 'Fuel Lines & Filters'
   ],
   'electrical-system': [
-    'Alternators / Generators', 'Starter Motors', 'Wiring Harnesses', 'Ignition Systems', 'Switches & Sensors'
+    'Alternators & 12V Generators', 'High-Torque Starter Motors', 'Complete Wiring Harnesses', '009 Mechanical Distributors', 'Ignition Coils & Spark Plug Leads', 'Switches, Relays & Sensors'
   ],
   'brake-system': [
-    'Disc Brake Kits', 'Brake Pads', 'Master Cylinders', 'Calipers & Rotors', 'Brake Lines', 'Brake Drums'
+    'Front Disc Brake Drop Spindle Kits', 'Rear Disc Brake Kits', 'Ceramic & Semi-Metallic Brake Pads', 'Dual Circuit Master Cylinders', 'Calipers, Rotors & Brake Drums', 'Stainless Steel Braided Brake Lines'
   ],
   'suspension-system': [
-    'Shock Absorbers', 'Coilovers', 'Sway Bars', 'Control Arms', 'Steering Boxes'
+    'Adjustable Front Beams', 'Gas Shock Absorbers & Coilovers', 'Heavy Duty Sway Bars', 'Drop Spindles & Ball Joints', 'Steering Boxes & Tie Rods', 'Urethane Suspension Bushings'
   ],
   'transmission-system': [
-    'Complete Transmissions', 'Clutches', 'Flywheels', 'Axles', 'CV Joints'
+    'Complete Freeway Flyer Transmissions', 'Stage 1/2 Heavy Duty Clutches', 'Lightened 8-Dowel Flywheels', 'Swing Axles & IRS Half Shafts', 'Heavy Duty CV Joints & Boots', 'Quick Shift Kits'
   ],
   'cooling-system': [
-    'Fan Shrouds', 'Oil Coolers', 'Oil Pumps', 'Oil Filters', 'Cooling Fans'
+    'Doghouse Fan Shrouds', 'External Mesa Oil Coolers', 'High-Flow Maxi Oil Pumps', 'Spin-On Oil Filter Adapters', 'Welded Engine Cooling Fans'
   ],
   'body-system': [
-    'Bumpers', 'Fenders', 'Doors', 'Rubber Seals', 'Windows'
+    'European Chrome Bumpers', 'Steel Fenders & Quarter Panels', 'German Rubber Window Seals', 'Door Handles & Latch Mechanisms', 'Glass & Pop-out Windows'
   ],
   'interior-system': [
-    'Seats', 'Seat Covers', 'Dash Components', 'Carpets', 'Door Panels'
+    'Pro-Street & Vintage Lowback Seats', 'TMI Seat Upholstery Covers', 'German Loop Carpet Kits', 'Padded Dashboard Tops & Vents', 'Custom Door & Quarter Panels'
   ],
   'restoration-system': [
-    'Emblems & Badges', 'Chrome Dress-Up', 'Restoration Hardware', 'Custom Accessories'
+    'Vintage Wolfsburg Crest Badges', 'Billet Engine Dress-Up Accessories', 'Stainless Steel Hardware Kits', 'Vintage Luggage Racks & Visors'
   ]
 };
 

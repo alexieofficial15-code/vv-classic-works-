@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch-path=src src/server.js",
+    "dev": "node src/server.js",
     "seed": "node src/scripts/seedDatabase.js",
     "test:persistence": "node src/scripts/testPersistence.js"
   },
