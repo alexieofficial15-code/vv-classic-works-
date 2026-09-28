@@ -420,28 +420,24 @@ export default function AdminPanel({
       if (value === '__CUSTOM__') {
         setIsCustomModel(true);
       } else {
-        setIsCustomModel(false);
         setFormData(prev => ({ ...prev, modelYearRange: value }));
       }
     } else if (name === 'subcategory') {
       if (value === '__CUSTOM__') {
         setIsCustomSubcat(true);
       } else {
-        setIsCustomSubcat(false);
         setFormData(prev => ({ ...prev, subcategory: value }));
       }
     } else if (name === 'engineSize') {
       if (value === '__CUSTOM__') {
         setIsCustomEngine(true);
       } else {
-        setIsCustomEngine(false);
         setFormData(prev => ({ ...prev, engineSize: value }));
       }
     } else if (name === 'condition') {
       if (value === '__CUSTOM__') {
         setIsCustomCondition(true);
       } else {
-        setIsCustomCondition(false);
         setFormData(prev => ({ ...prev, condition: value }));
       }
     } else {
@@ -2034,7 +2030,7 @@ export default function AdminPanel({
                     ) : (
                       <select
                         name="condition"
-                        value={formData.condition}
+                        value={(formData.listingType === 'vehicle' ? ADMIN_VEHICLE_CONDITION_PRESETS : formData.listingType === 'engine' ? ADMIN_ENGINE_CONDITION_PRESETS : ADMIN_CONDITION_PRESETS).includes(formData.condition) ? formData.condition : '__CUSTOM__'}
                         onChange={handleInputChange}
                         className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs cursor-pointer font-mono"
                       >
