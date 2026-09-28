@@ -27,9 +27,9 @@ const WORKSHOP_INFO = {
   cityStateZip: 'Houston, TX 77039',
   country: 'United States',
   fullAddress: '14826 Yarberry St, Houston, TX 77039, USA',
-  phone: '1347-226-8235',
-  phoneFormatted: '+1 (347) 226-8235',
-  phoneTel: 'tel:13472268235',
+  phone: '1945-287-9865',
+  phoneFormatted: '+1 (945) 287-9865',
+  phoneTel: 'tel:19452879865',
   coordinates: {
     lat: 29.9045,
     lng: -95.3341
