@@ -12,14 +12,18 @@ dotenv.config();
 
 const app = express();
 
-// Middlewares - Permissive CORS to allow Vercel, Netlify, Render, and Localhost
+// Middlewares - Permissive CORS to allow Vercel, Netlify, Render, Mobile browsers, and Localhost
 app.use(cors({
   origin: true,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
-app.use(express.json());
+app.options('*', cors());
+
+// Expand JSON body parser limit to 50MB for mobile photo uploads
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // API Route mounts
 app.use('/api', partsRoutes);
