@@ -13,13 +13,22 @@ export default function Footer() {
         
         {/* Column 1: Brand & Workshop Location */}
         <div className="col-span-1 space-y-4">
-          <div>
-            <div className="font-h3 text-base sm:text-lg text-[#ff7a1a] font-bold tracking-tighter">
-              CLASSIC AIRCOOLED VW WORKS
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xs overflow-hidden border border-[#ff7a1a]/60 shadow-[0_0_12px_rgba(255,122,26,0.35)] bg-[#141416] flex items-center justify-center shrink-0 mt-0.5">
+              <img 
+                src="/logo.png" 
+                alt="Classic Aircooled VW Works Emblem" 
+                className="w-full h-full object-cover"
+              />
             </div>
-            <p className="font-technical-data text-xs text-[#a78b7d] max-w-xs leading-relaxed mt-1.5">
-              Precision OEM-grade components verified against original mechanical blueprints for air-cooled restorations.
-            </p>
+            <div>
+              <div className="font-h3 text-base sm:text-lg text-[#ff7a1a] font-bold tracking-tighter">
+                CLASSIC AIRCOOLED VW WORKS
+              </div>
+              <p className="font-technical-data text-xs text-[#a78b7d] max-w-xs leading-relaxed mt-1">
+                Precision OEM-grade components verified against original mechanical blueprints for air-cooled restorations.
+              </p>
+            </div>
           </div>
 
           <div className="space-y-2 pt-1 font-technical-data text-xs">

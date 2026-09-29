@@ -82,8 +82,12 @@ export default function Navbar({
           onClick={onNavigateToShop} 
           className="flex items-center space-x-2 sm:space-x-3 group shrink-0 text-left focus:outline-none"
         >
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#ff7a1a] flex items-center justify-center text-black font-bold group-hover:bg-[#ffb68e] transition-colors rounded-xs">
-            <Wrench className="w-4 h-4 sm:w-5 sm:h-5 text-black" />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xs overflow-hidden border border-[#ff7a1a]/60 shadow-[0_0_12px_rgba(255,122,26,0.35)] group-hover:border-[#ff7a1a] transition-all bg-[#141416] flex items-center justify-center shrink-0">
+            <img 
+              src="/logo.png" 
+              alt="Classic Aircooled VW Works Emblem" 
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
           </div>
           <div>
             <div className="font-h2 text-xs sm:text-base md:text-lg font-bold tracking-tighter text-[#ff7a1a] flex items-center leading-none select-none">
