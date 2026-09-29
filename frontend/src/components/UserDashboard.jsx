@@ -340,7 +340,7 @@ export default function UserDashboard({
       <div className="w-full bg-[#131314] border border-[#584236]/40 rounded-md shadow-2xl flex flex-col md:flex-row overflow-hidden min-h-[75vh]">
 
         {/* 1. LEFT SIDEBAR NAVIGATION */}
-        <aside className="w-full md:w-64 bg-[#181719] border-b md:border-b-0 md:border-r border-[#262426] flex flex-col justify-between shrink-0 p-4 overflow-y-auto">
+        <aside className="w-full md:w-72 bg-[#181719] border-b md:border-b-0 md:border-r border-[#262426] flex flex-col justify-between shrink-0 p-4 overflow-y-auto">
           
           <div className="space-y-4 sm:space-y-6">
             {/* User Profile Header */}
@@ -1044,11 +1044,12 @@ export default function UserDashboard({
               </div>
 
               {/* Embedded Tawk.to Live Chat Container */}
-              <div className="bg-[#141416] border border-[#584236]/60 rounded-xs overflow-hidden shadow-2xl flex flex-col h-[calc(100vh-220px)] min-h-[580px] max-h-[720px]">
+              <div className="w-full bg-[#181719] border border-[#584236]/60 rounded-xs overflow-hidden shadow-2xl">
                 <iframe
                   src="https://tawk.to/chat/6abbacbfa6a44b3446f189f6/default"
                   title="Contact Specialist Live Mobile Chat"
-                  className="w-full h-full border-0 rounded-xs bg-[#141416]"
+                  className="w-full border-0 block"
+                  style={{ width: '100%', height: '620px', minHeight: '560px' }}
                   allow="microphone; camera; clipboard-write; autoplay"
                 />
               </div>
