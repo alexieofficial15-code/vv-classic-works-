@@ -22,6 +22,9 @@
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
       Tawk_API.onLoad = function() {
         try {
+          if (typeof Tawk_API.hideWidget === 'function') {
+            Tawk_API.hideWidget();
+          }
           var savedUser = localStorage.getItem('currentUser');
           if (savedUser) {
             var user = JSON.parse(savedUser);
@@ -33,15 +36,7 @@
                   userId: user.id || ''
                 }, function(e){});
               }
-              if (typeof Tawk_API.showWidget === 'function') {
-                Tawk_API.showWidget();
-              }
-              return;
             }
-          }
-          // Only show when authenticated to preserve chat history by user profile
-          if (typeof Tawk_API.hideWidget === 'function') {
-            Tawk_API.hideWidget();
           }
         } catch (e) {}
       };

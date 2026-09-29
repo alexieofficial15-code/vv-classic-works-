@@ -158,3 +158,23 @@ body {
   animation: letterJumpSwing 2s ease-in-out;
 }
 
+/* Completely suppress floating pop-up bubble in the bottom right corner */
+#tawk-bubble-container,
+.tawk-min-container,
+.tawk-button,
+[id^="tawk-bubble"],
+[class*="tawk-min-container"],
+iframe[title*="chat widget"],
+iframe[title*="tawk"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: absolute !important;
+  bottom: -9999px !important;
+  right: -9999px !important;
+  z-index: -9999 !important;
+}
+

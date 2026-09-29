@@ -449,7 +449,6 @@ export default function UserDashboard({
               <button
                 onClick={() => {
                   setActiveTab('contact');
-                  fetchUserChatMessages();
                 }}
                 className={`min-h-[44px] w-full flex items-center justify-between px-3 py-2.5 rounded-xs text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
                   activeTab === 'contact' || activeTab === 'chat' ? 'bg-[#ff7a1a] text-black shadow-sm' : 'text-[#a78b7d] hover:text-white hover:bg-[#201f20]'
@@ -457,13 +456,12 @@ export default function UserDashboard({
               >
                 <div className="flex items-center gap-2.5 sm:gap-3 truncate">
                   <MessageSquare className="w-4 h-4 shrink-0" />
-                  <span className="truncate">Contact Specialist / Chat</span>
+                  <span className="truncate">Contact Specialist</span>
                 </div>
-                {chatMessages.length > 0 && (
-                  <span className={`text-[10px] px-1.5 py-0.5 font-bold rounded-full ml-1 shrink-0 ${activeTab === 'contact' || activeTab === 'chat' ? 'bg-black text-[#ff7a1a]' : 'bg-[#ff7a1a] text-black'}`}>
-                    {unreadAdminCount > 0 ? `${unreadAdminCount} NEW` : chatMessages.length}
-                  </span>
-                )}
+                <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  LIVE
+                </span>
               </button>
 
               <button
@@ -1002,153 +1000,78 @@ export default function UserDashboard({
             </div>
           )}
 
-          {/* TAB 7: LIVE CHAT & DIRECT MESSAGING */}
+          {/* TAB 7: CONTACT SPECIALIST & LIVE CHAT */}
           {(activeTab === 'chat' || activeTab === 'contact') && (
-            <div className="space-y-6">
+            <div className="space-y-6 animate-in fade-in duration-200">
               {/* Header */}
               <div className="border-b border-[#262426] pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-white uppercase tracking-tight">
+                    <h2 className="text-xl font-bold text-white uppercase tracking-tight font-h2">
                       Specialist Engineering Desk
                     </h2>
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                      ONLINE & READY
+                      MOBILE DISPATCH ACTIVE
                     </span>
                   </div>
                   <p className="text-xs text-[#a78b7d] mt-1">
-                    Direct in-app messaging with Master Admin Engineer. Ask about engine builds, casting codes, custom crating, or order status.
+                    Direct live messaging with our Lead Aircooled VW Specialist. When you send a message here, it alerts our engineer's mobile phone instantly so we can reply to you directly.
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs font-mono text-[#a78b7d]">
+                <div className="flex items-center gap-2 text-xs font-mono text-[#a78b7d] bg-[#181719] px-3 py-1.5 rounded-xs border border-[#584236]/40 shrink-0">
                   <Clock className="w-3.5 h-3.5 text-[#ff7a1a]" />
-                  <span>Avg Reply Time: &lt; 15 mins</span>
+                  <span>Avg Response: &lt; 5 mins</span>
                 </div>
               </div>
 
-              {/* Chat Container */}
-              <div className="bg-[#141416] border border-[#584236]/50 rounded-xs flex flex-col h-[calc(100vh-240px)] min-h-[460px] max-h-[640px] shadow-2xl overflow-hidden">
-                
-                {/* Chat Header Bar */}
-                <div className="p-3.5 bg-[#1a191b] border-b border-[#2d2b2e] flex items-center justify-between text-xs shrink-0">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-[#ff7a1a]/20 border border-[#ff7a1a]/40 text-[#ff7a1a] flex items-center justify-center font-bold shrink-0">
-                      <Wrench className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 font-bold text-white">
-                        <span className="truncate">Master Admin Engineer</span>
-                        <CheckCircle className="w-3.5 h-3.5 text-[#83cffb] shrink-0" />
-                      </div>
-                      <span className="text-[10px] text-[#a78b7d] truncate block">Classic Aircooled VW Works Lead Specialist</span>
-                    </div>
+              {/* Connected User Notification Banner */}
+              <div className="p-3.5 bg-[#1a191b] border border-[#584236]/50 rounded-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-[#ff7a1a]/20 border border-[#ff7a1a]/40 text-[#ff7a1a] flex items-center justify-center font-bold shrink-0">
+                    <ShieldCheck className="w-4 h-4" />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (typeof window !== 'undefined' && window.Tawk_API) {
-                          try {
-                            window.Tawk_API.showWidget?.();
-                            window.Tawk_API.maximize?.();
-                          } catch (e) {}
-                        }
-                      }}
-                      className="bg-[#ff7a1a] hover:bg-[#ffb68e] text-black font-bold text-[10px] uppercase px-2.5 py-1.5 rounded-xs transition-all flex items-center gap-1 font-mono cursor-pointer shadow-sm"
-                      title="Open Live Chat Box"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span>Live Mobile Chat</span>
-                    </button>
-                    <span className="text-[10px] text-[#a78b7d] font-mono hidden sm:inline ml-1">
-                      Thread #{currentUser?.id?.slice(-6) || 'REST'}
-                    </span>
+                  <div>
+                    <span className="text-white font-bold block">Connected as {currentUser.name || userProfile.name}</span>
+                    <span className="text-[11px] text-[#a78b7d] font-mono">{currentUser.email || userProfile.email}</span>
                   </div>
                 </div>
+                <div className="text-[11px] text-[#ff7a1a] font-mono flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#ff7a1a] animate-ping"></span>
+                  <span>Direct Mobile Chat Connected</span>
+                </div>
+              </div>
 
-                {/* Quick Inquiries / Suggestion Chips */}
-                <div className="p-2.5 bg-[#181719] border-b border-[#2d2b2e] flex items-center gap-2 overflow-x-auto text-[11px] font-mono no-scrollbar shrink-0">
-                  <span className="text-[#a78b7d] uppercase text-[9px] shrink-0 font-bold flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-[#ff7a1a]" /> Quick:
-                  </span>
-                  <button 
-                    type="button"
-                    onClick={() => handleSendChatMessage("I'd like a quote for a custom 2276cc or 1776cc Turnkey Engine")}
-                    className="shrink-0 min-h-[30px] bg-[#222123] hover:bg-[#ff7a1a] text-[#e0c0b1] hover:text-black px-2.5 py-1 rounded-xs border border-[#3a383a] transition-all text-[10px] cursor-pointer"
-                  >
-                    🏎️ Turnkey Engine Quote
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => handleSendChatMessage("Can you verify cylinder head casting code compatibility for my Type 1?")}
-                    className="shrink-0 min-h-[30px] bg-[#222123] hover:bg-[#ff7a1a] text-[#e0c0b1] hover:text-black px-2.5 py-1 rounded-xs border border-[#3a383a] transition-all text-[10px] cursor-pointer"
-                  >
-                    🔧 Casting Code Check
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => handleSendChatMessage("What is the freight shipping cost for crated parts?")}
-                    className="shrink-0 min-h-[30px] bg-[#222123] hover:bg-[#ff7a1a] text-[#e0c0b1] hover:text-black px-2.5 py-1 rounded-xs border border-[#3a383a] transition-all text-[10px] cursor-pointer"
-                  >
-                    📦 Crated Shipping Cost
-                  </button>
+              {/* Embedded Tawk.to Live Chat Container */}
+              <div className="bg-[#141416] border border-[#584236]/60 rounded-xs overflow-hidden shadow-2xl flex flex-col h-[calc(100vh-220px)] min-h-[580px] max-h-[720px]">
+                <iframe
+                  src="https://tawk.to/chat/6abbacbfa6a44b3446f189f6/default"
+                  title="Contact Specialist Live Mobile Chat"
+                  className="w-full h-full border-0 rounded-xs bg-[#141416]"
+                  allow="microphone; camera; clipboard-write; autoplay"
+                />
+              </div>
+
+              {/* Quick Info Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                <div className="p-4 bg-[#181719] border border-[#584236]/40 rounded-xs space-y-1">
+                  <span className="text-[10px] text-[#ff7a1a] font-bold uppercase font-mono block">📱 Phone App Alerts</span>
+                  <h4 className="text-xs font-bold text-white">Instant Specialist Push Notifications</h4>
+                  <p className="text-[11px] text-[#a78b7d]">Your messages ping our lead builder's mobile phone wherever they are.</p>
                 </div>
 
-                {/* Messages Scroll Area */}
-                <div ref={chatScrollContainerRef} className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-4 bg-[#111112]">
-                  {chatMessages.map((msg, idx) => {
-                    const isFromUser = msg.senderRole === 'USER';
-                    return (
-                      <div 
-                        key={msg.id || idx}
-                        className={`flex flex-col ${isFromUser ? 'items-end' : 'items-start'}`}
-                      >
-                        <div className="flex items-center gap-1.5 mb-1 px-1 text-[10px] text-[#a78b7d] font-mono">
-                          <span>{isFromUser ? 'You' : 'Master Admin Engineer'}</span>
-                          <span>•</span>
-                          <span>{msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}</span>
-                        </div>
-
-                        <div 
-                          className={`max-w-[85%] sm:max-w-[75%] p-3.5 rounded-xs text-xs leading-relaxed ${
-                            isFromUser 
-                              ? 'bg-[#ff7a1a] text-black font-semibold shadow-md rounded-tr-none'
-                              : 'bg-[#201f20] text-[#e5e2e3] border border-[#584236]/50 shadow-md rounded-tl-none'
-                          }`}
-                        >
-                          <p className="whitespace-pre-wrap">{msg.message}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="p-4 bg-[#181719] border border-[#584236]/40 rounded-xs space-y-1">
+                  <span className="text-[10px] text-[#ff7a1a] font-bold uppercase font-mono block">💬 Preserved History</span>
+                  <h4 className="text-xs font-bold text-white">Saved In Your Account</h4>
+                  <p className="text-[11px] text-[#a78b7d]">Revisit engine specifications, part quotes, and restoration advice anytime.</p>
                 </div>
 
-                {/* Chat Input Bar - Sticky at bottom with min 44px touch target */}
-                <form 
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleSendChatMessage();
-                  }}
-                  className="p-2.5 sm:p-3 bg-[#181719] border-t border-[#2d2b2e] flex items-center gap-2 shrink-0"
-                >
-                  <input
-                    type="text"
-                    placeholder="Type your message to Master Admin..."
-                    value={chatInputText}
-                    onChange={(e) => setChatInputText(e.target.value)}
-                    className="flex-1 min-h-[44px] bg-[#0e0e0f] border border-[#584236]/60 rounded-xs px-3.5 py-2 text-xs sm:text-sm text-white placeholder-[#a78b7d] focus:outline-none focus:border-[#ff7a1a] font-mono"
-                  />
-                  <button
-                    type="submit"
-                    disabled={isSendingMessage || !chatInputText.trim()}
-                    className="min-h-[44px] bg-[#ff7a1a] hover:bg-[#ffb68e] disabled:opacity-40 text-black font-bold text-xs uppercase px-4 sm:px-5 py-2 rounded-xs transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-md"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Send</span>
-                  </button>
-                </form>
+                <div className="p-4 bg-[#181719] border border-[#584236]/40 rounded-xs space-y-1">
+                  <span className="text-[10px] text-[#ff7a1a] font-bold uppercase font-mono block">🛠️ Direct Workshop Hours</span>
+                  <h4 className="text-xs font-bold text-white">Mon – Sat: 8am – 6pm EST</h4>
+                  <p className="text-[11px] text-[#a78b7d]">Engineering assistance for Type 1, Type 2, Type 3, and Karmann Ghia builds.</p>
+                </div>
               </div>
 
             </div>

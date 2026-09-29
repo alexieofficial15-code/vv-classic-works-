@@ -257,7 +257,7 @@ export default function App() {
     }
   }, [userProfile, currentUser]);
 
-  // Synchronize Tawk.to Live Chat with Logged-in User Profile (Only visible when logged in)
+  // Synchronize Tawk.to Live Chat with Logged-in User Profile (Always hidden as floating widget)
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Tawk_API) {
       if (currentUser && currentUser.email) {
@@ -269,8 +269,8 @@ export default function App() {
               userId: currentUser.id || ''
             }, function(e){});
           }
-          if (typeof window.Tawk_API.showWidget === 'function') {
-            window.Tawk_API.showWidget();
+          if (typeof window.Tawk_API.hideWidget === 'function') {
+            window.Tawk_API.hideWidget();
           }
         } catch (e) {}
       } else {
