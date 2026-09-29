@@ -1045,9 +1045,27 @@ export default function UserDashboard({
                       <span className="text-[10px] text-[#a78b7d] truncate block">Classic Aircooled VW Works Lead Specialist</span>
                     </div>
                   </div>
-                  <span className="text-[10px] text-[#a78b7d] font-mono shrink-0 ml-2">
-                    Thread ID: #{currentUser?.id || 'REST-001'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (typeof window !== 'undefined' && window.Tawk_API) {
+                          try {
+                            window.Tawk_API.showWidget?.();
+                            window.Tawk_API.maximize?.();
+                          } catch (e) {}
+                        }
+                      }}
+                      className="bg-[#ff7a1a] hover:bg-[#ffb68e] text-black font-bold text-[10px] uppercase px-2.5 py-1.5 rounded-xs transition-all flex items-center gap-1 font-mono cursor-pointer shadow-sm"
+                      title="Open Live Chat Box"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>Live Mobile Chat</span>
+                    </button>
+                    <span className="text-[10px] text-[#a78b7d] font-mono hidden sm:inline ml-1">
+                      Thread #{currentUser?.id?.slice(-6) || 'REST'}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Quick Inquiries / Suggestion Chips */}

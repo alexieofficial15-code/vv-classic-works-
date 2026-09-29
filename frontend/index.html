@@ -17,9 +17,34 @@
   </head>
   <body class="bg-[#131314] text-[#e5e2e3] antialiased selection:bg-[#ff7a1a] selection:text-black">
     <div id="root"></div>
-    <!-- Tawk.to Live Chat Script -->
+    <!-- Tawk.to Live Chat Script with Logged-in User Sync -->
     <script type="text/javascript">
       var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+      Tawk_API.onLoad = function() {
+        try {
+          var savedUser = localStorage.getItem('currentUser');
+          if (savedUser) {
+            var user = JSON.parse(savedUser);
+            if (user && user.email) {
+              if (typeof Tawk_API.setAttributes === 'function') {
+                Tawk_API.setAttributes({
+                  name: user.name || 'Restorer Member',
+                  email: user.email,
+                  userId: user.id || ''
+                }, function(e){});
+              }
+              if (typeof Tawk_API.showWidget === 'function') {
+                Tawk_API.showWidget();
+              }
+              return;
+            }
+          }
+          // Only show when authenticated to preserve chat history by user profile
+          if (typeof Tawk_API.hideWidget === 'function') {
+            Tawk_API.hideWidget();
+          }
+        } catch (e) {}
+      };
       (function(){
         var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
         s1.async = true;
