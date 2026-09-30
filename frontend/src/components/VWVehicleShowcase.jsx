@@ -25,26 +25,8 @@ export default function VWVehicleShowcase({
   const [selectedSys, setSelectedSys] = useState(null);
   const [expandedSystemId, setExpandedSystemId] = useState(null);
 
-  // Complete Vehicles Database State
-  const [completeVehicles, setCompleteVehicles] = useState(() => {
-    try {
-      const cached = localStorage.getItem('cached_db_parts');
-      const custom = localStorage.getItem('custom_parts');
-      const all = [
-        ...(custom ? JSON.parse(custom) : []),
-        ...(cached ? JSON.parse(cached) : [])
-      ];
-      return all.filter(p => 
-        p.listingType === 'vehicle' || 
-        p.systemCategory === 'vehicle-complete' ||
-        p.partSubcategory === 'Complete Vehicle' ||
-        p.specificPartCategory === 'Complete Vehicle' ||
-        p.subcatId === 'complete-vehicle'
-      );
-    } catch (e) {
-      return [];
-    }
-  });
+  // Complete Vehicles Database State - loads all complete vehicles cleanly at once
+  const [completeVehicles, setCompleteVehicles] = useState([]);
 
   // Fetch Complete Vehicles from API
   useEffect(() => {
@@ -55,15 +37,15 @@ export default function VWVehicleShowcase({
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data) && isMounted) {
-            const customParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
-            const combined = [...customParts, ...json.data];
-            const unique = Array.from(new Map(combined.map(p => [p.id, p])).values());
-            const vehicles = unique.filter(p => 
-              p.listingType === 'vehicle' || 
-              p.systemCategory === 'vehicle-complete' ||
-              p.partSubcategory === 'Complete Vehicle' ||
-              p.specificPartCategory === 'Complete Vehicle' ||
-              p.subcatId === 'complete-vehicle'
+            const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
+            const vehicles = json.data.filter(p => 
+              !deletedIds.has(p.id) && (
+                p.listingType === 'vehicle' || 
+                p.systemCategory === 'vehicle-complete' ||
+                p.partSubcategory === 'Complete Vehicle' ||
+                p.specificPartCategory === 'Complete Vehicle' ||
+                p.subcatId === 'complete-vehicle'
+              )
             );
             setCompleteVehicles(vehicles);
           }

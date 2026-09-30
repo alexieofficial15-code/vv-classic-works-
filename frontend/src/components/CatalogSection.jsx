@@ -40,57 +40,35 @@ export default function CatalogSection({
 
   const currentSystemObj = VEHICLE_SYSTEMS.find(s => s.id === selectedSystem);
   
-  // Initialize ONLY from real cached DB items (or empty array) - NEVER hardcoded mock items
-  const [catalogItems, setCatalogItems] = useState(() => {
-    try {
-      const cached = localStorage.getItem('cached_db_parts');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-      const localParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
-      if (Array.isArray(localParts) && localParts.length > 0) return localParts;
-    } catch (e) {}
-    return [];
-  });
-  const [isLoadingParts, setIsLoadingParts] = useState(false);
+  // Initialize cleanly without partial stale cache so all parts load together at once
+  const [catalogItems, setCatalogItems] = useState([]);
+  const [isLoadingParts, setIsLoadingParts] = useState(true);
 
-  // Fetch dynamic items posted via Admin Panel / Supabase DB
+  // Fetch all parts directly from Supabase / Backend at once
   useEffect(() => {
+    let isMounted = true;
     const fetchCatalogParts = async () => {
       setIsLoadingParts(true);
-      let serverParts = null;
       try {
         const res = await fetch(`${API_BASE_URL}/api/admin/parts`);
-        const data = await res.json();
-        if (data.success && Array.isArray(data.data)) {
-          serverParts = data.data;
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.data) && isMounted) {
+            const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
+            const filteredServerParts = data.data.filter(p => !deletedIds.has(p.id));
+            setCatalogItems(filteredServerParts);
+          }
         }
       } catch (err) {
-        console.warn('Backend server unreachable, reading from local cache.');
+        console.warn('Backend server unreachable:', err);
+      } finally {
+        if (isMounted) {
+          setIsLoadingParts(false);
+        }
       }
-
-      const localParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
-      const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
-
-      if (serverParts !== null && Array.isArray(serverParts)) {
-        // Server Supabase database is the sole authoritative source of truth across all devices
-        const filteredServerParts = serverParts.filter(p => !deletedIds.has(p.id));
-        const serverIdSet = new Set(serverParts.map(p => p.id));
-        const unsyncedLocal = localParts.filter(p => !deletedIds.has(p.id) && !serverIdSet.has(p.id));
-        const finalParts = [...unsyncedLocal, ...filteredServerParts];
-        setCatalogItems(finalParts);
-        try {
-          localStorage.setItem('cached_db_parts', JSON.stringify(finalParts));
-        } catch (e) {}
-      } else {
-        // Local cache fallback when server is completely offline
-        const filteredLocal = localParts.filter(p => !deletedIds.has(p.id));
-        setCatalogItems(filteredLocal);
-      }
-      setIsLoadingParts(false);
     };
     fetchCatalogParts();
+    return () => { isMounted = false; };
   }, []);
 
   const handleResetFilters = () => {
