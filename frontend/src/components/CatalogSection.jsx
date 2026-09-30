@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Filter, Search, ShoppingBag, Eye, Heart, Layers, Check, CheckCircle2, Car, X, Image as ImageIcon, SlidersHorizontal, RotateCcw, ShieldCheck, Wrench, Box } from 'lucide-react';
 import { VW_NAV_CATEGORIES, VEHICLE_SYSTEMS, ENGINE_COMPATIBILITIES, USAGE_TYPES } from '../data/vwNavigationData';
-import { API_BASE_URL } from '../config/api';
+import { getCachedPartsSync, fetchPartsFast, subscribeToPartsUpdates } from '../services/partsService';
 
 export default function CatalogSection({ 
   onAddToCart, 
@@ -40,57 +40,27 @@ export default function CatalogSection({
 
   const currentSystemObj = VEHICLE_SYSTEMS.find(s => s.id === selectedSystem);
   
-  // Initialize ONLY from real cached DB items (or empty array) - NEVER hardcoded mock items
-  const [catalogItems, setCatalogItems] = useState(() => {
-    try {
-      const cached = localStorage.getItem('cached_db_parts');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-      const localParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
-      if (Array.isArray(localParts) && localParts.length > 0) return localParts;
-    } catch (e) {}
-    return [];
-  });
+  // Initialize INSTANTLY (0ms) from synchronous cache
+  const [catalogItems, setCatalogItems] = useState(() => getCachedPartsSync());
   const [isLoadingParts, setIsLoadingParts] = useState(false);
 
-  // Fetch dynamic items posted via Admin Panel / Supabase DB
+  // Fetch dynamic items via fast multi-tier service (direct Supabase edge + background fallback)
   useEffect(() => {
-    const fetchCatalogParts = async () => {
-      setIsLoadingParts(true);
-      let serverParts = null;
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/admin/parts`);
-        const data = await res.json();
-        if (data.success && Array.isArray(data.data)) {
-          serverParts = data.data;
-        }
-      } catch (err) {
-        console.warn('Backend server unreachable, reading from local cache.');
+    // Subscribe to background updates
+    const unsubscribe = subscribeToPartsUpdates((updated) => {
+      if (Array.isArray(updated) && updated.length > 0) {
+        setCatalogItems(updated);
       }
+    });
 
-      const localParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
-      const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
-
-      if (serverParts !== null && Array.isArray(serverParts)) {
-        // Server Supabase database is the sole authoritative source of truth across all devices
-        const filteredServerParts = serverParts.filter(p => !deletedIds.has(p.id));
-        const serverIdSet = new Set(serverParts.map(p => p.id));
-        const unsyncedLocal = localParts.filter(p => !deletedIds.has(p.id) && !serverIdSet.has(p.id));
-        const finalParts = [...unsyncedLocal, ...filteredServerParts];
-        setCatalogItems(finalParts);
-        try {
-          localStorage.setItem('cached_db_parts', JSON.stringify(finalParts));
-        } catch (e) {}
-      } else {
-        // Local cache fallback when server is completely offline
-        const filteredLocal = localParts.filter(p => !deletedIds.has(p.id));
-        setCatalogItems(filteredLocal);
+    // Fire non-blocking fast fetch
+    fetchPartsFast().then((fresh) => {
+      if (Array.isArray(fresh) && fresh.length > 0) {
+        setCatalogItems(fresh);
       }
-      setIsLoadingParts(false);
-    };
-    fetchCatalogParts();
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const handleResetFilters = () => {

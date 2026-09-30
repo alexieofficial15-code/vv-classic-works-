@@ -38,12 +38,34 @@ const authenticateAdmin = (req, res, next) => {
 
 // --- SPARE PARTS CRUD ---
 
-// 1. GET ALL PARTS (Public)
+// High-Speed In-Memory Cache for GET /admin/parts
+let cachedParts = null;
+let lastCacheTime = 0;
+const CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutes
+
+const invalidatePartsCache = () => {
+  cachedParts = null;
+  lastCacheTime = 0;
+};
+
+// 1. GET ALL PARTS (Public, High-Speed RAM Cache)
 router.get('/admin/parts', async (req, res) => {
   try {
+    const now = Date.now();
+    if (cachedParts && (now - lastCacheTime < CACHE_TTL_MS)) {
+      res.setHeader('X-Cache', 'HIT');
+      return res.json({ success: true, data: cachedParts });
+    }
+
     const parts = await dbService.getParts();
+    cachedParts = parts;
+    lastCacheTime = now;
+    res.setHeader('X-Cache', 'MISS');
     res.json({ success: true, data: parts });
   } catch (err) {
+    if (cachedParts) {
+      return res.json({ success: true, data: cachedParts });
+    }
     res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -51,6 +73,7 @@ router.get('/admin/parts', async (req, res) => {
 // 2. ADD NEW PART / POST (Admin Protected)
 router.post('/admin/parts', authenticateAdmin, async (req, res) => {
   try {
+    invalidatePartsCache();
     const newPart = await dbService.addPart(req.body);
     res.status(201).json({ 
       success: true, 
@@ -65,6 +88,7 @@ router.post('/admin/parts', authenticateAdmin, async (req, res) => {
 // 3. UPDATE PART / PUT (Admin Protected)
 router.put('/admin/parts/:id', authenticateAdmin, async (req, res) => {
   try {
+    invalidatePartsCache();
     const updated = await dbService.updatePart(req.params.id, req.body);
     res.json({ 
       success: true, 
@@ -79,6 +103,7 @@ router.put('/admin/parts/:id', authenticateAdmin, async (req, res) => {
 // 4. DELETE PART / DELETE (Admin Protected)
 router.delete('/admin/parts/:id', authenticateAdmin, async (req, res) => {
   try {
+    invalidatePartsCache();
     await dbService.deletePart(req.params.id);
     res.json({ 
       success: true, 
