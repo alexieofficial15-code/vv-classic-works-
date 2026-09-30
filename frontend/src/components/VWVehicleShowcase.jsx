@@ -2,10 +2,153 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { VW_NAV_CATEGORIES, VEHICLE_SYSTEMS, DETAILED_ENGINES } from '../data/vwNavigationData';
 import { API_BASE_URL } from '../config/api';
 import { 
-  Car, Cpu, Wrench, ChevronRight, ArrowLeft, ArrowRight, Image as ImageIcon, 
+  Car, Cpu, Wrench, ChevronLeft, ChevronRight, ArrowLeft, ArrowRight, Image as ImageIcon, 
   Sparkles, CheckCircle2, SlidersHorizontal, Flame, Zap, Cog, Wind, Sliders, 
   Disc, Shield, Armchair, Layers, Box, Eye, Check, Key, Gauge
 } from 'lucide-react';
+
+// Auto-Rotating & Swipeable Image Slider for Landing Page Category Cards
+function CategoryImageRotator({ images, categoryName, onOpenGallery, activeVehicle }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Auto-shift pictures every 3.5 seconds when multiple images exist
+  useEffect(() => {
+    if (!images || images.length <= 1 || isPaused) return;
+    const interval = setInterval(() => {
+      setCurrentIndex(prev => (prev + 1) % images.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [images, isPaused]);
+
+  const handlePrev = (e) => {
+    e.stopPropagation();
+    setCurrentIndex(prev => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const handleNext = (e) => {
+    e.stopPropagation();
+    setCurrentIndex(prev => (prev + 1) % images.length);
+  };
+
+  // Touch swipe support (left / right)
+  const minSwipeDistance = 40;
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+  const onTouchEnd = (e) => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    if (distance > minSwipeDistance) {
+      e.stopPropagation();
+      handleNext(e);
+    } else if (distance < -minSwipeDistance) {
+      e.stopPropagation();
+      handlePrev(e);
+    }
+  };
+
+  if (!images || images.length === 0) {
+    return (
+      <div className="w-full h-full bg-gradient-to-b from-[#1b1a1c] to-[#131314] flex flex-col items-center justify-center text-[#584236] group-hover:text-[#ff7a1a] transition-all p-6 text-center">
+        <div className="w-14 h-14 rounded-full bg-[#131314] border border-[#584236]/60 flex items-center justify-center mb-2.5 group-hover:border-[#ff7a1a]/60 group-hover:scale-105 transition-all shadow-inner">
+          <Car className="w-7 h-7 text-[#a78b7d] group-hover:text-[#ff7a1a] transition-colors" />
+        </div>
+        <span className="text-xs text-[#e5e2e3] font-bold uppercase tracking-wider font-mono">
+          {categoryName}
+        </span>
+        <span className="text-[10px] text-[#ff7a1a]/80 mt-1 font-mono">
+          Upload Category Photo in Admin
+        </span>
+      </div>
+    );
+  }
+
+  const currentImage = images[currentIndex % images.length];
+
+  return (
+    <div 
+      className="relative w-full h-full overflow-hidden select-none"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
+      <img 
+        key={currentIndex}
+        src={currentImage} 
+        alt={`${categoryName} photo ${currentIndex + 1}`} 
+        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100 animate-in fade-in duration-500" 
+      />
+
+      {/* Manual Left/Right Arrow Buttons on Hover / Mobile */}
+      {images.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={handlePrev}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-black/75 hover:bg-[#ff7a1a] text-white hover:text-black border border-[#584236] hover:border-[#ff7a1a] flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-md cursor-pointer"
+            aria-label="Previous image"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleNext}
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-black/75 hover:bg-[#ff7a1a] text-white hover:text-black border border-[#584236] hover:border-[#ff7a1a] flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-md cursor-pointer"
+            aria-label="Next image"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+
+          {/* Indicator Dots at Bottom */}
+          <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-full border border-black/40 pointer-events-auto">
+            {images.map((_, i) => (
+              <span
+                key={i}
+                onClick={(e) => { e.stopPropagation(); setCurrentIndex(i); }}
+                className={`transition-all rounded-full cursor-pointer ${
+                  currentIndex === i
+                    ? 'w-3.5 h-1.5 bg-[#ff7a1a]'
+                    : 'w-1.5 h-1.5 bg-white/40 hover:bg-white/70'
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Rotating badge */}
+          <div className="absolute bottom-2.5 right-2.5 z-10 hidden sm:flex items-center gap-1 bg-black/70 backdrop-blur-sm border border-[#ff7a1a]/30 px-1.5 py-0.5 rounded text-[8px] font-mono text-[#ff7a1a]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ff7a1a] animate-pulse"></span>
+            <span>{currentIndex + 1}/{images.length}</span>
+          </div>
+        </>
+      )}
+
+      {/* Inspect Photo Gallery Button */}
+      {onOpenGallery && activeVehicle && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenGallery(activeVehicle);
+          }}
+          className="absolute bottom-2.5 left-2.5 z-20 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 hover:bg-[#ff7a1a] text-[#83cffb] hover:text-black border border-[#584236] hover:border-[#ff7a1a] text-[9px] font-mono font-bold px-2 py-1 rounded-xs flex items-center gap-1 cursor-pointer shadow-md"
+          title="Inspect All Photos & Specs"
+        >
+          <Eye className="w-3 h-3" />
+          <span>Gallery</span>
+        </button>
+      )}
+    </div>
+  );
+}
 
 export default function VWVehicleShowcase({ 
   onSelectVehicle, 
@@ -274,8 +417,26 @@ export default function VWVehicleShowcase({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
                 {VW_NAV_CATEGORIES.map((category) => {
                   const matchingVehicles = completeVehicles.filter(v => isVehicleInCategory(v, category.id));
-                  // Prioritize the vehicle photo posted by admin for this category
-                  const categoryImage = matchingVehicles[matchingVehicles.length - 1]?.image || matchingVehicles[0]?.image || category.image;
+                  
+                  // Collect all photos from posts in this category for rotating showcase
+                  const categoryImages = [];
+                  matchingVehicles.forEach(v => {
+                    if (v.image && !categoryImages.includes(v.image)) {
+                      categoryImages.push(v.image);
+                    }
+                    if (Array.isArray(v.additionalImages)) {
+                      v.additionalImages.forEach(img => {
+                        if (img && !categoryImages.includes(img)) {
+                          categoryImages.push(img);
+                        }
+                      });
+                    }
+                  });
+                  if (categoryImages.length === 0 && category.image) {
+                    categoryImages.push(category.image);
+                  }
+
+                  const latestVehicle = matchingVehicles[matchingVehicles.length - 1] || matchingVehicles[0] || null;
 
                   return (
                     <div
@@ -284,25 +445,12 @@ export default function VWVehicleShowcase({
                       className="group relative cursor-pointer rounded-xs overflow-hidden border border-[#584236]/40 hover:border-[#ff7a1a] transition-all duration-300 bg-[#201f20]/60 backdrop-blur-md shadow-xl hover:shadow-[0_10px_35px_rgba(255,122,26,0.25)] hover:-translate-y-1 click-press flex flex-col justify-between"
                     >
                       <div className="relative h-44 sm:h-52 md:h-60 bg-gradient-to-b from-[#181719] to-[#121112] overflow-hidden flex items-center justify-center">
-                        {categoryImage ? (
-                          <img 
-                            src={categoryImage} 
-                            alt={category.name} 
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100" 
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-b from-[#1b1a1c] to-[#131314] flex flex-col items-center justify-center text-[#584236] group-hover:text-[#ff7a1a] transition-all p-6 text-center">
-                            <div className="w-14 h-14 rounded-full bg-[#131314] border border-[#584236]/60 flex items-center justify-center mb-2.5 group-hover:border-[#ff7a1a]/60 group-hover:scale-105 transition-all shadow-inner">
-                              <Car className="w-7 h-7 text-[#a78b7d] group-hover:text-[#ff7a1a] transition-colors" />
-                            </div>
-                            <span className="text-xs text-[#e5e2e3] font-bold uppercase tracking-wider font-mono">
-                              {category.name}
-                            </span>
-                            <span className="text-[10px] text-[#ff7a1a]/80 mt-1 font-mono">
-                              Upload Category Photo in Admin
-                            </span>
-                          </div>
-                        )}
+                        <CategoryImageRotator 
+                          images={categoryImages}
+                          categoryName={category.name}
+                          onOpenGallery={onViewVehicleDetails}
+                          activeVehicle={latestVehicle}
+                        />
 
                         <div className="absolute inset-0 bg-gradient-to-t from-[#131314] via-transparent to-black/40 pointer-events-none"></div>
 

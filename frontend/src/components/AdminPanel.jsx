@@ -517,6 +517,8 @@ export default function AdminPanel({
         }));
       });
     });
+    // Reset file input value so user can select more files or the same file again
+    e.target.value = '';
   };
 
   const handleAddImageUrl = () => {
@@ -533,6 +535,16 @@ export default function AdminPanel({
       ...prev,
       mediaImages: prev.mediaImages.filter((_, i) => i !== index)
     }));
+  };
+
+  const handleSetCoverImage = (index) => {
+    setFormData(prev => {
+      if (index === 0) return prev;
+      const newImages = [...prev.mediaImages];
+      const [selected] = newImages.splice(index, 1);
+      newImages.unshift(selected);
+      return { ...prev, mediaImages: newImages };
+    });
   };
 
   // Form Reset / Discard
@@ -1360,21 +1372,66 @@ export default function AdminPanel({
                         </button>
                       </div>
 
-                      {/* Preview of Uploaded Photo */}
+                      {/* Preview of All Uploaded Photos */}
                       {formData.mediaImages.length > 0 && (
                         <div className="pt-2">
-                          <span className="text-xs text-[#a78b7d] uppercase block mb-2 font-bold">
-                            Category Cover Photo Preview
-                          </span>
-                          <div className="relative w-full max-w-md h-52 bg-black rounded-xs border border-[#ff7a1a] overflow-hidden shadow-lg">
-                            <img src={formData.mediaImages[0]} alt="Vehicle Preview" className="w-full h-full object-cover" />
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveImage(0)}
-                              className="absolute top-2 right-2 bg-red-600/90 hover:bg-red-700 text-white p-1 rounded-full text-xs"
-                            >
-                              ✕
-                            </button>
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-1">
+                            <span className="text-xs text-[#a78b7d] uppercase font-bold">
+                              Uploaded Photos ({formData.mediaImages.length} {formData.mediaImages.length === 1 ? 'photo' : 'photos'} added)
+                            </span>
+                            <span className="text-[10px] text-[#ff7a1a]">
+                              ★ First photo is primary cover; all photos will auto-rotate on the landing page!
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                            {formData.mediaImages.map((imgSrc, idx) => (
+                              <div key={idx} className="relative group bg-black rounded-xs border border-[#584236]/60 hover:border-[#ff7a1a] overflow-hidden shadow-md h-32 flex flex-col justify-between">
+                                <img src={imgSrc} alt={`Vehicle upload ${idx + 1}`} className="w-full h-full object-cover" />
+                                
+                                {/* Top Badge: Cover or # */}
+                                <div className="absolute top-1.5 left-1.5">
+                                  {idx === 0 ? (
+                                    <span className="bg-[#ff7a1a] text-black font-extrabold text-[9px] px-1.5 py-0.5 rounded-xs shadow">
+                                      ★ COVER
+                                    </span>
+                                  ) : (
+                                    <span className="bg-black/80 text-[#e0c0b1] text-[9px] px-1.5 py-0.5 rounded-xs border border-[#584236]">
+                                      #{idx + 1}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Action buttons */}
+                                <div className="absolute top-1.5 right-1.5 flex gap-1">
+                                  {idx !== 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setFormData(prev => {
+                                          const newImages = [...prev.mediaImages];
+                                          const [selected] = newImages.splice(idx, 1);
+                                          newImages.unshift(selected);
+                                          return { ...prev, mediaImages: newImages };
+                                        });
+                                      }}
+                                      className="bg-[#131314]/90 hover:bg-[#ff7a1a] text-[#83cffb] hover:text-black px-1.5 py-0.5 rounded-xs text-[9px] font-bold border border-[#584236]/50 cursor-pointer"
+                                      title="Set as Cover Photo"
+                                    >
+                                      ★ Set Cover
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveImage(idx)}
+                                    className="bg-red-600/90 hover:bg-red-700 text-white w-5 h-5 rounded-xs text-[10px] font-bold flex items-center justify-center cursor-pointer"
+                                    title="Remove Photo"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       )}
@@ -2502,18 +2559,47 @@ export default function AdminPanel({
 
                   {/* Uploaded Thumbnails Preview */}
                   {formData.mediaImages.length > 0 && (
-                    <div>
-                      <span className="text-xs text-[#a78b7d] uppercase block mb-2 font-bold">
-                        Uploaded Photos ({formData.mediaImages.length})
-                      </span>
+                    <div className="space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <span className="text-xs text-[#a78b7d] uppercase font-bold">
+                          Uploaded Photos ({formData.mediaImages.length} {formData.mediaImages.length === 1 ? 'photo' : 'photos'} added)
+                        </span>
+                        <span className="text-[10px] text-[#ff7a1a]">
+                          ★ First photo is the primary cover displayed on landing page
+                        </span>
+                      </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
                         {formData.mediaImages.map((imgSrc, idx) => (
-                          <div key={idx} className="relative group h-24 bg-black border border-[#584236]/50 rounded-xs overflow-hidden">
+                          <div 
+                            key={idx} 
+                            className={`relative group h-24 bg-black border rounded-xs overflow-hidden transition-all ${
+                              idx === 0 
+                                ? 'border-[#ff7a1a] ring-2 ring-[#ff7a1a]/40 shadow-lg' 
+                                : 'border-[#584236]/50 hover:border-[#ff7a1a]/60'
+                            }`}
+                          >
                             <img src={imgSrc} alt={`Upload ${idx+1}`} className="w-full h-full object-cover" />
+                            
+                            {/* Primary Cover Badge */}
+                            {idx === 0 ? (
+                              <span className="absolute top-1 left-1 bg-[#ff7a1a] text-black text-[9px] font-bold px-1.5 py-0.5 rounded-xs tracking-wider">
+                                ★ COVER
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleSetCoverImage(idx)}
+                                className="absolute bottom-1 left-1 right-1 bg-black/85 hover:bg-[#ff7a1a] text-[#ff7a1a] hover:text-black text-[9px] py-1 px-1 rounded-xs transition-colors font-bold opacity-0 group-hover:opacity-100 text-center"
+                              >
+                                Set as Cover
+                              </button>
+                            )}
+
                             <button
                               type="button"
                               onClick={() => handleRemoveImage(idx)}
-                              className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-xs opacity-90 sm:opacity-80 hover:opacity-100 transition-opacity"
+                              className="absolute top-1 right-1 p-1 bg-red-600/90 hover:bg-red-500 text-white rounded-xs opacity-90 sm:opacity-80 hover:opacity-100 transition-opacity"
+                              title="Delete photo"
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>

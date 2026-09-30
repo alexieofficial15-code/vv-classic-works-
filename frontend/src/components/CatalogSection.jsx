@@ -1,7 +1,142 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Filter, Search, ShoppingBag, Eye, Heart, Layers, Check, CheckCircle2, Car, X, Image as ImageIcon, SlidersHorizontal, RotateCcw, ShieldCheck, Wrench, Box } from 'lucide-react';
+import { Filter, Search, ShoppingBag, Eye, Heart, Layers, Check, CheckCircle2, Car, X, Image as ImageIcon, SlidersHorizontal, RotateCcw, ShieldCheck, Wrench, Box, ChevronLeft, ChevronRight } from 'lucide-react';
 import { VW_NAV_CATEGORIES, VEHICLE_SYSTEMS, ENGINE_COMPATIBILITIES, USAGE_TYPES } from '../data/vwNavigationData';
 import { API_BASE_URL } from '../config/api';
+
+// Auto-Rotating & Swipeable Image Slider for Landing Page Part Cards
+function RotatingPartCardImage({ part, onClickImage }) {
+  const images = useMemo(() => {
+    const list = [];
+    if (part.image) list.push(part.image);
+    if (Array.isArray(part.additionalImages)) {
+      part.additionalImages.forEach(img => {
+        if (img && !list.includes(img)) list.push(img);
+      });
+    }
+    return list;
+  }, [part]);
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
+  // Auto-shift pictures every 3.5 seconds so card is not stagnant
+  useEffect(() => {
+    if (images.length <= 1 || isPaused) return;
+    const interval = setInterval(() => {
+      setCurrentIndex(prev => (prev + 1) % images.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [images.length, isPaused]);
+
+  // Touch swipe support (left / right)
+  const minSwipeDistance = 35;
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+  const onTouchEnd = (e) => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    if (distance > minSwipeDistance) {
+      e.stopPropagation();
+      setCurrentIndex(prev => (prev + 1) % images.length);
+    } else if (distance < -minSwipeDistance) {
+      e.stopPropagation();
+      setCurrentIndex(prev => (prev === 0 ? images.length - 1 : prev - 1));
+    }
+  };
+
+  const handlePrev = (e) => {
+    e.stopPropagation();
+    setCurrentIndex(prev => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const handleNext = (e) => {
+    e.stopPropagation();
+    setCurrentIndex(prev => (prev + 1) % images.length);
+  };
+
+  if (images.length === 0) {
+    return (
+      <div 
+        onClick={onClickImage}
+        className="w-full h-full flex flex-col items-center justify-center text-[#a78b7d] space-y-1 cursor-pointer"
+      >
+        <ImageIcon className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-[#584236]" />
+        <span className="text-[9px] sm:text-[10px] block">No Photo</span>
+      </div>
+    );
+  }
+
+  const currentImage = images[currentIndex % images.length];
+
+  return (
+    <div 
+      className="relative w-full h-full overflow-hidden cursor-pointer select-none"
+      onClick={onClickImage}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      title="Click to view all photos & specifications"
+    >
+      <img
+        key={currentIndex}
+        src={currentImage}
+        alt={`${part.title} photo ${currentIndex + 1}`}
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 animate-in fade-in"
+      />
+
+      {images.length > 1 && (
+        <>
+          {/* Subtle Left / Right Navigation Buttons on Hover */}
+          <button
+            type="button"
+            onClick={handlePrev}
+            className="absolute left-1.5 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-black/75 hover:bg-[#ff7a1a] text-white hover:text-black border border-[#584236] flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-md cursor-pointer"
+            aria-label="Previous image"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleNext}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-black/75 hover:bg-[#ff7a1a] text-white hover:text-black border border-[#584236] flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-md cursor-pointer"
+            aria-label="Next image"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Indicator Dots at Bottom */}
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 bg-black/60 backdrop-blur-xs px-2 py-0.5 rounded-full pointer-events-none">
+            {images.map((_, i) => (
+              <span
+                key={i}
+                className={`transition-all rounded-full ${
+                  (currentIndex % images.length) === i
+                    ? 'w-2.5 h-1 bg-[#ff7a1a]'
+                    : 'w-1 h-1 bg-white/40'
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Photo Counter Badge */}
+          <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-black/80 backdrop-blur-sm border border-[#ff7a1a]/40 text-[#ff7a1a] text-[8px] font-mono px-1.5 py-0.5 rounded pointer-events-none">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ff7a1a] animate-pulse"></span>
+            <span>{currentIndex + 1}/{images.length}</span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function CatalogSection({ 
   onAddToCart, 
@@ -330,22 +465,14 @@ export default function CatalogSection({
                 >
                   <div>
                     <div className="relative h-40 sm:h-44 md:h-48 overflow-hidden bg-[#0e0e0f] rounded-xs mb-2.5 sm:mb-4 flex items-center justify-center border border-[#584236]/30">
-                      {part.image ? (
-                        <img
-                          src={part.image}
-                          alt={part.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="text-center text-[#a78b7d] space-y-1">
-                          <ImageIcon className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-[#584236]" />
-                          <span className="text-[9px] sm:text-[10px] block">Image Slot</span>
-                        </div>
-                      )}
+                      <RotatingPartCardImage 
+                        part={part} 
+                        onClickImage={() => onViewPartDetails(part)} 
+                      />
 
                       <button
                         onClick={() => onToggleWishlist(part.id)}
-                        className={`absolute top-2 right-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xs backdrop-blur-md transition-all cursor-pointer ${
+                        className={`absolute top-2 right-2 z-20 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xs backdrop-blur-md transition-all cursor-pointer ${
                           isWishlisted
                             ? 'bg-[#ff7a1a] text-black'
                             : 'bg-[#131314]/80 text-[#e0c0b1] hover:text-[#ff7a1a]'
@@ -361,7 +488,11 @@ export default function CatalogSection({
                       <span className="text-[9px] sm:text-[10px] text-[#ff7a1a] uppercase font-bold block truncate">
                         {part.systemCategory || part.partSystem || 'Vehicle Part'} { (part.partSubcategory || part.specificPartCategory || part.subcatId) ? `• ${part.partSubcategory || part.specificPartCategory || part.subcatId}` : '' }
                       </span>
-                      <h3 className="font-h3 text-xs sm:text-sm font-bold text-[#e5e2e3] group-hover:text-[#ff7a1a] transition-colors line-clamp-2 leading-tight">
+                      <h3 
+                        onClick={() => onViewPartDetails(part)}
+                        className="font-h3 text-xs sm:text-sm font-bold text-[#e5e2e3] hover:text-[#ff7a1a] transition-colors line-clamp-2 leading-tight cursor-pointer"
+                        title="Click to view full specs & photos"
+                      >
                         {part.title}
                       </h3>
                       {part.oemNumber && (
