@@ -652,20 +652,27 @@ export default function AdminPanel({
     const isEngine = formData.listingType === 'engine';
 
     if (!formData.partName.trim()) {
-      alert(`⚠️ Required Field Missing: Please enter ${isVehicle ? 'Vehicle Title' : isEngine ? 'Engine Model Title' : 'Part Name'} (Section 4).`);
+      alert(`⚠️ Required Field Missing: Please enter ${isVehicle ? 'Vehicle Title / Name' : isEngine ? 'Engine Model Title' : 'Part Name'}.`);
       return;
     }
-    if (!formData.description.trim()) {
-      alert(`⚠️ Required Field Missing: Please enter ${isVehicle ? 'Vehicle Overview & History' : 'Description'} (Section 4).`);
-      return;
-    }
-    if (!formData.retailPrice || parseFloat(formData.retailPrice) <= 0) {
-      alert(`⚠️ Required Field Missing: Please enter valid ${isVehicle ? 'Asking Price' : 'Retail Price'} (Section 8).`);
-      return;
-    }
-    if (!formData.stockQuantity && !isVehicle) {
-      alert('⚠️ Required Field Missing: Please enter Stock Quantity (Section 8).');
-      return;
+    if (isVehicle) {
+      if (!formData.mediaImages || formData.mediaImages.length === 0) {
+        alert('⚠️ Required Field Missing: Please upload or provide a Vehicle Image so it displays in the category box on the landing page.');
+        return;
+      }
+    } else {
+      if (!formData.description.trim()) {
+        alert(`⚠️ Required Field Missing: Please enter ${isEngine ? 'Engine Specifications' : 'Description'} (Section 4).`);
+        return;
+      }
+      if (!formData.retailPrice || parseFloat(formData.retailPrice) <= 0) {
+        alert('⚠️ Required Field Missing: Please enter a valid Retail Price (Section 8).');
+        return;
+      }
+      if (!formData.stockQuantity) {
+        alert('⚠️ Required Field Missing: Please enter Stock Quantity (Section 8).');
+        return;
+      }
     }
 
     const targetId = editingPartId || `part-${Date.now()}`;
@@ -675,10 +682,12 @@ export default function AdminPanel({
       title: formData.partName,
       sku: formData.sku || (isVehicle ? `VIN-${formData.vinNumber || targetId.slice(-6)}` : targetId),
       oemNumber: formData.sku || formData.vinNumber || '',
-      description: formData.description,
+      description: isVehicle 
+        ? (formData.description?.trim() || `${formData.partName} - Category Cover Vehicle`) 
+        : formData.description,
       listingType: formData.listingType,
       vehicleCategory: formData.vehicleCategory,
-      modelYearRange: formData.modelYearRange,
+      modelYearRange: formData.modelYearRange || formData.partName,
       // Complete Vehicle Specifics
       vinNumber: formData.vinNumber,
       mileage: formData.mileage,
@@ -706,14 +715,14 @@ export default function AdminPanel({
       performanceType: formData.performanceType,
       condition: formData.condition,
       status: saveStatus,
-      price: parseFloat(formData.retailPrice) || 0,
-      wholesalePrice: parseFloat(formData.wholesalePrice) || 0,
+      price: isVehicle ? 0 : (parseFloat(formData.retailPrice) || 0),
+      wholesalePrice: isVehicle ? 0 : (parseFloat(formData.wholesalePrice) || 0),
       stock: isVehicle ? 1 : (parseInt(formData.stockQuantity) || 1),
-      inStock: (isVehicle ? 1 : (parseInt(formData.stockQuantity) || 1)) > 0,
+      inStock: true,
       storageLocation: formData.storageLocation,
       compatibleEngineSizes: isVehicle ? [] : formData.compatibleEngineSizes,
-      compatibleModels: isVehicle ? [formData.modelYearRange] : formData.compatibleModels,
-      image: formData.mediaImages[0] || (isVehicle ? 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=800&q=80' : 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80'),
+      compatibleModels: isVehicle ? [formData.modelYearRange || formData.partName] : formData.compatibleModels,
+      image: formData.mediaImages[0] || '',
       additionalImages: formData.mediaImages,
       videoUrl: formData.videoUrl,
       createdAt: new Date().toISOString()
@@ -1173,14 +1182,14 @@ export default function AdminPanel({
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-xl">🚗</span>
-                          <strong className="text-sm text-white font-bold">Complete Vehicle</strong>
+                          <strong className="text-sm text-white font-bold">Category Vehicle Cover</strong>
                         </div>
                         {formData.listingType === 'vehicle' && (
                           <span className="w-2 h-2 rounded-full bg-[#ff7a1a]"></span>
                         )}
                       </div>
                       <p className="text-[11px] text-[#e0c0b1] leading-relaxed">
-                        Complete cars, rolling project chassis, survivor classics & restored VWs with VIN, mileage & title specs.
+                        Upload a vehicle photo to display in one of the 6 landing page category boxes (Beetle, Bus, Ghia, etc.).
                       </p>
                     </button>
 
@@ -1233,8 +1242,164 @@ export default function AdminPanel({
                 </div>
               </div>
 
-              {/* 📌 SECTION 2: VEHICLE CLASSIFICATION / ENGINE PLATFORM */}
-              <div className="bg-[#181719]/80 border border-[#584236]/40 backdrop-blur-md rounded-md p-6 shadow-xl space-y-4 hover:border-[#ff7a1a]/50 transition-all">
+              {formData.listingType === 'vehicle' ? (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="bg-[#181719]/90 border border-[#ff7a1a]/60 backdrop-blur-md rounded-md p-6 shadow-xl space-y-6">
+                    <div className="flex items-center justify-between border-b border-[#ff7a1a]/30 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Car className="w-5 h-5 text-[#ff7a1a]" />
+                        <div>
+                          <h3 className="text-base font-bold text-white uppercase tracking-wider font-mono">
+                            SECTION 2: CHOOSE LANDING PAGE CATEGORY BOX
+                          </h3>
+                          <p className="text-xs text-[#a78b7d]">
+                            Select which category box on the landing page this vehicle photo will display in.
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-[#ff7a1a] bg-[#ff7a1a]/10 border border-[#ff7a1a]/30 px-2 py-0.5 rounded font-mono font-bold">
+                        Landing Page Display
+                      </span>
+                    </div>
+
+                    {/* 6 Category Box Selector */}
+                    <div>
+                      <label className="text-xs text-[#a78b7d] uppercase font-bold font-mono block mb-2">
+                        SELECT LANDING PAGE CATEGORY <span className="text-[#ff7a1a]">*</span>
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 font-mono">
+                        {[
+                          { id: 'type-1', navId: 'beetle-models', name: 'Beetle Models', desc: 'Type 1 Beetle, Super Beetle, Baja Bug' },
+                          { id: 'type-2', navId: 'bus-vans', name: 'Bus & Vans', desc: 'Type 2 Transporter, Split, Bay, Westfalia' },
+                          { id: 'classic-sports', navId: 'classic-sports', name: 'Classic Sports', desc: 'Karmann Ghia, Type 34, 356 Platform' },
+                          { id: 'type-3-type-4', navId: 'type-3-type-4', name: 'Type 3 & Type 4', desc: 'Notchback, Squareback, Fastback, 411/412' },
+                          { id: 'military-offroad', navId: 'military-offroad', name: 'Military & Off-Road', desc: 'VW Thing 181, Kübelwagen, Sand Rails' },
+                          { id: 'custom-kit-cars', navId: 'custom-kit-cars', name: 'Custom & Kit Cars', desc: 'Meyers Manx Buggy, Fiberglass Kits' }
+                        ].map(cat => {
+                          const isSelected = formData.vehicleCategory === cat.id || formData.vehicleCategory === cat.navId;
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => setFormData(prev => ({ 
+                                ...prev, 
+                                vehicleCategory: cat.id,
+                                modelYearRange: cat.name
+                              }))}
+                              className={`p-3.5 text-left rounded-xs border transition-all ${
+                                isSelected
+                                  ? 'bg-[#ff7a1a]/15 border-[#ff7a1a] text-white shadow-[0_0_20px_rgba(255,122,26,0.25)]'
+                                  : 'bg-[#131314] border-[#584236]/50 text-[#a78b7d] hover:border-[#ff7a1a]/50'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-bold text-xs text-white">{cat.name}</span>
+                                {isSelected && <span className="w-2.5 h-2.5 rounded-full bg-[#ff7a1a]"></span>}
+                              </div>
+                              <p className="text-[10px] text-[#e0c0b1] line-clamp-1">{cat.desc}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Vehicle Display Title */}
+                    <div>
+                      <label className="text-xs text-[#a78b7d] uppercase font-bold font-mono block mb-1.5">
+                        VEHICLE TITLE / MODEL NAME <span className="text-[#ff7a1a]">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="partName"
+                        placeholder="e.g., 1967 Volkswagen Beetle Type 1"
+                        value={formData.partName}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs font-mono"
+                      />
+                    </div>
+
+                    {/* Media: Upload Photo */}
+                    <div className="space-y-3 font-mono">
+                      <label className="text-xs text-[#a78b7d] uppercase font-bold block">
+                        CATEGORY COVER PHOTO <span className="text-[#ff7a1a]">* (Appears in Landing Page Category Box)</span>
+                      </label>
+
+                      {/* Drag & Drop File Upload */}
+                      <div className="border-2 border-dashed border-[#584236]/60 hover:border-[#ff7a1a] bg-[#131314] p-6 text-center rounded-xs transition-colors cursor-pointer relative">
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handleFileUpload}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        />
+                        <UploadCloud className="w-10 h-10 text-[#ff7a1a] mx-auto mb-2" />
+                        <p className="text-xs text-[#e5e2e3] font-bold">
+                          Drag & Drop Vehicle Photo here, or <span className="text-[#ff7a1a]">Browse Files</span>
+                        </p>
+                        <p className="text-[10px] text-[#a78b7d] mt-1">
+                          Supports PNG, JPG, WEBP. High quality horizontal vehicle photo recommended.
+                        </p>
+                      </div>
+
+                      {/* Direct Image URL input */}
+                      <div className="flex flex-col sm:flex-row gap-2 w-full">
+                        <input
+                          type="url"
+                          placeholder="Or paste direct image URL (https://...)"
+                          value={imageUrlInput}
+                          onChange={(e) => setImageUrlInput(e.target.value)}
+                          className="flex-1 bg-[#131314] border border-[#584236]/60 p-2.5 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs w-full"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddImageUrl}
+                          className="bg-[#201f20] hover:bg-[#ff7a1a] text-[#e0c0b1] hover:text-black border border-[#584236]/60 px-4 py-2 text-xs font-bold rounded-xs transition-all"
+                        >
+                          Add URL
+                        </button>
+                      </div>
+
+                      {/* Preview of Uploaded Photo */}
+                      {formData.mediaImages.length > 0 && (
+                        <div className="pt-2">
+                          <span className="text-xs text-[#a78b7d] uppercase block mb-2 font-bold">
+                            Category Cover Photo Preview
+                          </span>
+                          <div className="relative w-full max-w-md h-52 bg-black rounded-xs border border-[#ff7a1a] overflow-hidden shadow-lg">
+                            <img src={formData.mediaImages[0]} alt="Vehicle Preview" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(0)}
+                              className="absolute top-2 right-2 bg-red-600/90 hover:bg-red-700 text-white p-1 rounded-full text-xs"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Optional Description */}
+                    <div>
+                      <label className="text-xs text-[#a78b7d] uppercase font-bold font-mono block mb-1.5">
+                        DESCRIPTION / NOTES (OPTIONAL)
+                      </label>
+                      <textarea
+                        name="description"
+                        rows="2"
+                        placeholder="e.g., Authentic Type 1 Beetle showcased for our spare parts inventory..."
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* 📌 SECTION 2: VEHICLE CLASSIFICATION / ENGINE PLATFORM */}
+                  <div className="bg-[#181719]/80 border border-[#584236]/40 backdrop-blur-md rounded-md p-6 shadow-xl space-y-4 hover:border-[#ff7a1a]/50 transition-all">
                 <div className="flex items-center justify-between border-b border-[#584236]/30 pb-3">
                   <div className="flex items-center gap-2">
                     <Car className="w-5 h-5 text-[#ff7a1a]" />
@@ -2374,11 +2539,13 @@ export default function AdminPanel({
                   </div>
                 </div>
               </div>
+              </>
+              )}
 
               {/* 📌 STICKY BOTTOM ACTION BAR */}
               <div className="sticky bottom-0 bg-[#141416]/95 border-t border-[#ff7a1a]/40 p-3 sm:p-4 rounded-t-md flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 shadow-2xl backdrop-blur-xl z-30">
                 <div className="text-xs font-mono text-[#a78b7d] hidden sm:block truncate max-w-xs">
-                  <span className="text-[#ff7a1a] font-bold">Ready:</span> {formData.partName || 'New Product Form'}
+                  <span className="text-[#ff7a1a] font-bold">Ready:</span> {formData.partName || (formData.listingType === 'vehicle' ? 'Category Vehicle Cover' : 'New Product Form')}
                 </div>
 
                 <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
@@ -2397,7 +2564,7 @@ export default function AdminPanel({
                     className="flex-1 sm:flex-initial bg-[#ff7a1a] hover:bg-[#ffb68e] text-black font-mono font-bold px-4 py-2.5 sm:py-2 text-xs uppercase rounded-xs transition-all shadow-[0_0_20px_rgba(255,122,26,0.4)] glow-button flex items-center justify-center gap-1.5 min-h-[42px] sm:min-h-0 cursor-pointer"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>{isLoading ? 'Saving...' : editingPartId ? 'Update Item' : 'Publish Product'}</span>
+                    <span>{isLoading ? 'Saving...' : editingPartId ? 'Update Item' : formData.listingType === 'vehicle' ? 'Save & Update Category Box' : 'Publish Product'}</span>
                   </button>
                 </div>
               </div>

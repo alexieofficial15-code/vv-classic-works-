@@ -74,11 +74,11 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
                 ${part.price ? part.price.toLocaleString() : '0.00'} USD
               </div>
 
-              {/* Complete Vehicle Documentation & Attributes (if listingType === 'vehicle') */}
-              {(part.listingType === 'vehicle' || part.vinNumber || part.engineInstalled) && (
+              {/* Complete Vehicle Documentation & Attributes (only if specs exist) */}
+              {(part.vinNumber || part.mileage || part.engineInstalled || part.transmissionType || part.exteriorColor) && (
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 sm:p-4 mb-3 sm:mb-4 space-y-2">
                   <div className="text-[10px] sm:text-xs font-mono text-amber-400 font-bold uppercase tracking-wider flex items-center justify-between">
-                    <span>🚗 COMPLETE VEHICLE SPECIFICATION</span>
+                    <span>🚗 VEHICLE SPECIFICATION</span>
                     <span className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30 text-[9px]">
                       {part.titleStatus || 'Clean Title'}
                     </span>
