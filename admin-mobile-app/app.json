@@ -35,6 +35,12 @@
       "expo-asset",
       "expo-font",
       "expo-status-bar"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a2d94e8b-6eeb-42c8-a3de-7759fc059603"
+      }
+    },
+    "owner": "fan_g"
   }
 }
