@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { VW_NAV_CATEGORIES, VEHICLE_SYSTEMS, DETAILED_ENGINES } from '../data/vwNavigationData';
-import { getCachedPartsSync, fetchPartsFast, subscribeToPartsUpdates } from '../services/partsService';
+import { API_BASE_URL } from '../config/api';
 import { 
   Car, Cpu, Wrench, ChevronRight, ArrowLeft, ArrowRight, Image as ImageIcon, 
   Sparkles, CheckCircle2, SlidersHorizontal, Flame, Zap, Cog, Wind, Sliders, 
@@ -25,37 +25,55 @@ export default function VWVehicleShowcase({
   const [selectedSys, setSelectedSys] = useState(null);
   const [expandedSystemId, setExpandedSystemId] = useState(null);
 
-  const extractVehicles = (parts) => {
-    if (!Array.isArray(parts)) return [];
-    return parts.filter(p => 
-      p.listingType === 'vehicle' || 
-      p.systemCategory === 'vehicle-complete' ||
-      p.partSubcategory === 'Complete Vehicle' ||
-      p.specificPartCategory === 'Complete Vehicle' ||
-      p.subcatId === 'complete-vehicle'
-    );
-  };
-
-  // Complete Vehicles Database State - Instant 0ms Synchronous Hydration
+  // Complete Vehicles Database State
   const [completeVehicles, setCompleteVehicles] = useState(() => {
-    return extractVehicles(getCachedPartsSync());
+    try {
+      const cached = localStorage.getItem('cached_db_parts');
+      const custom = localStorage.getItem('custom_parts');
+      const all = [
+        ...(custom ? JSON.parse(custom) : []),
+        ...(cached ? JSON.parse(cached) : [])
+      ];
+      return all.filter(p => 
+        p.listingType === 'vehicle' || 
+        p.systemCategory === 'vehicle-complete' ||
+        p.partSubcategory === 'Complete Vehicle' ||
+        p.specificPartCategory === 'Complete Vehicle' ||
+        p.subcatId === 'complete-vehicle'
+      );
+    } catch (e) {
+      return [];
+    }
   });
 
-  // Fetch Complete Vehicles via fast multi-tier service
+  // Fetch Complete Vehicles from API
   useEffect(() => {
-    // 1. Subscribe to shared background updates
-    const unsubscribe = subscribeToPartsUpdates((updated) => {
-      setCompleteVehicles(extractVehicles(updated));
-    });
-
-    // 2. Trigger fast single-flight fetch
-    fetchPartsFast().then((fresh) => {
-      if (Array.isArray(fresh) && fresh.length > 0) {
-        setCompleteVehicles(extractVehicles(fresh));
+    let isMounted = true;
+    const fetchVehicles = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/parts`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && isMounted) {
+            const customParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
+            const combined = [...customParts, ...json.data];
+            const unique = Array.from(new Map(combined.map(p => [p.id, p])).values());
+            const vehicles = unique.filter(p => 
+              p.listingType === 'vehicle' || 
+              p.systemCategory === 'vehicle-complete' ||
+              p.partSubcategory === 'Complete Vehicle' ||
+              p.specificPartCategory === 'Complete Vehicle' ||
+              p.subcatId === 'complete-vehicle'
+            );
+            setCompleteVehicles(vehicles);
+          }
+        }
+      } catch (err) {
+        console.warn('Could not fetch complete vehicles from API:', err);
       }
-    });
-
-    return () => unsubscribe();
+    };
+    fetchVehicles();
+    return () => { isMounted = false; };
   }, [refreshKey]);
 
   // Helper: Match a vehicle to a category in VW_NAV_CATEGORIES
