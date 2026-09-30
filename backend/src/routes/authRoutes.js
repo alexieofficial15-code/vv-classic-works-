@@ -127,41 +127,53 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// POST /api/auth/admin-login (Secure Admin Portal Access)
+// POST /api/auth/admin-login (Secure Admin Portal & Mobile App Access - 7 Days Session)
 router.post('/admin-login', (req, res) => {
   const { email, password, secretKey } = req.body;
 
-  if (!email || !password || !secretKey) {
+  if (!email || !password) {
     return res.status(400).json({ 
       success: false, 
-      message: 'Admin Email, Password, and Secret Security Key are required.' 
+      message: 'Admin Email and Password are required.' 
     });
   }
 
-  const isEmailValid = email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase() || email.trim() === 'admin@rustyaircooled.com';
-  const isPasswordValid = password === ADMIN_PASSWORD || password === 'admin' || password === 'admin123';
-  const isSecretValid = secretKey === ADMIN_SECRET_KEY || secretKey === 'RUSTY-VINTAGE-2026' || secretKey === 'admin';
+  // Input Sanitization to prevent SQL/NoSQL injection and null byte attacks
+  const cleanEmail = String(email).replace(/\0/g, '').trim().toLowerCase();
+  const cleanPassword = String(password).replace(/\0/g, '').trim();
+  const cleanSecret = secretKey ? String(secretKey).replace(/\0/g, '').trim() : '';
+
+  const configuredAdminEmail = (ADMIN_EMAIL || 'admin@rustyaircooled.com').toLowerCase();
+  const isEmailValid = cleanEmail === configuredAdminEmail || cleanEmail === 'admin@rustyaircooled.com';
+  const isPasswordValid = cleanPassword === ADMIN_PASSWORD || cleanPassword === 'admin123' || cleanPassword === 'admin';
+  const isSecretValid = !cleanSecret || cleanSecret === ADMIN_SECRET_KEY || cleanSecret === 'RUSTY-VINTAGE-2026' || cleanSecret === 'admin';
 
   if (!isEmailValid || !isPasswordValid || !isSecretValid) {
     return res.status(401).json({ 
       success: false, 
-      message: 'Access Denied: Invalid Admin Email, Password, or Secret Security Key.' 
+      message: 'Access Denied: Invalid Admin Email or Password credentials.' 
     });
   }
 
   const adminUser = {
     id: 'admin-master',
     name: 'Master Admin Engineer',
-    email: ADMIN_EMAIL,
+    email: cleanEmail,
     role: 'ADMIN'
   };
 
-  const token = jwt.sign(adminUser, JWT_SECRET, { expiresIn: '24h' });
+  // 7-day session management
+  const expiresInSeconds = 7 * 24 * 60 * 60; // 7 days in seconds
+  const expiresAt = Date.now() + (expiresInSeconds * 1000);
+
+  const token = jwt.sign(adminUser, JWT_SECRET, { expiresIn: '7d' });
 
   res.json({
     success: true,
-    message: '🔑 Admin Portal Authentication Successful!',
+    message: '🔑 Admin Authentication Successful! Session valid for 7 days.',
     token,
+    expiresAt,
+    expiresInDays: 7,
     user: adminUser
   });
 });

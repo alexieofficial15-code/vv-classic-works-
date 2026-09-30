@@ -1043,15 +1043,88 @@ export default function UserDashboard({
                 </div>
               </div>
 
-              {/* Embedded Tawk.to Live Chat Container */}
-              <div className="w-full bg-[#181719] border border-[#584236]/60 rounded-xs overflow-hidden shadow-2xl">
-                <iframe
-                  src="https://tawk.to/chat/6abbacbfa6a44b3446f189f6/default"
-                  title="Contact Specialist Live Mobile Chat"
-                  className="w-full border-0 block"
-                  style={{ width: '100%', height: '620px', minHeight: '560px' }}
-                  allow="microphone; camera; clipboard-write; autoplay"
-                />
+              {/* Native Specialist Live Chat Container */}
+              <div className="w-full bg-[#181719] border border-[#584236]/60 rounded-xs overflow-hidden shadow-2xl flex flex-col h-[560px]">
+                {/* Chat Message Stream */}
+                <div 
+                  ref={chatScrollContainerRef} 
+                  className="flex-1 p-4 overflow-y-auto space-y-3.5 scrollbar-thin bg-gradient-to-b from-[#151416] to-[#121112]"
+                >
+                  {chatMessages.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center p-6 text-[#a78b7d] space-y-2">
+                      <div className="w-12 h-12 rounded-full bg-[#201f20] border border-[#584236]/50 flex items-center justify-center text-[#ff7a1a]">
+                        <MessageSquare className="w-6 h-6" />
+                      </div>
+                      <h4 className="text-sm font-bold text-white">Direct Line to Workshop Specialist</h4>
+                      <p className="text-xs max-w-sm">
+                        Ask about parts compatibility, engine rebuild quotes, delivery times, or technical questions. Your message alerts our engineer's mobile app directly.
+                      </p>
+                      <div className="flex flex-wrap gap-2 justify-center pt-2">
+                        {['Do you have stock for 1600cc twin port heads?', 'Need help with Beetle engine fitment', 'Can I request an expedited delivery?'].map((q, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => handleSendChatMessage(q)}
+                            className="text-[11px] bg-[#201f20] hover:bg-[#ff7a1a] hover:text-black text-[#e0c0b1] border border-[#584236]/50 px-2.5 py-1 rounded-full transition-colors cursor-pointer"
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    chatMessages.map((msg, idx) => {
+                      const isAdmin = msg.senderRole === 'ADMIN';
+                      return (
+                        <div
+                          key={msg.id || idx}
+                          className={`flex flex-col ${isAdmin ? 'items-start' : 'items-end'}`}
+                        >
+                          <div className="flex items-center gap-1.5 mb-1 px-1 text-[10px] font-mono text-[#a78b7d]">
+                            <span className={isAdmin ? 'text-[#ff7a1a] font-bold' : 'text-[#83cffb]'}>
+                              {isAdmin ? '🔧 Lead Specialist Engineer' : 'You'}
+                            </span>
+                            <span>•</span>
+                            <span>
+                              {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                            </span>
+                          </div>
+                          <div
+                            className={`max-w-[85%] sm:max-w-[75%] p-3.5 rounded-sm text-xs leading-relaxed ${
+                              isAdmin
+                                ? 'bg-[#201f20] border border-[#ff7a1a]/40 text-[#f0e9e4] shadow-md'
+                                : 'bg-[#ff7a1a] text-black font-medium shadow-md'
+                            }`}
+                          >
+                            <p className="whitespace-pre-wrap">{msg.message}</p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Chat Input Bar */}
+                <form 
+                  onSubmit={(e) => { e.preventDefault(); handleSendChatMessage(); }} 
+                  className="p-3 bg-[#1c1b1d] border-t border-[#584236]/50 flex items-center gap-2"
+                >
+                  <input
+                    type="text"
+                    value={chatInputText}
+                    onChange={(e) => setChatInputText(e.target.value)}
+                    placeholder="Type your message to the lead specialist... (Enter to send)"
+                    className="flex-1 bg-[#131314] border border-[#584236]/60 rounded-xs px-3.5 py-2.5 text-xs text-white placeholder-[#786154] focus:outline-none focus:border-[#ff7a1a]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!chatInputText.trim() || isSendingMessage}
+                    className="bg-[#ff7a1a] hover:bg-[#ffb68e] disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold px-4 py-2.5 rounded-xs text-xs uppercase flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Send</span>
+                  </button>
+                </form>
               </div>
 
               {/* Quick Info Cards */}

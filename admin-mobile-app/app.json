@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Vintage VW Admin Desk",
+    "slug": "vintage-vw-admin-desk",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#131314",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#131314"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.vintagevw.admindesk",
+      "adaptiveIcon": {
+        "backgroundColor": "#131314"
+      },
+      "permissions": [
+        "NOTIFICATIONS",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#ff7a1a"
+        }
+      ],
+      "expo-asset",
+      "expo-font",
+      "expo-status-bar"
+    ]
+  }
+}

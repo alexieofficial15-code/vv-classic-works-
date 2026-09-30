@@ -42,38 +42,6 @@
   </head>
   <body class="bg-[#131314] text-[#e5e2e3] antialiased selection:bg-[#ff7a1a] selection:text-black">
     <div id="root"></div>
-    <!-- Tawk.to Live Chat Script with Logged-in User Sync -->
-    <script type="text/javascript">
-      var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
-      Tawk_API.onLoad = function() {
-        try {
-          if (typeof Tawk_API.hideWidget === 'function') {
-            Tawk_API.hideWidget();
-          }
-          var savedUser = localStorage.getItem('currentUser');
-          if (savedUser) {
-            var user = JSON.parse(savedUser);
-            if (user && user.email) {
-              if (typeof Tawk_API.setAttributes === 'function') {
-                Tawk_API.setAttributes({
-                  name: user.name || 'Restorer Member',
-                  email: user.email,
-                  userId: user.id || ''
-                }, function(e){});
-              }
-            }
-          }
-        } catch (e) {}
-      };
-      (function(){
-        var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
-        s1.async = true;
-        s1.src = 'https://embed.tawk.to/6abbacbfa6a44b3446f189f6/default';
-        s1.charset = 'UTF-8';
-        s1.setAttribute('crossorigin', '*');
-        s0.parentNode.insertBefore(s1, s0);
-      })();
-    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

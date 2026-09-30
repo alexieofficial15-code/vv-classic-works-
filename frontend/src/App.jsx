@@ -432,32 +432,6 @@ export default function App() {
     }
   }, [userProfile, currentUser]);
 
-  // Synchronize Tawk.to Live Chat with Logged-in User Profile (Always hidden as floating widget)
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.Tawk_API) {
-      if (currentUser && currentUser.email) {
-        try {
-          if (typeof window.Tawk_API.setAttributes === 'function') {
-            window.Tawk_API.setAttributes({
-              name: currentUser.name || 'Restorer Member',
-              email: currentUser.email,
-              userId: currentUser.id || ''
-            }, function(e){});
-          }
-          if (typeof window.Tawk_API.hideWidget === 'function') {
-            window.Tawk_API.hideWidget();
-          }
-        } catch (e) {}
-      } else {
-        try {
-          if (typeof window.Tawk_API.hideWidget === 'function') {
-            window.Tawk_API.hideWidget();
-          }
-        } catch (e) {}
-      }
-    }
-  }, [currentUser]);
-
   const handleOpenUserDashboard = () => {
     if (!currentUser) {
       handleOpenAuth();
@@ -478,18 +452,6 @@ export default function App() {
     setSavedVehicles([]);
     setNotifications([]);
     navigateToPage('shop');
-
-    // End and hide Tawk.to chat session on logout to preserve user privacy
-    if (typeof window !== 'undefined' && window.Tawk_API) {
-      try {
-        if (typeof window.Tawk_API.endChat === 'function') {
-          window.Tawk_API.endChat();
-        }
-        if (typeof window.Tawk_API.hideWidget === 'function') {
-          window.Tawk_API.hideWidget();
-        }
-      } catch (e) {}
-    }
   };
   
   // Refresh trigger for parts catalog after admin edit/delete
