@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { API_BASE_URL } from './config/api';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
@@ -72,30 +72,205 @@ export default function App() {
   // Admin Panel requests store (fetched from GET /api/admin/requests)
   const [adminRequests, setAdminRequests] = useState([]);
 
-  // Sync and persist URL hash and view states across browser refreshes
-  useEffect(() => {
-    if (isAdminPanelOpen) {
-      localStorage.setItem('isAdminPanelOpen', 'true');
-      if (window.location.hash !== '#admin') {
-        window.history.replaceState(null, '', '#admin');
-      }
-    } else {
-      localStorage.setItem('isAdminPanelOpen', 'false');
-      if (currentPage === 'dashboard') {
-        if (window.location.hash !== '#dashboard') {
-          window.history.replaceState(null, '', '#dashboard');
-        }
+  // Cache of parts for fast lookup during browser Back / Forward navigation
+  const partsCacheRef = useRef(new Map());
+
+  // Navigation helpers that record history states (allowing Browser Back / Forward to work)
+  const navigateToPage = (newPage) => {
+    if (newPage === currentPage) return;
+    setCurrentPage(newPage);
+    localStorage.setItem('currentPage', newPage);
+    const targetHash = newPage === 'dashboard' ? '#dashboard' : '#shop';
+    if (window.location.hash !== targetHash) {
+      window.history.pushState({ page: newPage }, '', targetHash);
+    }
+  };
+
+  const handleViewPartDetails = (part) => {
+    if (!part) return;
+    partsCacheRef.current.set(String(part.id), part);
+    setActiveModalPart(part);
+    const partHash = `#part-${part.id}`;
+    if (window.location.hash !== partHash) {
+      window.history.pushState({ modal: 'part', partId: part.id, page: currentPage }, '', partHash);
+    }
+  };
+
+  const handleClosePartDetails = () => {
+    setActiveModalPart(null);
+    if (window.location.hash.startsWith('#part-')) {
+      if (window.history.state?.modal === 'part' && window.history.length > 1) {
+        window.history.back();
       } else {
-        if (window.location.hash === '#admin' || window.location.hash === '#dashboard') {
-          window.history.replaceState(null, '', window.location.pathname);
-        }
+        const fallback = currentPage === 'dashboard' ? '#dashboard' : '#shop';
+        window.history.replaceState({ page: currentPage }, '', fallback);
       }
     }
-  }, [isAdminPanelOpen, currentPage]);
+  };
 
+  const handleOpenCart = () => {
+    setIsCartOpen(true);
+    if (window.location.hash !== '#cart') {
+      window.history.pushState({ modal: 'cart', page: currentPage }, '', '#cart');
+    }
+  };
+
+  const handleCloseCart = () => {
+    setIsCartOpen(false);
+    if (window.location.hash === '#cart') {
+      if (window.history.state?.modal === 'cart' && window.history.length > 1) {
+        window.history.back();
+      } else {
+        const fallback = currentPage === 'dashboard' ? '#dashboard' : '#shop';
+        window.history.replaceState({ page: currentPage }, '', fallback);
+      }
+    }
+  };
+
+  const handleOpenGuidedSearch = () => {
+    setIsGuidedSearchOpen(true);
+    if (window.location.hash !== '#guided-search') {
+      window.history.pushState({ modal: 'guided-search', page: currentPage }, '', '#guided-search');
+    }
+  };
+
+  const handleCloseGuidedSearch = () => {
+    setIsGuidedSearchOpen(false);
+    if (window.location.hash === '#guided-search') {
+      if (window.history.state?.modal === 'guided-search' && window.history.length > 1) {
+        window.history.back();
+      } else {
+        const fallback = currentPage === 'dashboard' ? '#dashboard' : '#shop';
+        window.history.replaceState({ page: currentPage }, '', fallback);
+      }
+    }
+  };
+
+  const handleOpenAuth = () => {
+    setIsAuthOpen(true);
+    if (window.location.hash !== '#auth') {
+      window.history.pushState({ modal: 'auth', page: currentPage }, '', '#auth');
+    }
+  };
+
+  const handleCloseAuth = () => {
+    setIsAuthOpen(false);
+    if (window.location.hash === '#auth') {
+      if (window.history.state?.modal === 'auth' && window.history.length > 1) {
+        window.history.back();
+      } else {
+        const fallback = currentPage === 'dashboard' ? '#dashboard' : '#shop';
+        window.history.replaceState({ page: currentPage }, '', fallback);
+      }
+    }
+  };
+
+  const handleOpenAdminLogin = () => {
+    setIsAdminLoginOpen(true);
+    if (window.location.hash !== '#admin-login') {
+      window.history.pushState({ modal: 'admin-login', page: currentPage }, '', '#admin-login');
+    }
+  };
+
+  const handleCloseAdminLogin = () => {
+    setIsAdminLoginOpen(false);
+    if (window.location.hash === '#admin-login') {
+      if (window.history.state?.modal === 'admin-login' && window.history.length > 1) {
+        window.history.back();
+      } else {
+        const fallback = currentPage === 'dashboard' ? '#dashboard' : '#shop';
+        window.history.replaceState({ page: currentPage }, '', fallback);
+      }
+    }
+  };
+
+  const handleOpenAdminPanel = () => {
+    setIsAdminPanelOpen(true);
+    localStorage.setItem('isAdminPanelOpen', 'true');
+    if (window.location.hash !== '#admin') {
+      window.history.pushState({ page: 'admin' }, '', '#admin');
+    }
+  };
+
+  const handleCloseAdminPanel = () => {
+    setIsAdminPanelOpen(false);
+    localStorage.setItem('isAdminPanelOpen', 'false');
+    if (window.location.hash === '#admin') {
+      if (window.history.state?.page === 'admin' && window.history.length > 1) {
+        window.history.back();
+      } else {
+        const fallback = currentPage === 'dashboard' ? '#dashboard' : '#shop';
+        window.history.replaceState({ page: currentPage }, '', fallback);
+      }
+    }
+  };
+
+  // Browser History & Popstate (Back/Forward buttons) listener
   useEffect(() => {
-    localStorage.setItem('currentPage', currentPage);
-  }, [currentPage]);
+    // 1. Ensure initial page entry exists in browser history
+    const initialHash = window.location.hash;
+    const initialPage = initialHash === '#dashboard' ? 'dashboard' : 'shop';
+    if (!window.history.state) {
+      window.history.replaceState({ page: initialPage }, '', initialHash || '#shop');
+    }
+
+    // 2. React to Browser "Back" and "Forward" buttons
+    const handlePopState = (event) => {
+      const hash = window.location.hash;
+      const state = event.state || {};
+
+      // A. Part Detail Modal
+      if (hash.startsWith('#part-')) {
+        const partId = hash.replace('#part-', '');
+        const cached = partsCacheRef.current.get(String(partId));
+        if (cached) {
+          setActiveModalPart(cached);
+        } else {
+          fetch(`${API_BASE_URL}/api/admin/parts`)
+            .then(res => res.json())
+            .then(data => {
+              if (data.success && Array.isArray(data.data)) {
+                const found = data.data.find(p => String(p.id) === String(partId));
+                if (found) {
+                  partsCacheRef.current.set(String(found.id), found);
+                  setActiveModalPart(found);
+                }
+              }
+            })
+            .catch(() => {});
+        }
+      } else {
+        setActiveModalPart(null);
+      }
+
+      // B. Modals
+      setIsCartOpen(hash === '#cart');
+      setIsGuidedSearchOpen(hash === '#guided-search');
+      setIsAuthOpen(hash === '#auth');
+      setIsAdminLoginOpen(hash === '#admin-login');
+
+      // C. Admin Panel
+      if (hash === '#admin') {
+        setIsAdminPanelOpen(true);
+        localStorage.setItem('isAdminPanelOpen', 'true');
+      } else {
+        setIsAdminPanelOpen(false);
+        localStorage.setItem('isAdminPanelOpen', 'false');
+      }
+
+      // D. Page Level View (Dashboard vs Shop)
+      if (hash === '#dashboard' || state.page === 'dashboard') {
+        setCurrentPage('dashboard');
+        localStorage.setItem('currentPage', 'dashboard');
+      } else {
+        setCurrentPage('shop');
+        localStorage.setItem('currentPage', 'shop');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const fetchAdminRequests = async () => {
     if (!adminToken) return;
@@ -285,9 +460,9 @@ export default function App() {
 
   const handleOpenUserDashboard = () => {
     if (!currentUser) {
-      setIsAuthOpen(true);
+      handleOpenAuth();
     } else {
-      setCurrentPage('dashboard');
+      navigateToPage('dashboard');
     }
   };
 
@@ -302,7 +477,7 @@ export default function App() {
     setUserRequests([]);
     setSavedVehicles([]);
     setNotifications([]);
-    setCurrentPage('shop');
+    navigateToPage('shop');
 
     // End and hide Tawk.to chat session on logout to preserve user privacy
     if (typeof window !== 'undefined' && window.Tawk_API) {
@@ -341,7 +516,7 @@ export default function App() {
       }
       return [...prev, { ...part, quantity: 1 }];
     });
-    setIsCartOpen(true);
+    handleOpenCart();
   };
 
   const handleUpdateQuantity = (partId, newQty) => {
@@ -584,20 +759,20 @@ export default function App() {
           cartCount={cartItems.reduce((acc, item) => acc + item.quantity, 0)}
           userRequestsCount={userRequests.length}
           wishlistCount={wishlistIds.length}
-          onOpenCart={() => setIsCartOpen(true)}
+          onOpenCart={handleOpenCart}
           onOpenUserDashboard={handleOpenUserDashboard}
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          onOpenAuth={() => setIsAuthOpen(true)}
-          onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
+          onOpenAuth={handleOpenAuth}
+          onOpenAdminLogin={handleOpenAdminLogin}
           activeFilter={activeFilter}
           onSelectFilter={(filterObj, options) => {
-            setCurrentPage('shop');
+            navigateToPage('shop');
             handleSelectFilter(filterObj, options);
           }}
           currentUser={currentUser}
           onLogout={handleLogout}
-          onNavigateToShop={() => setCurrentPage('shop')}
+          onNavigateToShop={() => navigateToPage('shop')}
         />
       )}
 
@@ -605,11 +780,11 @@ export default function App() {
         {currentPage === 'dashboard' ? (
           <UserDashboard
             isOpen={true}
-            onClose={() => setCurrentPage('shop')}
-            onBackToShop={() => setCurrentPage('shop')}
+            onClose={() => navigateToPage('shop')}
+            onBackToShop={() => navigateToPage('shop')}
             currentUser={currentUser}
             authToken={authToken}
-            onOpenAuth={() => setIsAuthOpen(true)}
+            onOpenAuth={handleOpenAuth}
             onLogout={handleLogout}
             userRequests={userRequests}
             savedVehicles={savedVehicles}
@@ -621,14 +796,14 @@ export default function App() {
             onRemoveVehicle={handleRemoveVehicle}
             onSelectActiveVehicleFilter={(model) => {
               handleSelectFilter({ modelId: model });
-              setCurrentPage('shop');
+              navigateToPage('shop');
             }}
             onRequestItem={handleRequestItem}
             onReserveItem={handleReserveItem}
             onRemoveWishlist={(id) => setWishlistIds(prev => prev.filter(wId => wId !== id))}
             onUpdateProfile={(updated) => setUserProfile(updated)}
             onOpenCatalog={() => {
-              setCurrentPage('shop');
+              navigateToPage('shop');
               setTimeout(() => {
                 const catalogEl = document.getElementById('catalog');
                 if (catalogEl) catalogEl.scrollIntoView({ behavior: 'smooth' });
@@ -645,8 +820,8 @@ export default function App() {
               key={`vw-showcase-${refreshKey}`}
               refreshKey={refreshKey}
               onSelectVehicle={handleSelectFilter}
-              onOpenGuidedSearch={() => setIsGuidedSearchOpen(true)}
-              onViewVehicleDetails={(part) => setActiveModalPart(part)}
+              onOpenGuidedSearch={handleOpenGuidedSearch}
+              onViewVehicleDetails={handleViewPartDetails}
               onRequestVehicle={handleRequestItem}
               onReserveVehicle={handleReserveItem}
               onAddToCart={handleAddToCart}
@@ -658,7 +833,7 @@ export default function App() {
               onAddToCart={handleAddToCart}
               onRequestItem={handleRequestItem}
               onReserveItem={handleReserveItem}
-              onViewPartDetails={(part) => setActiveModalPart(part)}
+              onViewPartDetails={handleViewPartDetails}
               onToggleWishlist={handleToggleWishlist}
               wishlistIds={wishlistIds}
               searchTerm={searchTerm}
@@ -684,7 +859,7 @@ export default function App() {
       {/* Step-by-Step Guided Search Modal */}
       <GuidedSearchModal
         isOpen={isGuidedSearchOpen}
-        onClose={() => setIsGuidedSearchOpen(false)}
+        onClose={handleCloseGuidedSearch}
         onApplySelection={handleSelectFilter}
       />
 
@@ -692,7 +867,7 @@ export default function App() {
       {activeModalPart && (
         <PartDetailModal
           part={activeModalPart}
-          onClose={() => setActiveModalPart(null)}
+          onClose={handleClosePartDetails}
           onAddToCart={handleAddToCart}
           onRequestItem={handleRequestItem}
           onReserveItem={handleReserveItem}
@@ -702,7 +877,7 @@ export default function App() {
       {/* Shopping Cart Drawer */}
       <CartDrawer
         isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
+        onClose={handleCloseCart}
         cartItems={cartItems}
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveFromCart}
@@ -712,7 +887,7 @@ export default function App() {
       {/* User Authentication Modal Guard */}
       <AuthModal
         isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
+        onClose={handleCloseAuth}
         onAuthSuccess={(user, token) => {
           const userRole = (user?.role || '').toLowerCase();
           const userEmail = (user?.email || '').toLowerCase();
@@ -726,10 +901,10 @@ export default function App() {
           if (isAdmin) {
             setAdminToken(token || 'master-admin-token-2026');
             localStorage.setItem('adminToken', token || 'master-admin-token-2026');
-            setIsAdminPanelOpen(true);
-            setCurrentPage('shop');
+            handleOpenAdminPanel();
+            navigateToPage('shop');
           } else {
-            setCurrentPage('dashboard');
+            navigateToPage('dashboard');
           }
         }}
         cartTotal={cartTotal}
@@ -738,7 +913,7 @@ export default function App() {
       {/* Admin Gateway Login Modal */}
       <AdminLoginModal
         isOpen={isAdminLoginOpen}
-        onClose={() => setIsAdminLoginOpen(false)}
+        onClose={handleCloseAdminLogin}
         onAdminSuccess={(token, user) => {
           const adminSessionToken = token || 'master-admin-token-2026';
           setAdminToken(adminSessionToken);
@@ -747,8 +922,8 @@ export default function App() {
             setCurrentUser(user);
             localStorage.setItem('currentUser', JSON.stringify(user));
           }
-          setIsAdminPanelOpen(true);
-          setCurrentPage('shop');
+          handleOpenAdminPanel();
+          navigateToPage('shop');
         }}
       />
 
@@ -756,7 +931,7 @@ export default function App() {
       {isAdminPanelOpen && (
         <AdminPanel
           isOpen={isAdminPanelOpen}
-          onClose={() => setIsAdminPanelOpen(false)}
+          onClose={handleCloseAdminPanel}
           onLogout={handleLogout}
           onRefreshCatalog={handleRefreshCatalog}
           userRequests={adminRequests}

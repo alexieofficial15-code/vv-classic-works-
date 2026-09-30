@@ -246,6 +246,50 @@ export default function VWVehicleShowcase({
     }
   };
 
+  // Browser Back / Forward support for Vehicle Showcase Steps
+  useEffect(() => {
+    const handleShowcasePop = (e) => {
+      const hash = window.location.hash;
+      const state = e.state || {};
+
+      if (hash.startsWith('#model-') || (state.type === 'vw-step' && state.step === 3)) {
+        setCurrentStep(3);
+        const catId = state.catId;
+        if (catId) {
+          const cat = VW_NAV_CATEGORIES.find(c => c.id === catId);
+          if (cat) setSelectedCat(cat);
+          if (state.modId) {
+            const mod = cat?.models?.find(m => m.id === state.modId);
+            if (mod) setSelectedMod(mod);
+          }
+        }
+      } else if (hash.startsWith('#cat-') || (state.type === 'vw-step' && state.step === 2)) {
+        setCurrentStep(2);
+        const catId = state.catId || hash.replace('#cat-', '');
+        if (catId) {
+          const cat = VW_NAV_CATEGORIES.find(c => c.id === catId);
+          if (cat) setSelectedCat(cat);
+        }
+        setSelectedMod(null);
+      } else if (
+        !hash.startsWith('#part-') && 
+        hash !== '#cart' && 
+        hash !== '#guided-search' && 
+        hash !== '#auth' && 
+        hash !== '#admin-login' && 
+        hash !== '#admin' && 
+        hash !== '#dashboard'
+      ) {
+        setCurrentStep(1);
+        setSelectedCat(null);
+        setSelectedMod(null);
+      }
+    };
+
+    window.addEventListener('popstate', handleShowcasePop);
+    return () => window.removeEventListener('popstate', handleShowcasePop);
+  }, []);
+
   // Vehicle Step Handlers
   const handleSelectCategory = (category) => {
     setSelectedCat(category);
@@ -253,6 +297,9 @@ export default function VWVehicleShowcase({
     setSelectedEng(null);
     setSelectedSys(null);
     setCurrentStep(2);
+    if (window.location.hash !== `#cat-${category.id}`) {
+      window.history.pushState({ type: 'vw-step', step: 2, catId: category.id }, '', `#cat-${category.id}`);
+    }
   };
 
   const handleSelectModel = (model) => {
@@ -260,6 +307,9 @@ export default function VWVehicleShowcase({
     setSelectedEng(null);
     setSelectedSys(null);
     setCurrentStep(3);
+    if (window.location.hash !== `#model-${model.id}`) {
+      window.history.pushState({ type: 'vw-step', step: 3, catId: selectedCat?.id, modId: model.id }, '', `#model-${model.id}`);
+    }
   };
 
   const handleSelectEngine = (engine) => {
@@ -301,6 +351,12 @@ export default function VWVehicleShowcase({
   };
 
   const handleResetToCategory = () => {
+    if (currentStep > 1 && (window.location.hash.startsWith('#cat-') || window.location.hash.startsWith('#model-'))) {
+      if (window.history.length > 1) {
+        window.history.back();
+        return;
+      }
+    }
     setCurrentStep(1);
     setSelectedCat(null);
     setSelectedMod(null);
@@ -403,7 +459,15 @@ export default function VWVehicleShowcase({
 
               {currentStep > 1 && (
                 <button
-                  onClick={() => setCurrentStep(currentStep - 1)}
+                  onClick={() => {
+                    if (window.location.hash.startsWith('#cat-') || window.location.hash.startsWith('#model-')) {
+                      if (window.history.length > 1) {
+                        window.history.back();
+                        return;
+                      }
+                    }
+                    setCurrentStep(currentStep - 1);
+                  }}
                   className="min-h-[38px] px-2.5 py-1.5 text-[11px] sm:text-xs text-[#83cffb] hover:underline flex items-center gap-1 font-bold cursor-pointer"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
