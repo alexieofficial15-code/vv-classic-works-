@@ -323,6 +323,15 @@ export default function App() {
 
   // Cart Handlers
   const handleAddToCart = (part) => {
+    // Google Ads conversion tracking for Add to Cart
+    if (typeof window !== 'undefined' && typeof window.gtag_report_conversion === 'function') {
+      try {
+        window.gtag_report_conversion();
+      } catch (err) {
+        console.warn('Google Ads conversion tracking error:', err);
+      }
+    }
+
     setCartItems(prev => {
       const existing = prev.find(item => item.id === part.id);
       if (existing) {
@@ -633,8 +642,14 @@ export default function App() {
 
             {/* Premium Vehicle & CB Performance Parts System Showroom */}
             <VWVehicleShowcase 
+              key={`vw-showcase-${refreshKey}`}
+              refreshKey={refreshKey}
               onSelectVehicle={handleSelectFilter}
               onOpenGuidedSearch={() => setIsGuidedSearchOpen(true)}
+              onViewVehicleDetails={(part) => setActiveModalPart(part)}
+              onRequestVehicle={handleRequestItem}
+              onReserveVehicle={handleReserveItem}
+              onAddToCart={handleAddToCart}
             />
 
             {/* All Parts Page / Catalog Section */}

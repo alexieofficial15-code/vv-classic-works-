@@ -1,18 +1,108 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { VW_NAV_CATEGORIES, VEHICLE_SYSTEMS, DETAILED_ENGINES } from '../data/vwNavigationData';
-import { Car, Cpu, Wrench, ChevronRight, ArrowLeft, ArrowRight, Image as ImageIcon, Sparkles, CheckCircle2, SlidersHorizontal, Flame, Zap, Cog, Wind, Sliders, Disc, Shield, Armchair, Layers } from 'lucide-react';
+import { API_BASE_URL } from '../config/api';
+import { 
+  Car, Cpu, Wrench, ChevronRight, ArrowLeft, ArrowRight, Image as ImageIcon, 
+  Sparkles, CheckCircle2, SlidersHorizontal, Flame, Zap, Cog, Wind, Sliders, 
+  Disc, Shield, Armchair, Layers, Box, Eye, Check, Key, Gauge
+} from 'lucide-react';
 
 export default function VWVehicleShowcase({ 
   onSelectVehicle, 
-  onOpenGuidedSearch 
+  onOpenGuidedSearch,
+  onViewVehicleDetails,
+  onRequestVehicle,
+  onReserveVehicle,
+  onAddToCart,
+  refreshKey
 }) {
   const [navMode, setNavMode] = useState('vehicle'); // 'vehicle' | 'systems'
+  const [activeViewMode, setActiveViewMode] = useState('both'); // 'both' | 'vehicles-only' | 'parts-only'
   const [currentStep, setCurrentStep] = useState(1); // 1: Category, 2: Model, 3: Engine, 4: Systems & Subcategories
   const [selectedCat, setSelectedCat] = useState(null);
   const [selectedMod, setSelectedMod] = useState(null);
   const [selectedEng, setSelectedEng] = useState(null);
   const [selectedSys, setSelectedSys] = useState(null);
   const [expandedSystemId, setExpandedSystemId] = useState(null);
+
+  // Complete Vehicles Database State
+  const [completeVehicles, setCompleteVehicles] = useState(() => {
+    try {
+      const cached = localStorage.getItem('cached_db_parts');
+      const custom = localStorage.getItem('custom_parts');
+      const all = [
+        ...(custom ? JSON.parse(custom) : []),
+        ...(cached ? JSON.parse(cached) : [])
+      ];
+      return all.filter(p => 
+        p.listingType === 'vehicle' || 
+        p.systemCategory === 'vehicle-complete' ||
+        p.partSubcategory === 'Complete Vehicle' ||
+        p.specificPartCategory === 'Complete Vehicle' ||
+        p.subcatId === 'complete-vehicle'
+      );
+    } catch (e) {
+      return [];
+    }
+  });
+
+  // Fetch Complete Vehicles from API
+  useEffect(() => {
+    let isMounted = true;
+    const fetchVehicles = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/parts`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && isMounted) {
+            const customParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
+            const combined = [...customParts, ...json.data];
+            const unique = Array.from(new Map(combined.map(p => [p.id, p])).values());
+            const vehicles = unique.filter(p => 
+              p.listingType === 'vehicle' || 
+              p.systemCategory === 'vehicle-complete' ||
+              p.partSubcategory === 'Complete Vehicle' ||
+              p.specificPartCategory === 'Complete Vehicle' ||
+              p.subcatId === 'complete-vehicle'
+            );
+            setCompleteVehicles(vehicles);
+          }
+        }
+      } catch (err) {
+        console.warn('Could not fetch complete vehicles from API:', err);
+      }
+    };
+    fetchVehicles();
+    return () => { isMounted = false; };
+  }, [refreshKey]);
+
+  // Helper: Match a vehicle to a category in VW_NAV_CATEGORIES
+  const isVehicleInCategory = (vehicle, categoryId) => {
+    if (!vehicle || !categoryId) return false;
+    const cat = (vehicle.vehicleCategory || vehicle.carModelId || '').toLowerCase();
+    const title = (vehicle.title || '').toLowerCase();
+    const model = (vehicle.modelYearRange || vehicle.carModelName || '').toLowerCase();
+
+    if (categoryId === 'beetle-models' || categoryId === 'type-1') {
+      return cat === 'type-1' || cat === 'beetle-models' || title.includes('beetle') || model.includes('beetle') || title.includes('bug');
+    }
+    if (categoryId === 'bus-vans' || categoryId === 'type-2') {
+      return cat === 'type-2' || cat === 'bus-vans' || cat === 'bus-models' || title.includes('bus') || model.includes('bus') || title.includes('transporter') || title.includes('van') || title.includes('westfalia');
+    }
+    if (categoryId === 'classic-sports' || categoryId === 'type-14') {
+      return cat === 'classic-sports' || cat === 'type-14' || cat === 'ghia-models' || title.includes('ghia') || model.includes('ghia') || title.includes('356') || title.includes('karmann');
+    }
+    if (categoryId === 'type-3-type-4' || categoryId === 'type-3' || categoryId === 'type-4') {
+      return cat === 'type-3-type-4' || cat === 'type-3' || cat === 'type-4' || cat === 'type3-models' || title.includes('type 3') || title.includes('type 4') || title.includes('notchback') || title.includes('squareback') || title.includes('fastback');
+    }
+    if (categoryId === 'military-offroad') {
+      return cat === 'military-offroad' || cat === 'military' || title.includes('thing') || title.includes('kübelwagen') || title.includes('kuebelwagen') || title.includes('schwimmwagen') || title.includes('sand rail');
+    }
+    if (categoryId === 'custom-kit-cars') {
+      return cat === 'custom-kit-cars' || cat === 'custom' || title.includes('manx') || title.includes('buggy') || title.includes('kit') || title.includes('sterling') || title.includes('bradley');
+    }
+    return false;
+  };
 
   // Icon Map Helper for 10 Vehicle Systems
   const renderSystemIcon = (systemId) => {
@@ -93,6 +183,12 @@ export default function VWVehicleShowcase({
     setSelectedSys(null);
   };
 
+  // Vehicles matching currently selected category
+  const selectedCatVehicles = useMemo(() => {
+    if (!selectedCat) return [];
+    return completeVehicles.filter(v => isVehicleInCategory(v, selectedCat.id));
+  }, [completeVehicles, selectedCat]);
+
   return (
     <section id="vw-showcase" className="py-10 sm:py-16 md:py-20 bg-[#131314] relative border-b border-[#584236]/30 overflow-hidden font-technical-data">
       
@@ -109,14 +205,20 @@ export default function VWVehicleShowcase({
               <span>PRECISION VEHICLE DISCOVERY // CLASSIC AIRCOOLED VW WORKS</span>
             </div>
             <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-[#e5e2e3] font-h2 tracking-tight">
-              Find Parts For Your <span className="text-[#ff7a1a]">Volkswagen</span>
+              Find Parts & Complete <span className="text-[#ff7a1a]">Volkswagens</span>
             </h2>
             <p className="text-[#e0c0b1] text-xs sm:text-sm mt-1.5 max-w-2xl leading-relaxed">
-              Select your vehicle category and model to instantly isolate 100% compatible air-cooled spare parts.
+              Explore complete turnkey classic Volkswagen cars for sale and select your vehicle platform to isolate 100% compatible air-cooled spare parts.
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+            {completeVehicles.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#ff7a1a]/10 border border-[#ff7a1a]/40 text-[#ff7a1a] text-xs font-bold font-mono rounded-xs">
+                <Car className="w-3.5 h-3.5" />
+                <span>{completeVehicles.length} COMPLETE {completeVehicles.length === 1 ? 'VEHICLE' : 'VEHICLES'} IN STOCK</span>
+              </span>
+            )}
             <button
               onClick={onOpenGuidedSearch}
               className="min-h-[44px] px-4 py-2.5 sm:px-5 sm:py-2.5 text-[11px] sm:text-xs font-bold bg-[#ff7a1a] hover:bg-[#ffb68e] text-black rounded-xs transition-all uppercase tracking-wider flex items-center gap-1.5 glow-button cursor-pointer"
@@ -126,6 +228,155 @@ export default function VWVehicleShowcase({
             </button>
           </div>
         </div>
+
+        {/* 🚗 FEATURED COMPLETE VEHICLES FOR SALE (IF POSTED IN ADMIN) */}
+        {completeVehicles.length > 0 && (
+          <div className="mb-10 sm:mb-14 bg-[#181719]/90 border border-[#ff7a1a]/40 rounded-xs p-4 sm:p-6 shadow-2xl relative overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 sm:pb-4 border-b border-[#584236]/30 mb-4 sm:mb-6 gap-2">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-xs bg-[#ff7a1a] text-black">
+                  <Car className="w-4 h-4 sm:w-5 sm:h-5" />
+                </span>
+                <div>
+                  <h3 className="text-sm sm:text-lg font-bold text-white font-h2 uppercase tracking-wide flex items-center gap-2">
+                    <span>Complete Classic Vehicles For Sale</span>
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded font-mono font-bold">
+                      Workshop Certified
+                    </span>
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-[#a78b7d]">
+                    Authentic air-cooled restorations and turnkey vintage cars directly from our Texas garage.
+                  </p>
+                </div>
+              </div>
+              <span className="text-[11px] font-mono text-[#ff7a1a] font-bold">
+                {completeVehicles.length} {completeVehicles.length === 1 ? 'CAR AVAILABLE' : 'CARS AVAILABLE'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {completeVehicles.map((vehicle) => (
+                <div
+                  key={vehicle.id}
+                  className="group bg-[#201f20] border border-[#584236]/60 hover:border-[#ff7a1a] rounded-xs overflow-hidden transition-all duration-300 shadow-xl hover:shadow-[0_10px_35px_rgba(255,122,26,0.25)] hover:-translate-y-1 flex flex-col justify-between"
+                >
+                  <div>
+                    {/* Vehicle Photo Container */}
+                    <div className="relative h-48 sm:h-56 bg-black/80 overflow-hidden cursor-pointer" onClick={() => onViewVehicleDetails && onViewVehicleDetails(vehicle)}>
+                      <img 
+                        src={vehicle.image || 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=800&q=80'} 
+                        alt={vehicle.title} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#131314] via-transparent to-black/30"></div>
+                      
+                      {/* Top Badges */}
+                      <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
+                        <span className="bg-[#ff7a1a] text-black font-extrabold text-[9px] sm:text-[10px] font-mono uppercase px-2 py-0.5 rounded-xs shadow-md">
+                          COMPLETE VEHICLE
+                        </span>
+                        <span className="bg-black/85 backdrop-blur-md border border-emerald-500/50 text-emerald-400 font-mono text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-xs">
+                          {vehicle.titleStatus || 'Clean Title'}
+                        </span>
+                      </div>
+
+                      {/* Bottom Price Overlay */}
+                      <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-end justify-between pointer-events-none">
+                        <div className="bg-[#131314]/90 backdrop-blur-md border border-[#ff7a1a]/50 px-2.5 py-1 rounded-xs">
+                          <span className="text-[10px] font-mono text-slate-400 block leading-none">ASKING PRICE</span>
+                          <span className="text-base sm:text-lg font-extrabold text-[#ff7a1a] font-display">
+                            ${vehicle.price ? Number(vehicle.price).toLocaleString() : '0.00'} USD
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Vehicle Metadata Body */}
+                    <div className="p-3.5 sm:p-5 space-y-3">
+                      <div>
+                        <span className="text-[9px] sm:text-[10px] font-mono text-[#83cffb] uppercase font-bold tracking-wider block mb-0.5">
+                          {vehicle.carModelName || vehicle.modelYearRange || 'Classic Air-Cooled VW'}
+                        </span>
+                        <h4 
+                          onClick={() => onViewVehicleDetails && onViewVehicleDetails(vehicle)}
+                          className="text-sm sm:text-base font-bold text-white group-hover:text-[#ff7a1a] transition-colors leading-snug cursor-pointer line-clamp-1"
+                        >
+                          {vehicle.title}
+                        </h4>
+                      </div>
+
+                      {/* Fast Specs Matrix */}
+                      <div className="grid grid-cols-2 gap-1.5 text-[10px] sm:text-[11px] font-mono bg-[#131314] p-2.5 rounded-xs border border-[#584236]/40">
+                        {vehicle.engineInstalled && (
+                          <div className="truncate">
+                            <span className="text-[#a78b7d] block text-[9px]">ENGINE</span>
+                            <span className="text-white font-semibold truncate block">{vehicle.engineInstalled}</span>
+                          </div>
+                        )}
+                        {vehicle.mileage && (
+                          <div className="truncate">
+                            <span className="text-[#a78b7d] block text-[9px]">MILEAGE</span>
+                            <span className="text-[#ff7a1a] font-semibold truncate block">{vehicle.mileage}</span>
+                          </div>
+                        )}
+                        {vehicle.transmissionType && (
+                          <div className="truncate">
+                            <span className="text-[#a78b7d] block text-[9px]">TRANS</span>
+                            <span className="text-slate-300 font-semibold truncate block">{vehicle.transmissionType}</span>
+                          </div>
+                        )}
+                        {vehicle.vinNumber && (
+                          <div className="truncate">
+                            <span className="text-[#a78b7d] block text-[9px]">VIN</span>
+                            <span className="text-slate-300 font-semibold truncate block">{vehicle.vinNumber}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {vehicle.description && (
+                        <p className="text-[11px] text-[#a78b7d] line-clamp-2 leading-relaxed">
+                          {vehicle.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Vehicle Actions */}
+                  <div className="p-3.5 sm:p-5 pt-0 space-y-2 border-t border-[#584236]/30">
+                    <div className="flex items-center gap-2 pt-2">
+                      <button
+                        onClick={() => onViewVehicleDetails && onViewVehicleDetails(vehicle)}
+                        className="flex-1 min-h-[38px] text-xs bg-[#131314] hover:bg-[#1a191a] text-[#83cffb] hover:text-white border border-[#83cffb]/40 rounded-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Inspect Specs</span>
+                      </button>
+
+                      <button
+                        onClick={() => onRequestVehicle ? onRequestVehicle(vehicle) : (onAddToCart && onAddToCart(vehicle))}
+                        className="flex-1 min-h-[38px] text-xs bg-[#ff7a1a] hover:bg-[#ffb68e] text-black rounded-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                      >
+                        <Box className="w-3.5 h-3.5" />
+                        <span>Inquire / Buy</span>
+                      </button>
+                    </div>
+
+                    {onReserveVehicle && (
+                      <button
+                        onClick={() => onReserveVehicle(vehicle)}
+                        className="w-full min-h-[34px] text-[11px] bg-[#201f20] hover:bg-[#2b2a2b] text-purple-300 hover:text-white border border-purple-500/40 rounded-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Shield className="w-3 h-3" />
+                        <span>Reserve Car with Deposit</span>
+                      </button>
+                    )}
+                  </div>
+
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* MODE 1: VEHICLE-FIRST NAVIGATION FLOW */}
         {navMode === 'vehicle' && (
@@ -199,75 +450,139 @@ export default function VWVehicleShowcase({
             {/* STEP 1: VEHICLE CATEGORY CARDS */}
             {currentStep === 1 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
-                {VW_NAV_CATEGORIES.map((category) => (
-                  <div
-                    key={category.id}
-                    onClick={() => handleSelectCategory(category)}
-                    className="group relative cursor-pointer rounded-xs overflow-hidden border border-[#584236]/40 hover:border-[#ff7a1a] transition-all duration-300 bg-[#201f20]/60 backdrop-blur-md shadow-xl hover:shadow-[0_10px_35px_rgba(255,122,26,0.25)] hover:-translate-y-1 click-press flex flex-col justify-between"
-                  >
-                    <div className="relative h-40 sm:h-48 md:h-56 bg-black/70 overflow-hidden flex items-center justify-center">
-                      {category.image ? (
-                        <img 
-                          src={category.image} 
-                          alt={category.name} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-85 group-hover:opacity-100" 
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-[#181719] flex flex-col items-center justify-center text-[#584236] group-hover:text-[#ff7a1a] transition-colors p-4 text-center">
-                          <ImageIcon className="w-10 h-10 mb-1.5 group-hover:scale-110 transition-transform duration-300" />
-                          <span className="text-xs text-[#a78b7d] font-bold uppercase tracking-wider">
-                            {category.name}
+                {VW_NAV_CATEGORIES.map((category) => {
+                  const matchingVehicles = completeVehicles.filter(v => isVehicleInCategory(v, category.id));
+                  const categoryImage = matchingVehicles[0]?.image || category.image;
+
+                  return (
+                    <div
+                      key={category.id}
+                      onClick={() => handleSelectCategory(category)}
+                      className="group relative cursor-pointer rounded-xs overflow-hidden border border-[#584236]/40 hover:border-[#ff7a1a] transition-all duration-300 bg-[#201f20]/60 backdrop-blur-md shadow-xl hover:shadow-[0_10px_35px_rgba(255,122,26,0.25)] hover:-translate-y-1 click-press flex flex-col justify-between"
+                    >
+                      <div className="relative h-40 sm:h-48 md:h-56 bg-black/70 overflow-hidden flex items-center justify-center">
+                        {categoryImage ? (
+                          <img 
+                            src={categoryImage} 
+                            alt={category.name} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-85 group-hover:opacity-100" 
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-[#181719] flex flex-col items-center justify-center text-[#584236] group-hover:text-[#ff7a1a] transition-colors p-4 text-center">
+                            <ImageIcon className="w-10 h-10 mb-1.5 group-hover:scale-110 transition-transform duration-300" />
+                            <span className="text-xs text-[#a78b7d] font-bold uppercase tracking-wider">
+                              {category.name}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#131314] via-transparent to-black/40"></div>
+
+                        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
+                          {matchingVehicles.length > 0 ? (
+                            <span className="bg-[#ff7a1a] text-black text-[9px] sm:text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-xs flex items-center gap-1 shadow-md">
+                              <Car className="w-3 h-3" />
+                              <span>{matchingVehicles.length} {matchingVehicles.length === 1 ? 'Car For Sale' : 'Cars For Sale'}</span>
+                            </span>
+                          ) : (
+                            <span className="bg-[#131314]/90 backdrop-blur-md border border-[#ff7a1a]/40 text-[#ff7a1a] text-[9px] sm:text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-xs">
+                              {category.modelsCount}
+                            </span>
+                          )}
+                          <span className="bg-[#131314]/90 backdrop-blur-md border border-[#584236]/60 text-[#83cffb] text-[9px] sm:text-[10px] font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-xs">
+                            {category.partsCount}
                           </span>
                         </div>
-                      )}
+                      </div>
 
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#131314] via-transparent to-black/40"></div>
+                      <div className="p-3.5 sm:p-5 md:p-6 bg-[#201f20]/90 backdrop-blur-xl border-t border-[#584236]/30 flex-1 flex flex-col justify-between space-y-3 sm:space-y-4">
+                        <div>
+                          <span className="text-[9px] sm:text-[10px] text-[#ff7a1a] uppercase font-bold tracking-widest block mb-0.5">
+                            {category.subtitle}
+                          </span>
+                          <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#e5e2e3] group-hover:text-[#ff7a1a] transition-colors font-h2">
+                            {category.name}
+                          </h3>
+                          <p className="text-[11px] sm:text-xs text-[#a78b7d] mt-1.5 leading-relaxed line-clamp-2">
+                            {category.description}
+                          </p>
+                        </div>
 
-                      <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
-                        <span className="bg-[#131314]/90 backdrop-blur-md border border-[#ff7a1a]/40 text-[#ff7a1a] text-[9px] sm:text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-xs">
-                          {category.modelsCount}
-                        </span>
-                        <span className="bg-[#131314]/90 backdrop-blur-md border border-[#584236]/60 text-[#83cffb] text-[9px] sm:text-[10px] font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-xs">
-                          {category.partsCount}
-                        </span>
+                        <div className="pt-2.5 sm:pt-3 border-t border-[#584236]/30 flex items-center justify-between">
+                          <span className="text-[11px] sm:text-xs font-bold text-[#e0c0b1] group-hover:text-[#ff7a1a] transition-colors flex items-center gap-1 uppercase tracking-wider">
+                            <span>{matchingVehicles.length > 0 ? 'View Cars & Models' : 'Select Models'}</span>
+                            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform text-[#ff7a1a]" />
+                          </span>
+                          <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#131314] border border-[#584236]/60 group-hover:border-[#ff7a1a] flex items-center justify-center text-[#ff7a1a]">
+                            <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                          </span>
+                        </div>
                       </div>
                     </div>
-
-                    <div className="p-3.5 sm:p-5 md:p-6 bg-[#201f20]/90 backdrop-blur-xl border-t border-[#584236]/30 flex-1 flex flex-col justify-between space-y-3 sm:space-y-4">
-                      <div>
-                        <span className="text-[9px] sm:text-[10px] text-[#ff7a1a] uppercase font-bold tracking-widest block mb-0.5">
-                          {category.subtitle}
-                        </span>
-                        <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#e5e2e3] group-hover:text-[#ff7a1a] transition-colors font-h2">
-                          {category.name}
-                        </h3>
-                        <p className="text-[11px] sm:text-xs text-[#a78b7d] mt-1.5 leading-relaxed line-clamp-2">
-                          {category.description}
-                        </p>
-                      </div>
-
-                      <div className="pt-2.5 sm:pt-3 border-t border-[#584236]/30 flex items-center justify-between">
-                        <span className="text-[11px] sm:text-xs font-bold text-[#e0c0b1] group-hover:text-[#ff7a1a] transition-colors flex items-center gap-1 uppercase tracking-wider">
-                          <span>Select Models</span>
-                          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform text-[#ff7a1a]" />
-                        </span>
-                        <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#131314] border border-[#584236]/60 group-hover:border-[#ff7a1a] flex items-center justify-center text-[#ff7a1a]">
-                          <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
             {/* STEP 2: VEHICLE MODEL SELECTION */}
             {currentStep === 2 && selectedCat && (
               <div>
+                {/* Category-Specific Complete Vehicles (if any) */}
+                {selectedCatVehicles.length > 0 && (
+                  <div className="mb-6 p-4 sm:p-5 bg-gradient-to-r from-[#201f20] to-[#181719] border border-[#ff7a1a]/40 rounded-xs shadow-xl">
+                    <div className="flex items-center justify-between mb-3 border-b border-[#584236]/30 pb-2">
+                      <div className="flex items-center gap-2">
+                        <Car className="w-4 h-4 text-[#ff7a1a]" />
+                        <h4 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider font-h2">
+                          Complete Vehicles Available in {selectedCat.name} ({selectedCatVehicles.length})
+                        </h4>
+                      </div>
+                      <span className="text-[10px] text-[#ff7a1a] font-mono font-bold bg-[#ff7a1a]/10 px-2 py-0.5 border border-[#ff7a1a]/30 rounded">
+                        Turnkey Classics
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-2">
+                      {selectedCatVehicles.map(veh => (
+                        <div key={veh.id} className="bg-[#131314] border border-[#584236]/60 hover:border-[#ff7a1a] rounded-xs p-3 transition-all flex flex-col justify-between">
+                          <div className="flex gap-3">
+                            <img src={veh.image} alt={veh.title} className="w-20 h-20 object-cover rounded-xs border border-slate-800 shrink-0" />
+                            <div className="overflow-hidden">
+                              <span className="text-[9px] font-mono text-[#ff7a1a] font-bold block">{veh.mileage || 'Low Mileage'}</span>
+                              <h5 className="text-xs font-bold text-white truncate">{veh.title}</h5>
+                              <p className="text-xs font-extrabold text-[#ff7a1a] mt-1 font-display">
+                                ${veh.price ? Number(veh.price).toLocaleString() : '0.00'} USD
+                              </p>
+                              <span className="text-[9px] text-[#83cffb] font-mono block truncate">{veh.engineInstalled || 'Aircooled Engine'}</span>
+                            </div>
+                          </div>
+                          <div className="mt-3 pt-2 border-t border-[#584236]/40 flex gap-2">
+                            <button
+                              onClick={() => onViewVehicleDetails && onViewVehicleDetails(veh)}
+                              className="flex-1 text-[10px] bg-[#201f20] hover:bg-[#353436] text-white py-1.5 px-2 rounded-xs font-bold uppercase transition-colors"
+                            >
+                              Inspect
+                            </button>
+                            <button
+                              onClick={() => onRequestVehicle ? onRequestVehicle(veh) : (onAddToCart && onAddToCart(veh))}
+                              className="flex-1 text-[10px] bg-[#ff7a1a] hover:bg-[#ffb68e] text-black py-1.5 px-2 rounded-xs font-bold uppercase transition-colors"
+                            >
+                              Inquire
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-4 sm:mb-6 flex items-center justify-between">
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#e5e2e3] font-h2">
-                    Step 2: Select Model for <span className="text-[#ff7a1a]">{selectedCat.name}</span>
-                  </h3>
+                  <div>
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#e5e2e3] font-h2">
+                      Step 2: Select Model for <span className="text-[#ff7a1a]">{selectedCat.name}</span>
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-[#a78b7d] mt-1">Select a specific chassis model to browse compatible spare parts.</p>
+                  </div>
                   <span className="text-[11px] sm:text-xs text-[#a78b7d]">Showing {selectedCat.models.length} Models</span>
                 </div>
 
@@ -298,17 +613,19 @@ export default function VWVehicleShowcase({
                           <h4 className="text-sm sm:text-base font-bold text-[#e5e2e3] group-hover:text-[#ff7a1a] transition-colors">
                             {model.name}
                           </h4>
-                          <p className="text-[11px] sm:text-xs text-[#a78b7d] mt-1">
-                            Era: <span className="text-[#e0c0b1] font-bold">{model.era}</span>
-                          </p>
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {model.engines?.map((eng) => (
+                              <span key={eng} className="text-[9px] bg-[#131314] text-[#a78b7d] px-1.5 py-0.5 border border-[#584236]/30">
+                                {eng}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="mt-3 pt-2.5 sm:pt-3 border-t border-[#584236]/30 flex items-center justify-between text-[11px] sm:text-xs">
-                        <span className="text-[#83cffb] font-bold">{model.partsCount}</span>
-                        <span className="text-[#ff7a1a] font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform uppercase text-[9px] sm:text-[10px]">
-                          Select Systems <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                        </span>
+                      <div className="mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-[#584236]/30 flex items-center justify-between text-[11px] sm:text-xs text-[#ff7a1a] font-bold uppercase">
+                        <span>Browse Systems</span>
+                        <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </div>
                   ))}

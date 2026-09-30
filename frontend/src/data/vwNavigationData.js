@@ -396,13 +396,13 @@ export const VW_NAV_CATEGORIES = [
     description: 'Type 1 platforms including Beetle, Super Beetle, Convertible, Baja & Cal-Look.',
     modelsCount: '5+ Models',
     partsCount: '650+ Parts',
-    image: '',
+    image: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=800&q=80',
     models: [
-      { id: 'beetle-type-1', name: 'Volkswagen Beetle Type 1', era: '1946-1977', engines: ['1200cc', '1300cc', '1500cc', '1600cc', '1776cc'], partsCount: '480+ parts', image: '' },
-      { id: 'super-beetle', name: 'Super Beetle (1302 / 1303)', era: '1971-1979', engines: ['1600cc', '1776cc', '1914cc'], partsCount: '390+ parts', image: '' },
-      { id: 'convertible-beetle', name: 'Convertible Beetle', era: '1949-1980', engines: ['1300cc', '1500cc', '1600cc'], partsCount: '310+ parts', image: '' },
-      { id: 'baja-bug', name: 'Baja Bug', era: 'Off-Road Custom', engines: ['1600cc', '1776cc', '1914cc', '2110cc', '2276cc'], partsCount: '350+ parts', image: '' },
-      { id: 'cal-look-beetle', name: 'Cal-Look Beetle', era: 'Custom Vintage', engines: ['1776cc', '1914cc', '2276cc', '2332cc'], partsCount: '290+ parts', image: '' }
+      { id: 'beetle-type-1', name: 'Volkswagen Beetle Type 1', era: '1946-1977', engines: ['1200cc', '1300cc', '1500cc', '1600cc', '1776cc'], partsCount: '480+ parts', image: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=600&q=80' },
+      { id: 'super-beetle', name: 'Super Beetle (1302 / 1303)', era: '1971-1979', engines: ['1600cc', '1776cc', '1914cc'], partsCount: '390+ parts', image: 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=600&q=80' },
+      { id: 'convertible-beetle', name: 'Convertible Beetle', era: '1949-1980', engines: ['1300cc', '1500cc', '1600cc'], partsCount: '310+ parts', image: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=600&q=80' },
+      { id: 'baja-bug', name: 'Baja Bug', era: 'Off-Road Custom', engines: ['1600cc', '1776cc', '1914cc', '2110cc', '2276cc'], partsCount: '350+ parts', image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80' },
+      { id: 'cal-look-beetle', name: 'Cal-Look Beetle', era: 'Custom Vintage', engines: ['1776cc', '1914cc', '2276cc', '2332cc'], partsCount: '290+ parts', image: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=600&q=80' }
     ]
   },
   {
@@ -412,13 +412,13 @@ export const VW_NAV_CATEGORIES = [
     description: 'VW Transporters T1 Split, T2 Bay, Single/Double Cabs & Westfalia Campers.',
     modelsCount: '5+ Models',
     partsCount: '580+ Parts',
-    image: '',
+    image: 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=800&q=80',
     models: [
-      { id: 'bus-t1-split', name: 'Transporter T1 (Split Screen)', era: '1950-1967', engines: ['1200cc', '1500cc', '1600cc'], partsCount: '440+ parts', image: '' },
-      { id: 'bus-t2-bay', name: 'Transporter T2 (Bay Window)', era: '1967-1979', engines: ['1600cc', '1700cc', '1800cc', '2000cc'], partsCount: '460+ parts', image: '' },
-      { id: 'single-cab-pickup', name: 'Single Cab Pickup', era: '1950-1979', engines: ['1500cc', '1600cc'], partsCount: '280+ parts', image: '' },
-      { id: 'double-cab-pickup', name: 'Double Cab Pickup', era: '1953-1979', engines: ['1600cc', '1700cc', '2000cc'], partsCount: '260+ parts', image: '' },
-      { id: 'westfalia-camper', name: 'Westfalia Camper', era: '1951-1979', engines: ['1600cc', '1800cc', '2000cc'], partsCount: '380+ parts', image: '' }
+      { id: 'bus-t1-split', name: 'Transporter T1 (Split Screen)', era: '1950-1967', engines: ['1200cc', '1500cc', '1600cc'], partsCount: '440+ parts', image: 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=600&q=80' },
+      { id: 'bus-t2-bay', name: 'Transporter T2 (Bay Window)', era: '1967-1979', engines: ['1600cc', '1700cc', '1800cc', '2000cc'], partsCount: '460+ parts', image: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=600&q=80' },
+      { id: 'single-cab-pickup', name: 'Single Cab Pickup', era: '1950-1979', engines: ['1500cc', '1600cc'], partsCount: '280+ parts', image: 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=600&q=80' },
+      { id: 'double-cab-pickup', name: 'Double Cab Pickup', era: '1953-1979', engines: ['1600cc', '1700cc', '2000cc'], partsCount: '260+ parts', image: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=600&q=80' },
+      { id: 'westfalia-camper', name: 'Westfalia Camper', era: '1951-1979', engines: ['1600cc', '1800cc', '2000cc'], partsCount: '380+ parts', image: 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=600&q=80' }
     ]
   },
   {
@@ -428,12 +428,12 @@ export const VW_NAV_CATEGORIES = [
     description: 'Italian-designed Karmann Ghia Coupés, Convertibles & Type 34 platforms.',
     modelsCount: '4+ Models',
     partsCount: '410+ Parts',
-    image: '',
+    image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80',
     models: [
-      { id: 'karmann-ghia-coupe', name: 'Karmann Ghia Coupé (Type 14)', era: '1955-1974', engines: ['1200cc', '1300cc', '1500cc', '1600cc'], partsCount: '370+ parts', image: '' },
-      { id: 'karmann-ghia-convertible', name: 'Karmann Ghia Convertible', era: '1957-1974', engines: ['1300cc', '1500cc', '1600cc'], partsCount: '320+ parts', image: '' },
-      { id: 'type-34-ghia', name: 'Type 34 Karmann Ghia', era: '1961-1969', engines: ['1500cc', '1600cc'], partsCount: '240+ parts', image: '' },
-      { id: 'porsche-356-replica', name: '356 Speedster / Coupe Platform', era: 'Classic Sports', engines: ['1600cc', '1776cc', '1914cc'], partsCount: '290+ parts', image: '' }
+      { id: 'karmann-ghia-coupe', name: 'Karmann Ghia Coupé (Type 14)', era: '1955-1974', engines: ['1200cc', '1300cc', '1500cc', '1600cc'], partsCount: '370+ parts', image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=600&q=80' },
+      { id: 'karmann-ghia-convertible', name: 'Karmann Ghia Convertible', era: '1957-1974', engines: ['1300cc', '1500cc', '1600cc'], partsCount: '320+ parts', image: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=600&q=80' },
+      { id: 'type-34-ghia', name: 'Type 34 Karmann Ghia', era: '1961-1969', engines: ['1500cc', '1600cc'], partsCount: '240+ parts', image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=600&q=80' },
+      { id: 'porsche-356-replica', name: '356 Speedster / Coupe Platform', era: 'Classic Sports', engines: ['1600cc', '1776cc', '1914cc'], partsCount: '290+ parts', image: 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=600&q=80' }
     ]
   },
   {
@@ -443,12 +443,12 @@ export const VW_NAV_CATEGORIES = [
     description: 'Type 3 Notchback, Squareback, Fastback & Type 4 411/412 pancake platforms.',
     modelsCount: '4+ Models',
     partsCount: '340+ Parts',
-    image: '',
+    image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80',
     models: [
-      { id: 'type-3-notchback', name: 'Type 3 Notchback (1500 / 1600)', era: '1961-1973', engines: ['1500cc', '1600cc'], partsCount: '290+ parts', image: '' },
-      { id: 'type-3-squareback', name: 'Type 3 Squareback (Variant)', era: '1962-1973', engines: ['1500cc', '1600cc'], partsCount: '310+ parts', image: '' },
-      { id: 'type-3-fastback', name: 'Type 3 Fastback', era: '1965-1973', engines: ['1600cc'], partsCount: '270+ parts', image: '' },
-      { id: 'type-4-411-412', name: 'Type 4 (411 / 412 Sedan & Variant)', era: '1968-1974', engines: ['1700cc', '1800cc', '2000cc'], partsCount: '230+ parts', image: '' }
+      { id: 'type-3-notchback', name: 'Type 3 Notchback (1500 / 1600)', era: '1961-1973', engines: ['1500cc', '1600cc'], partsCount: '290+ parts', image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=600&q=80' },
+      { id: 'type-3-squareback', name: 'Type 3 Squareback (Variant)', era: '1962-1973', engines: ['1500cc', '1600cc'], partsCount: '310+ parts', image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=600&q=80' },
+      { id: 'type-3-fastback', name: 'Type 3 Fastback', era: '1965-1973', engines: ['1600cc'], partsCount: '270+ parts', image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=600&q=80' },
+      { id: 'type-4-411-412', name: 'Type 4 (411 / 412 Sedan & Variant)', era: '1968-1974', engines: ['1700cc', '1800cc', '2000cc'], partsCount: '230+ parts', image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=600&q=80' }
     ]
   },
   {
@@ -458,12 +458,12 @@ export const VW_NAV_CATEGORIES = [
     description: 'VW Thing (Type 181), Kübelwagen, Schwimmwagen & sand rail buggies.',
     modelsCount: '4+ Models',
     partsCount: '310+ Parts',
-    image: '',
+    image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80',
     models: [
-      { id: 'vw-thing-181', name: 'VW Thing (Type 181 / Trekker)', era: '1968-1983', engines: ['1500cc', '1600cc', '1776cc'], partsCount: '310+ parts', image: '' },
-      { id: 'kubelwagen-type-82', name: 'Kübelwagen (Type 82)', era: 'Vintage Military', engines: ['1100cc', '1200cc'], partsCount: '190+ parts', image: '' },
-      { id: 'schwimmwagen-type-166', name: 'Schwimmwagen (Type 166)', era: 'Amphibious Military', engines: ['1100cc', '1200cc'], partsCount: '150+ parts', image: '' },
-      { id: 'offroad-rail-buggy', name: 'Sand Rail / Dune Buggy Chassis', era: 'Custom Off-Road', engines: ['1776cc', '1914cc', '2110cc', '2276cc'], partsCount: '340+ parts', image: '' }
+      { id: 'vw-thing-181', name: 'VW Thing (Type 181 / Trekker)', era: '1968-1983', engines: ['1500cc', '1600cc', '1776cc'], partsCount: '310+ parts', image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80' },
+      { id: 'kubelwagen-type-82', name: 'Kübelwagen (Type 82)', era: 'Vintage Military', engines: ['1100cc', '1200cc'], partsCount: '190+ parts', image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80' },
+      { id: 'schwimmwagen-type-166', name: 'Schwimmwagen (Type 166)', era: 'Amphibious Military', engines: ['1100cc', '1200cc'], partsCount: '150+ parts', image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80' },
+      { id: 'offroad-rail-buggy', name: 'Sand Rail / Dune Buggy Chassis', era: 'Custom Off-Road', engines: ['1776cc', '1914cc', '2110cc', '2276cc'], partsCount: '340+ parts', image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80' }
     ]
   },
   {
@@ -473,12 +473,12 @@ export const VW_NAV_CATEGORIES = [
     description: 'Fiberglass Dune Buggies, Meyers Manx, Sterling & Bradley GT builds.',
     modelsCount: '4+ Models',
     partsCount: '280+ Parts',
-    image: '',
+    image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80',
     models: [
-      { id: 'meyers-manx-buggy', name: 'Meyers Manx Dune Buggy', era: '1964-Present', engines: ['1600cc', '1776cc', '1914cc', '2110cc'], partsCount: '320+ parts', image: '' },
-      { id: 'deserter-buggy', name: 'Deserter / Fiberglass Buggy', era: '1960s-1970s', engines: ['1600cc', '1776cc'], partsCount: '240+ parts', image: '' },
-      { id: 'sterling-kit-car', name: 'Sterling / Nova Kit Car', era: 'Custom Sports', engines: ['1776cc', '1914cc', '2276cc'], partsCount: '190+ parts', image: '' },
-      { id: 'bradley-gt', name: 'Bradley GT', era: '1970s Custom', engines: ['1600cc', '1776cc'], partsCount: '180+ parts', image: '' }
+      { id: 'meyers-manx-buggy', name: 'Meyers Manx Dune Buggy', era: '1964-Present', engines: ['1600cc', '1776cc', '1914cc', '2110cc'], partsCount: '320+ parts', image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80' },
+      { id: 'deserter-buggy', name: 'Deserter / Fiberglass Buggy', era: '1960s-1970s', engines: ['1600cc', '1776cc'], partsCount: '240+ parts', image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80' },
+      { id: 'sterling-kit-car', name: 'Sterling / Nova Kit Car', era: 'Custom Sports', engines: ['1776cc', '1914cc', '2276cc'], partsCount: '190+ parts', image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80' },
+      { id: 'bradley-gt', name: 'Bradley GT', era: '1970s Custom', engines: ['1600cc', '1776cc'], partsCount: '180+ parts', image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=600&q=80' }
     ]
   }
 ];

@@ -23,6 +23,22 @@
 
       gtag('config', 'AW-18481077913');
     </script>
+    <!-- Event snippet for Add to cart conversion page
+    In your html page, add the snippet and call gtag_report_conversion when someone clicks on the chosen link or button. -->
+    <script>
+      function gtag_report_conversion(url) {
+        var callback = function () {
+          if (typeof(url) != 'undefined') {
+            window.location = url;
+          }
+        };
+        gtag('event', 'conversion', {
+            'send_to': 'AW-18481077913/_W70CKWVyIsdEJm9u-xE',
+            'event_callback': callback
+        });
+        return false;
+      }
+    </script>
   </head>
   <body class="bg-[#131314] text-[#e5e2e3] antialiased selection:bg-[#ff7a1a] selection:text-black">
     <div id="root"></div>

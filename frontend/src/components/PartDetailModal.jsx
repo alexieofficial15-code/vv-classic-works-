@@ -74,6 +74,56 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
                 ${part.price ? part.price.toLocaleString() : '0.00'} USD
               </div>
 
+              {/* Complete Vehicle Documentation & Attributes (if listingType === 'vehicle') */}
+              {(part.listingType === 'vehicle' || part.vinNumber || part.engineInstalled) && (
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 sm:p-4 mb-3 sm:mb-4 space-y-2">
+                  <div className="text-[10px] sm:text-xs font-mono text-amber-400 font-bold uppercase tracking-wider flex items-center justify-between">
+                    <span>🚗 COMPLETE VEHICLE SPECIFICATION</span>
+                    <span className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30 text-[9px]">
+                      {part.titleStatus || 'Clean Title'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[10px] sm:text-xs font-mono">
+                    {part.vinNumber && (
+                      <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                        <span className="text-slate-500 block text-[9px]">VIN</span>
+                        <span className="text-white font-bold truncate block">{part.vinNumber}</span>
+                      </div>
+                    )}
+                    {part.mileage && (
+                      <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                        <span className="text-slate-500 block text-[9px]">MILEAGE</span>
+                        <span className="text-amber-300 font-bold truncate block">{part.mileage}</span>
+                      </div>
+                    )}
+                    {part.engineInstalled && (
+                      <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                        <span className="text-slate-500 block text-[9px]">ENGINE</span>
+                        <span className="text-white font-bold truncate block">{part.engineInstalled}</span>
+                      </div>
+                    )}
+                    {part.transmissionType && (
+                      <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                        <span className="text-slate-500 block text-[9px]">TRANSMISSION</span>
+                        <span className="text-white font-bold truncate block">{part.transmissionType}</span>
+                      </div>
+                    )}
+                    {part.exteriorColor && (
+                      <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                        <span className="text-slate-500 block text-[9px]">EXTERIOR COLOR</span>
+                        <span className="text-white font-bold truncate block">{part.exteriorColor}</span>
+                      </div>
+                    )}
+                    {part.interiorColor && (
+                      <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                        <span className="text-slate-500 block text-[9px]">INTERIOR COLOR</span>
+                        <span className="text-white font-bold truncate block">{part.interiorColor}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Provenance / Technical Description */}
               <div className="bg-slate-950/80 rounded-xl p-3 sm:p-3.5 border border-slate-800 mb-3 sm:mb-4">
                 <div className="text-[9px] sm:text-[10px] font-mono text-amber-400 uppercase mb-1 flex items-center gap-1">

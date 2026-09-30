@@ -747,12 +747,28 @@ export default function AdminPanel({
         const filteredLocal = localParts.filter(p => p.id !== targetId);
         localStorage.setItem('custom_parts', JSON.stringify(filteredLocal));
 
-        setStatusMessage(`✅ Successfully ${actionText} "${formData.partName}" to Cloud Database!`);
+        // Immediately update cached_db_parts so VW Vehicle Showcase & Catalog update instantly
+        try {
+          const cached = JSON.parse(localStorage.getItem('cached_db_parts') || '[]');
+          const updatedCached = [newPart, ...cached.filter(p => p.id !== targetId)];
+          localStorage.setItem('cached_db_parts', JSON.stringify(updatedCached));
+        } catch (e) {}
+
+        const successText = isVehicle 
+          ? `🚗 Successfully published Complete Vehicle "${formData.partName}"! It is now live in the Volkswagen Vehicle Showroom on the landing page.`
+          : `✅ Successfully ${actionText} "${formData.partName}" to Cloud Database!`;
+        setStatusMessage(successText);
       } else {
         // Fallback save to LocalStorage if server returns an error
         const localParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
         const filteredLocal = localParts.filter(p => p.id !== targetId);
         localStorage.setItem('custom_parts', JSON.stringify([newPart, ...filteredLocal]));
+
+        try {
+          const cached = JSON.parse(localStorage.getItem('cached_db_parts') || '[]');
+          const updatedCached = [newPart, ...cached.filter(p => p.id !== targetId)];
+          localStorage.setItem('cached_db_parts', JSON.stringify(updatedCached));
+        } catch (e) {}
 
         setStatusMessage(`⚠️ ${actionText} locally (${data?.message || 'Server error'}).`);
       }
@@ -762,12 +778,18 @@ export default function AdminPanel({
       const filteredLocal = localParts.filter(p => p.id !== targetId);
       localStorage.setItem('custom_parts', JSON.stringify([newPart, ...filteredLocal]));
 
+      try {
+        const cached = JSON.parse(localStorage.getItem('cached_db_parts') || '[]');
+        const updatedCached = [newPart, ...cached.filter(p => p.id !== targetId)];
+        localStorage.setItem('cached_db_parts', JSON.stringify(updatedCached));
+      } catch (e) {}
+
       const actionText = editingPartId ? 'Updated' : 'Published';
       setStatusMessage(`⚠️ Network offline: ${actionText} to local browser cache.`);
     } finally {
       setIsLoading(false);
       setEditingPartId(null);
-      setTimeout(() => setStatusMessage(null), 3500);
+      setTimeout(() => setStatusMessage(null), 4000);
       await fetchAdminData();
       if (onRefreshCatalog) onRefreshCatalog();
       setActiveTab('parts-list');
