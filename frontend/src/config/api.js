@@ -10,15 +10,7 @@ const getApiBaseUrl = () => {
     return envUrl.trim().replace(/\/+$/, ''); // Strip trailing slashes
   }
   
-  if (typeof window !== 'undefined' && window.location && window.location.hostname) {
-    const hostname = window.location.hostname;
-    // In local development or LAN testing (localhost, 127.0.0.1)
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return `http://${hostname}:5000`;
-    }
-  }
-  
-  // Production default fallback to live Render backend
+  // Connect to live Render backend by default (both in production and local dev/preview)
   return 'https://vv-classic-works.onrender.com';
 };
 

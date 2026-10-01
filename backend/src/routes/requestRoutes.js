@@ -5,7 +5,25 @@ import { dbService } from '../config/supabase.js';
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'vintage_secret';
 
-// Auth middleware matching orderRoutes.js
+// Optional Auth middleware for submitting requests (Allows both Guests and Registered Users)
+const optionalAuthenticate = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    req.user = null;
+    return next();
+  }
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+  } catch (err) {
+    req.user = null;
+  }
+  next();
+};
+
+// Auth middleware matching orderRoutes.js (for viewing private user requests)
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -43,21 +61,25 @@ const authenticateAdmin = (req, res, next) => {
   }
 };
 
-// POST /api/requests - Create a part request / reservation (Protected Route)
-router.post('/requests', authenticate, async (req, res) => {
+// POST /api/requests - Create a part request / reservation (Guest + Member Support)
+router.post('/requests', optionalAuthenticate, async (req, res) => {
   try {
-    const { id, partId, partTitle, partImage, sku, price, compatibility, type, status, userPhone, userCity } = req.body;
+    const { id, partId, partTitle, partImage, sku, price, compatibility, type, status, userName, userEmail, userPhone, userCity } = req.body;
 
     if (!partId && !partTitle) {
       return res.status(400).json({ success: false, message: 'Part details are required for request' });
     }
 
+    const finalUserId = req.user?.id || `guest-${Date.now()}`;
+    const finalUserName = req.user?.name || userName || 'Guest Restorer';
+    const finalUserEmail = req.user?.email || userEmail || 'guest@aircooledworks.com';
+
     const requestInput = {
       id: id || `REQ-${Math.floor(1000 + Math.random() * 9000)}`,
-      userId: req.user.id,
-      userName: req.user.name || 'Restorer Member',
-      userEmail: req.user.email,
-      userPhone: userPhone || req.user.phone || '',
+      userId: finalUserId,
+      userName: finalUserName,
+      userEmail: finalUserEmail,
+      userPhone: userPhone || req.user?.phone || '',
       userCity: userCity || req.user.city || '',
       partId: partId || '',
       partTitle: partTitle || 'Vintage Part',

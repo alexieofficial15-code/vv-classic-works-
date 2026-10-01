@@ -308,13 +308,14 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
 
                 <button
                   onClick={() => {
-                    if (onRequestItem) onRequestItem(part);
+                    if (onReserveItem) onReserveItem(part);
+                    else if (onRequestItem) onRequestItem(part);
                     onClose();
                   }}
-                  className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 bg-[#201f20] hover:bg-[#353436] border border-[#584236]/60 text-white py-2.5 sm:py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all uppercase tracking-wider cursor-pointer"
+                  className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 bg-[#181719] hover:bg-[#252426] border border-[#83cffb]/50 text-[#83cffb] hover:text-white py-2.5 sm:py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all uppercase tracking-wider cursor-pointer"
                 >
-                  <Box className="w-4 h-4" />
-                  <span>Request Item</span>
+                  <ShieldCheck className="w-4 h-4 text-[#83cffb]" />
+                  <span>Reserve Product</span>
                 </button>
               </div>
             </div>

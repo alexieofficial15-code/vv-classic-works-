@@ -578,9 +578,21 @@ export default function App() {
     handleOpenUserDashboard();
   };
 
+  // Guest Reservation Modal State
+  const [guestReservationPart, setGuestReservationPart] = useState(null);
+  const [guestResForm, setGuestResForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    city: '',
+    notes: ''
+  });
+  const [isSubmittingRes, setIsSubmittingRes] = useState(false);
+
   const handleReserveItem = async (part) => {
     if (!currentUser || !authToken) {
-      setIsAuthOpen(true);
+      // Allow seamless guest reservation
+      setGuestReservationPart(part);
       return;
     }
 
@@ -634,7 +646,61 @@ export default function App() {
       ...prev
     ]);
 
-    handleOpenUserDashboard();
+    alert(`Reservation Confirmed!\n\nYour reservation for "${part.title}" has been placed (Ref: #${record.id}). Our master technicians will hold this item for you.`);
+  };
+
+  const handleConfirmGuestReservation = async (e) => {
+    e.preventDefault();
+    if (!guestReservationPart) return;
+    setIsSubmittingRes(true);
+
+    const part = guestReservationPart;
+    const reqPayload = {
+      id: `REQ-${Math.floor(1000 + Math.random() * 9000)}`,
+      partId: part.id,
+      partTitle: part.title,
+      partImage: part.image,
+      sku: part.sku || part.oemNumber || 'N/A',
+      price: part.price || 0,
+      compatibility: part.compatibleModels && part.compatibleModels.length > 0 ? part.compatibleModels[0] : (part.modelYearRange || 'VW Beetle / Bus'),
+      type: 'RESERVE',
+      status: 'Reserved',
+      userName: guestResForm.name || 'Guest Restorer',
+      userEmail: guestResForm.email || 'guest@aircooledworks.com',
+      userPhone: guestResForm.phone || '',
+      userCity: guestResForm.city || '',
+      notes: guestResForm.notes || ''
+    };
+
+    let record = reqPayload;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/requests`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(reqPayload)
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        record = data.data;
+      }
+    } catch (err) {
+      console.warn('API guest reservation fallback:', err);
+    }
+
+    setUserRequests(prev => [record, ...prev.filter(r => r.id !== record.id)]);
+    refreshUserRequests();
+    if (adminToken) fetchAdminRequests();
+
+    // Trigger Google Ads conversion on guest reservation
+    triggerGoogleAdsConversion();
+
+    setIsSubmittingRes(false);
+    setGuestReservationPart(null);
+    setGuestResForm({ name: '', email: '', phone: '', city: '', notes: '' });
+
+    alert(`Reservation Confirmed!\n\nThank you, ${reqPayload.userName}! Your reservation for "${part.title}" is confirmed (Ref: #${record.id}).\nWe have held this item for you and our team will contact you via ${reqPayload.userPhone || reqPayload.userEmail} shortly.`);
   };
 
   const handleAddVehicle = (veh) => {
@@ -690,39 +756,50 @@ export default function App() {
 
   const cartTotal = cartItems.reduce((acc, item) => acc + ((item.price || 0) * item.quantity), 0);
 
-  // Auth Guard trigger from checkout
-  const handleProceedToCheckout = async () => {
-    if (!currentUser) {
-      setIsAuthOpen(true);
-    } else {
-      let orderId = `ORD-VINTAGE-${Math.floor(100000 + Math.random() * 900000)}`;
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/orders`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-          },
-          body: JSON.stringify({
-            items: cartItems,
-            totalAmount: cartTotal
-          })
-        });
-        const data = await res.json();
-        if (data.success && data.data?.id) {
-          orderId = data.data.id;
-          alert(`Order ${orderId} placed successfully for ${currentUser.name}! Confirmation sent to ${currentUser.email}.`);
-        } else {
-          alert(`Order placed successfully for ${currentUser.name}!`);
-        }
-      } catch (err) {
-        alert(`Order placed successfully for ${currentUser.name}! Confirmation email sent.`);
-      }
+  // Unified Order Placement Handler (Guest Checkout + Logged-in Members)
+  const handleProceedToCheckout = async (checkoutData = {}) => {
+    const finalName = checkoutData.name || currentUser?.name || 'Guest Restorer';
+    const finalEmail = checkoutData.email || currentUser?.email || 'guest@aircooledworks.com';
+    const finalPhone = checkoutData.phone || currentUser?.phone || '';
+    const finalAddress = checkoutData.shippingAddress || currentUser?.city || 'Workshop Pickup / Delivery Dispatch';
+    const finalNotes = checkoutData.notes || '';
 
-      setCartItems([]);
+    let orderId = `ORD-VINTAGE-${Math.floor(100000 + Math.random() * 900000)}`;
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
+      const res = await fetch(`${API_BASE_URL}/api/orders`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          items: cartItems,
+          totalAmount: cartTotal,
+          userName: finalName,
+          userEmail: finalEmail,
+          userPhone: finalPhone,
+          shippingAddress: finalAddress,
+          notes: finalNotes
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.data?.id) {
+        orderId = data.data.id;
+      }
+    } catch (err) {
+      console.warn('Backend order placement fallback:', err);
+    }
+
+    // Trigger Google Ads conversion tracking on order placement
+    triggerGoogleAdsConversion();
+
+    setCartItems([]);
+    refreshUserRequests();
+    if (adminToken) fetchAdminRequests();
+
+    if (currentUser) {
+      alert(`Order #${orderId} Placed Successfully!\n\nThank you, ${finalName}! Confirmation sent to ${finalEmail}.`);
       setIsCartOpen(false);
-      refreshUserRequests();
-      if (adminToken) fetchAdminRequests();
       handleOpenUserDashboard();
     }
   };
@@ -865,11 +942,135 @@ export default function App() {
         />
       )}
 
+      {/* Guest Reservation Modal */}
+      {guestReservationPart && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto font-technical-data select-none animate-in fade-in">
+          <div className="relative w-full max-w-lg bg-slate-900 border border-amber-500/40 rounded-2xl p-5 sm:p-6 shadow-2xl text-white my-auto space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🛡️</span>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold font-display text-white">Reserve Rare Vintage Part</h3>
+                  <span className="text-[10px] text-amber-400 font-mono">No upfront payment required • Workshop hold</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setGuestReservationPart(null)}
+                className="min-w-[36px] min-h-[36px] flex items-center justify-center text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer"
+                aria-label="Close reservation modal"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Part Preview */}
+            <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center gap-3">
+              {guestReservationPart.image && (
+                <img
+                  src={guestReservationPart.image}
+                  alt={guestReservationPart.title}
+                  className="w-14 h-14 object-cover rounded-lg border border-slate-800 shrink-0"
+                />
+              )}
+              <div className="flex-1 min-w-0">
+                <h4 className="text-xs font-bold text-white truncate font-display">{guestReservationPart.title}</h4>
+                <div className="text-[10px] text-slate-400 font-mono">
+                  OEM: {guestReservationPart.oemNumber || 'GENUINE'} • SKU: {guestReservationPart.sku || 'NOS'}
+                </div>
+                <div className="text-xs font-bold text-amber-400 font-mono">
+                  ${(guestReservationPart.price || 0).toLocaleString()} USD
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmGuestReservation} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-mono text-slate-400 mb-1">
+                  YOUR FULL NAME <span className="text-amber-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Michael Schmidt"
+                  value={guestResForm.name}
+                  onChange={(e) => setGuestResForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-mono text-slate-400 mb-1">
+                    EMAIL ADDRESS <span className="text-amber-400">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="name@email.com"
+                    value={guestResForm.email}
+                    onChange={(e) => setGuestResForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-mono text-slate-400 mb-1">
+                    PHONE / WHATSAPP <span className="text-amber-400">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="+1 (555) 019-2834"
+                    value={guestResForm.phone}
+                    onChange={(e) => setGuestResForm(prev => ({ ...prev, phone: e.target.value }))}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-mono text-slate-400 mb-1">
+                  DELIVERY CITY / STATE / COUNTRY
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Austin, Texas, USA"
+                  value={guestResForm.city}
+                  onChange={(e) => setGuestResForm(prev => ({ ...prev, city: e.target.value }))}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-mono text-slate-400 mb-1">
+                  NOTES / COMPATIBILITY QUESTIONS (OPTIONAL)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Need confirmation for 1971 Super Beetle dual port"
+                  value={guestResForm.notes}
+                  onChange={(e) => setGuestResForm(prev => ({ ...prev, notes: e.target.value }))}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmittingRes}
+                className="w-full min-h-[46px] bg-[#ff7a1a] hover:bg-[#ffb68e] text-black font-bold py-3 rounded-xl uppercase tracking-wider text-xs font-mono shadow-xl transition-all cursor-pointer disabled:opacity-50"
+              >
+                {isSubmittingRes ? 'Confirming Reservation...' : 'Confirm Reservation (Hold Item)'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Shopping Cart Drawer */}
       <CartDrawer
         isOpen={isCartOpen}
         onClose={handleCloseCart}
         cartItems={cartItems}
+        currentUser={currentUser}
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveFromCart}
         onProceedToCheckout={handleProceedToCheckout}

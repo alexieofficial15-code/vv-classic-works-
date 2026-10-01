@@ -176,16 +176,31 @@ export default function CatalogSection({
 
   const currentSystemObj = VEHICLE_SYSTEMS.find(s => s.id === selectedSystem);
   
+  // Clean stale test posts (like 'alloy' test drafts) from browser cache
+  const cleanStaleCache = (partsList) => {
+    if (!Array.isArray(partsList)) return [];
+    return partsList.filter(p => {
+      const titleLower = (p.title || '').trim().toLowerCase();
+      if (titleLower === 'alloy' || titleLower === 'test' || titleLower === 'testing') return false;
+      return true;
+    });
+  };
+
   // Initialize with SPARE_PARTS fallback so parts are instantly available on landing page
   const [catalogItems, setCatalogItems] = useState(() => {
     try {
+      // Purge unwanted test drafts from local storage
       const cached = localStorage.getItem('cached_db_parts');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        const cleaned = cleanStaleCache(parsed);
+        if (cleaned.length !== parsed.length) {
+          localStorage.setItem('cached_db_parts', JSON.stringify(cleaned));
+        }
+        if (cleaned.length > 0) return cleaned;
       }
     } catch (e) {}
-    return SPARE_PARTS;
+    return cleanStaleCache(SPARE_PARTS);
   });
   const [isLoadingParts, setIsLoadingParts] = useState(false);
 
@@ -199,17 +214,17 @@ export default function CatalogSection({
           const data = await res.json();
           if (data.success && Array.isArray(data.data) && isMounted && data.data.length > 0) {
             const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
-            const filteredServerParts = data.data.filter(p => !deletedIds.has(p.id));
-            setCatalogItems(filteredServerParts);
+            const cleanedServerParts = cleanStaleCache(data.data).filter(p => !deletedIds.has(p.id));
+            setCatalogItems(cleanedServerParts);
             try {
-              localStorage.setItem('cached_db_parts', JSON.stringify(filteredServerParts));
+              localStorage.setItem('cached_db_parts', JSON.stringify(cleanedServerParts));
             } catch (e) {}
           }
         }
       } catch (err) {
         console.warn('Backend server unreachable, using local spare parts database.');
         const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
-        setCatalogItems(SPARE_PARTS.filter(p => !deletedIds.has(p.id)));
+        setCatalogItems(cleanStaleCache(SPARE_PARTS).filter(p => !deletedIds.has(p.id)));
       } finally {
         if (isMounted) {
           setIsLoadingParts(false);
@@ -234,6 +249,10 @@ export default function CatalogSection({
   // Smart Filtering Logic
   const filteredParts = useMemo(() => {
     return catalogItems.filter((part) => {
+      // Exclude any unwanted mock or test posts
+      const titleLower = (part.title || '').trim().toLowerCase();
+      if (titleLower === 'alloy' || titleLower === 'test') return false;
+
       const searchLower = searchTerm ? searchTerm.toLowerCase() : '';
       const matchesSearch = !searchTerm || 
         (part.title && part.title.toLowerCase().includes(searchLower)) ||
@@ -518,6 +537,7 @@ export default function CatalogSection({
                   </div>
 
                   <div className="pt-2.5 sm:pt-3 border-t border-[#584236]/30 flex flex-col space-y-2">
+                    {/* Primary Button: ADD TO CART */}
                     <button
                       onClick={() => handleAdd(part)}
                       className="w-full min-h-[40px] sm:min-h-[44px] text-xs bg-[#ff7a1a] hover:bg-[#ffb68e] text-black font-bold py-2 px-3 rounded-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
@@ -526,19 +546,24 @@ export default function CatalogSection({
                       {isAdded ? 'Added To Cart!' : 'Add To Cart'}
                     </button>
 
-                    <div className="flex items-center gap-2">
+                    {/* Secondary Actions: RESERVE PRODUCT & SPECS */}
+                    <div className="grid grid-cols-2 gap-2">
                       <button
-                        onClick={() => onViewPartDetails(part)}
-                        className="flex-1 min-h-[36px] text-xs text-[#e0c0b1] hover:text-white bg-[#131314] hover:bg-[#1c1b1c] py-1.5 px-2 border border-[#584236]/50 rounded-xs flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                        onClick={() => onReserveItem ? onReserveItem(part) : onRequestItem && onRequestItem(part)}
+                        className="min-h-[38px] text-[11px] sm:text-xs text-[#83cffb] hover:text-white bg-[#181719] hover:bg-[#252426] py-1.5 px-2 border border-[#83cffb]/40 hover:border-[#83cffb] rounded-xs font-bold uppercase flex items-center justify-center gap-1 cursor-pointer transition-all shadow-xs"
+                        title="Reserve this rare item immediately"
                       >
-                        <Eye className="w-3 h-3" /> Specs
+                        <ShieldCheck className="w-3.5 h-3.5 text-[#83cffb]" />
+                        <span>Reserve</span>
                       </button>
 
                       <button
-                        onClick={() => onRequestItem ? onRequestItem(part) : onReserveItem && onReserveItem(part)}
-                        className="flex-1 min-h-[36px] text-xs text-[#83cffb] hover:text-white bg-[#201f20] hover:bg-[#353436] py-1.5 px-2 border border-[#584236]/60 rounded-xs font-bold uppercase flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                        onClick={() => onViewPartDetails(part)}
+                        className="min-h-[38px] text-[11px] sm:text-xs text-[#e0c0b1] hover:text-white bg-[#131314] hover:bg-[#1c1b1c] py-1.5 px-2 border border-[#584236]/50 rounded-xs flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                        title="View specifications and details"
                       >
-                        <Box className="w-3 h-3" /> Request
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Specs</span>
                       </button>
                     </div>
                   </div>
