@@ -458,6 +458,28 @@ export default function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const handleRefreshCatalog = () => setRefreshKey(prev => prev + 1);
 
+  // Google Ads Conversion Tracker Helper (Add to Cart & Product Reservation)
+  const triggerGoogleAdsConversion = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'conversion', {
+            'send_to': 'AW-18481077913/_W70CKWVyIsdEJm9u-xE'
+          });
+        } else if (typeof window.gtag_report_conversion === 'function') {
+          window.gtag_report_conversion();
+        } else if (Array.isArray(window.dataLayer)) {
+          window.dataLayer.push({
+            event: 'conversion',
+            send_to: 'AW-18481077913/_W70CKWVyIsdEJm9u-xE'
+          });
+        }
+      } catch (err) {
+        console.warn('Google Ads conversion tracking error:', err);
+      }
+    }
+  };
+
   // Cart Handlers
   const handleAddToCart = (part) => {
     // Validation guard: ensure valid part before updating state or firing tracking
@@ -477,25 +499,7 @@ export default function App() {
     });
 
     // Google Ads conversion tracking for Add to Cart: AW-18481077913/_W70CKWVyIsdEJm9u-xE
-    // Fires exactly once per successful Add to Cart action
-    if (typeof window !== 'undefined') {
-      try {
-        if (typeof window.gtag === 'function') {
-          window.gtag('event', 'conversion', {
-            'send_to': 'AW-18481077913/_W70CKWVyIsdEJm9u-xE'
-          });
-        } else if (typeof window.gtag_report_conversion === 'function') {
-          window.gtag_report_conversion();
-        } else if (Array.isArray(window.dataLayer)) {
-          window.dataLayer.push({
-            event: 'conversion',
-            send_to: 'AW-18481077913/_W70CKWVyIsdEJm9u-xE'
-          });
-        }
-      } catch (err) {
-        console.warn('Google Ads conversion tracking error:', err);
-      }
-    }
+    triggerGoogleAdsConversion();
 
     handleOpenCart();
   };
@@ -559,6 +563,9 @@ export default function App() {
     refreshUserRequests();
     if (adminToken) fetchAdminRequests();
 
+    // Trigger Google Ads conversion on product request
+    triggerGoogleAdsConversion();
+
     setNotifications(prev => [
       {
         title: 'Item Request Submitted',
@@ -614,6 +621,9 @@ export default function App() {
     setUserRequests(prev => [record, ...prev.filter(r => r.id !== record.id)]);
     refreshUserRequests();
     if (adminToken) fetchAdminRequests();
+
+    // Trigger Google Ads conversion on product reservation
+    triggerGoogleAdsConversion();
 
     setNotifications(prev => [
       {
