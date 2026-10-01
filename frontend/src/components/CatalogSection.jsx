@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Filter, Search, ShoppingBag, Eye, Heart, Layers, Check, CheckCircle2, Car, X, Image as ImageIcon, SlidersHorizontal, RotateCcw, ShieldCheck, Wrench, Box, ChevronLeft, ChevronRight } from 'lucide-react';
 import { VW_NAV_CATEGORIES, VEHICLE_SYSTEMS, ENGINE_COMPATIBILITIES, USAGE_TYPES } from '../data/vwNavigationData';
 import { API_BASE_URL } from '../config/api';
+import { SPARE_PARTS } from '../data/partsData';
 
 // Auto-Rotating & Swipeable Image Slider for Landing Page Part Cards
 function RotatingPartCardImage({ part, onClickImage }) {
@@ -175,27 +176,40 @@ export default function CatalogSection({
 
   const currentSystemObj = VEHICLE_SYSTEMS.find(s => s.id === selectedSystem);
   
-  // Initialize cleanly without partial stale cache so all parts load together at once
-  const [catalogItems, setCatalogItems] = useState([]);
-  const [isLoadingParts, setIsLoadingParts] = useState(true);
+  // Initialize with SPARE_PARTS fallback so parts are instantly available on landing page
+  const [catalogItems, setCatalogItems] = useState(() => {
+    try {
+      const cached = localStorage.getItem('cached_db_parts');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return SPARE_PARTS;
+  });
+  const [isLoadingParts, setIsLoadingParts] = useState(false);
 
   // Fetch all parts directly from Supabase / Backend at once
   useEffect(() => {
     let isMounted = true;
     const fetchCatalogParts = async () => {
-      setIsLoadingParts(true);
       try {
         const res = await fetch(`${API_BASE_URL}/api/admin/parts`);
         if (res.ok) {
           const data = await res.json();
-          if (data.success && Array.isArray(data.data) && isMounted) {
+          if (data.success && Array.isArray(data.data) && isMounted && data.data.length > 0) {
             const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
             const filteredServerParts = data.data.filter(p => !deletedIds.has(p.id));
             setCatalogItems(filteredServerParts);
+            try {
+              localStorage.setItem('cached_db_parts', JSON.stringify(filteredServerParts));
+            } catch (e) {}
           }
         }
       } catch (err) {
-        console.warn('Backend server unreachable:', err);
+        console.warn('Backend server unreachable, using local spare parts database.');
+        const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
+        setCatalogItems(SPARE_PARTS.filter(p => !deletedIds.has(p.id)));
       } finally {
         if (isMounted) {
           setIsLoadingParts(false);
@@ -505,10 +519,11 @@ export default function CatalogSection({
 
                   <div className="pt-2.5 sm:pt-3 border-t border-[#584236]/30 flex flex-col space-y-2">
                     <button
-                      onClick={() => onRequestItem ? onRequestItem(part) : onAddToCart(part)}
+                      onClick={() => handleAdd(part)}
                       className="w-full min-h-[40px] sm:min-h-[44px] text-xs bg-[#ff7a1a] hover:bg-[#ffb68e] text-black font-bold py-2 px-3 rounded-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
                     >
-                      <Box className="w-3.5 h-3.5" /> Request Item
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                      {isAdded ? 'Added To Cart!' : 'Add To Cart'}
                     </button>
 
                     <div className="flex items-center gap-2">
@@ -520,10 +535,10 @@ export default function CatalogSection({
                       </button>
 
                       <button
-                        onClick={() => onReserveItem && onReserveItem(part)}
-                        className="flex-1 min-h-[36px] text-xs text-[#ff7a1a] hover:text-white bg-[#201f20] hover:bg-[#353436] py-1.5 px-2 border border-[#584236]/60 rounded-xs font-bold uppercase flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                        onClick={() => onRequestItem ? onRequestItem(part) : onReserveItem && onReserveItem(part)}
+                        className="flex-1 min-h-[36px] text-xs text-[#83cffb] hover:text-white bg-[#201f20] hover:bg-[#353436] py-1.5 px-2 border border-[#584236]/60 rounded-xs font-bold uppercase flex items-center justify-center gap-1 cursor-pointer transition-colors"
                       >
-                        <ShieldCheck className="w-3 h-3" /> Reserve
+                        <Box className="w-3 h-3" /> Request
                       </button>
                     </div>
                   </div>

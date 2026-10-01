@@ -460,13 +460,10 @@ export default function App() {
 
   // Cart Handlers
   const handleAddToCart = (part) => {
-    // Google Ads conversion tracking for Add to Cart
-    if (typeof window !== 'undefined' && typeof window.gtag_report_conversion === 'function') {
-      try {
-        window.gtag_report_conversion();
-      } catch (err) {
-        console.warn('Google Ads conversion tracking error:', err);
-      }
+    // Validation guard: ensure valid part before updating state or firing tracking
+    if (!part || !part.id) {
+      console.warn('Invalid part object provided to handleAddToCart');
+      return;
     }
 
     setCartItems(prev => {
@@ -478,6 +475,28 @@ export default function App() {
       }
       return [...prev, { ...part, quantity: 1 }];
     });
+
+    // Google Ads conversion tracking for Add to Cart: AW-18481077913/_W70CKWVyIsdEJm9u-xE
+    // Fires exactly once per successful Add to Cart action
+    if (typeof window !== 'undefined') {
+      try {
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'conversion', {
+            'send_to': 'AW-18481077913/_W70CKWVyIsdEJm9u-xE'
+          });
+        } else if (typeof window.gtag_report_conversion === 'function') {
+          window.gtag_report_conversion();
+        } else if (Array.isArray(window.dataLayer)) {
+          window.dataLayer.push({
+            event: 'conversion',
+            send_to: 'AW-18481077913/_W70CKWVyIsdEJm9u-xE'
+          });
+        }
+      } catch (err) {
+        console.warn('Google Ads conversion tracking error:', err);
+      }
+    }
+
     handleOpenCart();
   };
 

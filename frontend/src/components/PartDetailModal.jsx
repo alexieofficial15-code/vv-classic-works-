@@ -297,24 +297,24 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
               <div className="flex flex-col sm:flex-row gap-2.5">
                 <button
                   onClick={() => {
-                    if (onRequestItem) onRequestItem(part);
+                    if (onAddToCart) onAddToCart(part);
                     onClose();
                   }}
                   className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 bg-[#ff7a1a] hover:bg-[#ffb68e] text-black py-2.5 sm:py-3 px-4 rounded-xl font-bold text-xs sm:text-sm shadow-xl transition-all uppercase tracking-wider cursor-pointer"
                 >
-                  <Box className="w-4 h-4" />
-                  <span>Request Item (${part.price ? part.price.toLocaleString() : '0.00'})</span>
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>Add To Cart (${part.price ? part.price.toLocaleString() : '0.00'})</span>
                 </button>
 
                 <button
                   onClick={() => {
-                    if (onReserveItem) onReserveItem(part);
+                    if (onRequestItem) onRequestItem(part);
                     onClose();
                   }}
-                  className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 bg-purple-600/30 hover:bg-purple-600 border border-purple-500/50 text-purple-200 hover:text-white py-2.5 sm:py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all uppercase tracking-wider cursor-pointer"
+                  className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 bg-[#201f20] hover:bg-[#353436] border border-[#584236]/60 text-white py-2.5 sm:py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition-all uppercase tracking-wider cursor-pointer"
                 >
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Reserve Item</span>
+                  <Box className="w-4 h-4" />
+                  <span>Request Item</span>
                 </button>
               </div>
             </div>
