@@ -118,9 +118,17 @@ CREATE TABLE IF NOT EXISTS public.messages (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Index for chat messages lookups
+-- Indexes for ultra-fast chat lookups & thread retrieval
 CREATE INDEX IF NOT EXISTS idx_messages_user_id ON public.messages(user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_created_at ON public.messages(created_at ASC);
+CREATE INDEX IF NOT EXISTS idx_messages_thread ON public.messages(user_id, created_at ASC);
+CREATE INDEX IF NOT EXISTS idx_messages_email ON public.messages(user_email);
+CREATE INDEX IF NOT EXISTS idx_messages_unread ON public.messages(user_id, is_read) WHERE is_read = false;
+
+-- Indexes for instant spare parts catalog filtering
+CREATE INDEX IF NOT EXISTS idx_spare_parts_category ON public.spare_parts(category);
+CREATE INDEX IF NOT EXISTS idx_spare_parts_car_model ON public.spare_parts(car_model_id);
+CREATE INDEX IF NOT EXISTS idx_spare_parts_price ON public.spare_parts(price);
 
 -- Enable Row Level Security (RLS) & Add Public Access Policies
 -- This ensures Supabase never rejects API queries when using Anon Key or Service Role Key
