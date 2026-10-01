@@ -26,14 +26,15 @@
     <!-- Event snippet for Add to cart conversion page -->
     <script>
       function gtag_report_conversion(url) {
-        if (typeof gtag === 'function') {
-          gtag('event', 'conversion', {
-            'send_to': 'AW-18481077913/_W70CKWVyIsdEJm9u-xE'
-          });
-        }
-        if (typeof url !== 'undefined' && url) {
-          window.location = url;
-        }
+        var callback = function () {
+          if (typeof(url) != 'undefined') {
+            window.location = url;
+          }
+        };
+        gtag('event', 'conversion', {
+            'send_to': 'AW-18481077913/_W70CKWVyIsdEJm9u-xE',
+            'event_callback': callback
+        });
         return false;
       }
     </script>
