@@ -6,14 +6,20 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const img1Path = path.resolve(__dirname, '../public/hero_engine_1.jpg');
-const img2Path = path.resolve(__dirname, '../public/hero_engine_2.jpg');
-const img3Path = path.resolve(__dirname, '../public/hero_engine_3.jpg');
-const outputPath = path.resolve(__dirname, '../public/hero_engine_video.webm');
+const imgPaths = [
+  path.resolve(__dirname, '../public/hero_engine_1.jpg'),
+  path.resolve(__dirname, '../public/hero_engine_2.jpg'),
+  path.resolve(__dirname, '../public/hero_engine_3.jpg'),
+  path.resolve(__dirname, '../public/hero_engine_4.jpg'),
+  path.resolve(__dirname, '../public/hero_engine_5.jpg'),
+  path.resolve(__dirname, '../public/hero_engine_6.jpg'),
+  path.resolve(__dirname, '../public/hero_engine_7.jpg'),
+];
 
-const img1Base64 = `data:image/jpeg;base64,${fs.readFileSync(img1Path).toString('base64')}`;
-const img2Base64 = `data:image/jpeg;base64,${fs.readFileSync(img2Path).toString('base64')}`;
-const img3Base64 = `data:image/jpeg;base64,${fs.readFileSync(img3Path).toString('base64')}`;
+const outputPath = path.resolve(__dirname, '../public/hero_engine_video.webm');
+const assetsOutputPath = path.resolve(__dirname, '../src/assets/hero_engine_video.webm');
+
+const base64Images = imgPaths.map(p => `data:image/jpeg;base64,${fs.readFileSync(p).toString('base64')}`);
 
 const html = `
 <!DOCTYPE html>
@@ -39,11 +45,7 @@ const html = `
         img.src = src;
       });
 
-      const images = await Promise.all([
-        loadImg('${img1Base64}'),
-        loadImg('${img2Base64}'),
-        loadImg('${img3Base64}')
-      ]);
+      const images = await Promise.all(${JSON.stringify(base64Images)}.map(src => loadImg(src)));
 
       const stream = canvas.captureStream(30);
       let mimeType = 'video/webm;codecs=vp9';
@@ -62,9 +64,9 @@ const html = `
       const chunks = [];
       recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
 
-      const durationPerSlide = 4000; // 4 seconds per image
-      const fadeDuration = 1200; // 1.2 seconds crossfade
-      const totalDuration = durationPerSlide * images.length; // 12 seconds total loop
+      const durationPerSlide = 3500; // 3.5 seconds per engine
+      const fadeDuration = 1100; // 1.1s smooth crossfade
+      const totalDuration = durationPerSlide * images.length;
       const fps = 30;
       const totalFrames = Math.floor((totalDuration / 1000) * fps);
 
@@ -93,7 +95,6 @@ const html = `
 
       function drawVignette() {
         ctx.save();
-        // Subtle cinematic vignette
         const grad = ctx.createRadialGradient(W / 2, H / 2, H * 0.25, W / 2, H / 2, W * 0.7);
         grad.addColorStop(0, 'rgba(10, 10, 12, 0)');
         grad.addColorStop(0.7, 'rgba(10, 10, 12, 0.4)');
@@ -101,7 +102,6 @@ const html = `
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, W, H);
 
-        // Top and bottom ambient darkening
         const topGrad = ctx.createLinearGradient(0, 0, 0, H * 0.35);
         topGrad.addColorStop(0, 'rgba(10, 10, 12, 0.6)');
         topGrad.addColorStop(1, 'rgba(10, 10, 12, 0)');
@@ -120,16 +120,14 @@ const html = `
         ctx.fillStyle = '#0f0f11';
         ctx.fillRect(0, 0, W, H);
 
-        // Ken Burns effect parameters for current slide
-        const currScale = 1.05 + slideProgress * 0.08;
-        const currPan = Math.sin(slideProgress * Math.PI) * 0.03;
+        const currScale = 1.04 + slideProgress * 0.07;
+        const currPan = Math.sin(slideProgress * Math.PI) * 0.025;
         drawCover(images[currentSlideIndex], currScale, currPan, 0, 1.0);
 
-        // Crossfade into next slide during transition
         const transitionStart = (durationPerSlide - fadeDuration) / durationPerSlide;
         if (slideProgress > transitionStart) {
           const fadeProgress = (slideProgress - transitionStart) / (1 - transitionStart);
-          const nextScale = 1.0 + fadeProgress * 0.06;
+          const nextScale = 1.0 + fadeProgress * 0.05;
           drawCover(images[nextSlideIndex], nextScale, 0, 0, fadeProgress);
         }
 
@@ -154,7 +152,7 @@ const html = `
 `;
 
 async function main() {
-  console.log('Launching browser to generate WebM video...');
+  console.log('Launching browser to generate 7-engine WebM video loop...');
   const browser = await puppeteer.launch({
     executablePath: 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
     headless: true,
@@ -165,12 +163,13 @@ async function main() {
   await page.setViewport({ width: 1280, height: 720 });
   await page.setContent(html);
 
-  console.log('Rendering frames and recording video stream (approx 12-14 seconds)...');
-  await page.waitForFunction('window._recordedBase64 !== undefined', { timeout: 35000 });
+  console.log('Rendering all 7 engine frames (approx 24-28 seconds)...');
+  await page.waitForFunction('window._recordedBase64 !== undefined', { timeout: 60000 });
 
   const base64Data = await page.evaluate(() => window._recordedBase64);
   const buffer = Buffer.from(base64Data, 'base64');
   fs.writeFileSync(outputPath, buffer);
+  fs.writeFileSync(assetsOutputPath, buffer);
   console.log(`Video generated successfully at: ${outputPath} (${(buffer.length / 1024 / 1024).toFixed(2)} MB)`);
 
   await browser.close();

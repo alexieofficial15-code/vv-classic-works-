@@ -1,56 +1,27 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Car, Wrench, ShieldCheck, Play, Pause } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Car, Wrench } from 'lucide-react';
 
-const ENGINE_BUILDS = [
-  {
-    id: 1,
-    title: 'Twin IDF 1914cc Turn-Key',
-    subtitle: 'Dual Weber 40 IDF • Polished Aluminum Tinware • Merged Header',
-    image: '/hero_engine_1.jpg',
-    tag: 'STREET / TOURING'
-  },
-  {
-    id: 2,
-    title: 'Porsche Axial Fan 2180cc',
-    subtitle: 'High-Flow Axial Fan Shroud • Dual Dellorto • Billet Pulley',
-    image: '/hero_engine_2.jpg',
-    tag: 'HIGH PERFORMANCE'
-  },
-  {
-    id: 3,
-    title: 'Competition 2276cc Stroker',
-    subtitle: 'Stainless Tuned Exhaust • Forged Pistons • Race Cam',
-    image: '/hero_engine_3.jpg',
-    tag: 'CUSTOM RACE BUILD'
-  }
+const ENGINE_IMAGES = [
+  '/hero_engine_1.jpg',
+  '/hero_engine_2.jpg',
+  '/hero_engine_3.jpg',
+  '/hero_engine_4.jpg',
+  '/hero_engine_5.jpg',
+  '/hero_engine_6.jpg',
+  '/hero_engine_7.jpg'
 ];
 
 export default function HeroSection({ onSelectCarModel }) {
-  const [isPlaying, setIsPlaying] = useState(true);
   const [activeEngineIndex, setActiveEngineIndex] = useState(0);
   const [useLiveVideo, setUseLiveVideo] = useState(true);
-  const videoRef = useRef(null);
 
-  // Toggle video play / pause
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play().catch(() => {});
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  // Auto-cycle through engine info when video is not active / slideshow mode
+  // Automatic smooth crossfade cycle through all 7 images as fallback or ambient sequence
   useEffect(() => {
-    if (useLiveVideo) return;
     const timer = setInterval(() => {
-      setActiveEngineIndex((prev) => (prev + 1) % ENGINE_BUILDS.length);
-    }, 4000);
+      setActiveEngineIndex((prev) => (prev + 1) % ENGINE_IMAGES.length);
+    }, 3800);
     return () => clearInterval(timer);
-  }, [useLiveVideo]);
+  }, []);
 
   const scrollToCatalog = () => {
     const catalogEl = document.getElementById('catalog');
@@ -66,28 +37,20 @@ export default function HeroSection({ onSelectCarModel }) {
     }
   };
 
-  const activeBuild = ENGINE_BUILDS[activeEngineIndex];
-
   return (
-    <section className="relative min-h-[580px] sm:min-h-[680px] lg:min-h-[720px] flex items-center justify-center overflow-hidden border-b border-[#584236]/30 bg-[#0e0e10] pt-6 sm:pt-10 pb-16 sm:pb-24">
+    <section className="relative min-h-[580px] sm:min-h-[660px] lg:min-h-[700px] flex items-center justify-center overflow-hidden border-b border-[#584236]/30 bg-[#0e0e10] pt-8 sm:pt-12 pb-16 sm:pb-24">
       
       {/* ========================================================================= */}
-      {/* Dynamic Video & Image Showcase Background (Inspired by Reference Design)  */}
+      {/* Dynamic Video & Fading Image Showcase Background                         */}
       {/* ========================================================================= */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        {/* Real Generated WebM Video Background */}
+        {/* Real Generated WebM Video Background (Smooth 7-Engine Video Loop) */}
         <video
-          ref={videoRef}
           autoPlay
           loop
           muted
           playsInline
           poster="/hero_engine_1.jpg"
-          onTimeUpdate={(e) => {
-            const time = e.currentTarget.currentTime;
-            const idx = Math.min(2, Math.floor(time / 4));
-            setActiveEngineIndex(idx);
-          }}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
             useLiveVideo ? 'opacity-85 scale-[1.01]' : 'opacity-0 pointer-events-none'
           }`}
@@ -97,17 +60,17 @@ export default function HeroSection({ onSelectCarModel }) {
           <source src="/hero_engine_video.mp4" type="video/mp4" />
         </video>
 
-        {/* High-Resolution Dynamic Image Slideshow Fallback & Overlay */}
+        {/* High-Resolution Fading Image Layer (All 7 Custom Aircooled Engines) */}
         {!useLiveVideo && (
           <div className="absolute inset-0 w-full h-full">
-            {ENGINE_BUILDS.map((build, idx) => (
+            {ENGINE_IMAGES.map((imgSrc, idx) => (
               <div
-                key={build.id}
+                key={imgSrc}
                 className={`absolute inset-0 bg-cover bg-center transition-all duration-1000 transform ${
                   idx === activeEngineIndex ? 'opacity-90 scale-105' : 'opacity-0 scale-100 pointer-events-none'
                 }`}
                 style={{
-                  backgroundImage: `url(${build.image})`,
+                  backgroundImage: `url(${imgSrc})`,
                   transition: 'opacity 1.2s ease-in-out, transform 4s ease-out'
                 }}
               />
@@ -154,7 +117,7 @@ export default function HeroSection({ onSelectCarModel }) {
         </h1>
 
         {/* Value Proposition Description */}
-        <p className="font-body-lg text-xs sm:text-base md:text-lg text-[#f0e3db] mb-6 sm:mb-8 max-w-2xl leading-relaxed px-2 font-normal drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+        <p className="font-body-lg text-xs sm:text-base md:text-lg text-[#f0e3db] mb-7 sm:mb-9 max-w-2xl leading-relaxed px-2 font-normal drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
           Discover hand-crafted turn-key boxer engines, precision dual-port carburetors, factory OEM casting numbers, and hard-to-find restoration components.
         </p>
 
@@ -175,46 +138,6 @@ export default function HeroSection({ onSelectCarModel }) {
             <Wrench className="w-4 h-4 text-[#83cffb]" />
             Browse Full Parts Catalog
           </button>
-        </div>
-
-        {/* Engine Showcase Indicator & Video Controller Floating Pill */}
-        <div className="mt-8 sm:mt-10 flex items-center justify-center gap-2 sm:gap-3 bg-[#131314]/85 backdrop-blur-xl border border-[#584236]/40 px-3 sm:px-4 py-1.5 rounded-full shadow-2xl">
-          <button 
-            onClick={togglePlay}
-            className="p-1.5 rounded-full hover:bg-white/10 text-[#ff7a1a] transition-all flex items-center justify-center cursor-pointer"
-            title={isPlaying ? "Pause Background Video" : "Play Background Video"}
-          >
-            {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-          </button>
-
-          <div className="h-3 w-px bg-white/20 mx-1" />
-
-          {/* Quick Engine Switchers (Seeks smoothly to that engine in the video loop) */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {ENGINE_BUILDS.map((build, idx) => (
-              <button
-                key={build.id}
-                onClick={() => {
-                  setActiveEngineIndex(idx);
-                  if (videoRef.current) {
-                    videoRef.current.currentTime = idx * 4;
-                    if (!isPlaying) {
-                      videoRef.current.play().catch(() => {});
-                      setIsPlaying(true);
-                    }
-                  }
-                }}
-                className={`text-[10px] sm:text-xs font-technical-data px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
-                  activeEngineIndex === idx
-                    ? 'bg-[#ff7a1a] text-black font-bold shadow-[0_0_10px_rgba(255,122,26,0.5)]'
-                    : 'text-white/70 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                <span>0{build.id}</span>
-                <span className="hidden md:inline">{build.title.split(' ')[0]}</span>
-              </button>
-            ))}
-          </div>
         </div>
 
       </div>
