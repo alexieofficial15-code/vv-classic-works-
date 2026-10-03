@@ -1,7 +1,6 @@
 import express from 'express';
 import { dbService } from '../config/supabase.js';
 import { ENGINE_HOTSPOTS, YOUTUBE_SHOWCASE } from '../data/db.js';
-import { getCatalogPayload, resolvePartImage } from '../services/catalogService.js';
 
 const router = express.Router();
 
@@ -45,46 +44,6 @@ router.get('/parts', async (req, res) => {
       count: results.length,
       data: results
     });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// GET /api/catalog - Lightweight public catalog (no inline base64 images, gzip + ETag)
-router.get('/catalog', async (req, res) => {
-  try {
-    const { body, gzip, etag } = await getCatalogPayload();
-    res.set('ETag', etag);
-    res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
-    res.set('Vary', 'Accept-Encoding');
-    if (req.headers['if-none-match'] === etag) {
-      return res.status(304).end();
-    }
-    res.type('application/json');
-    if (/\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
-      res.set('Content-Encoding', 'gzip');
-      return res.send(gzip);
-    }
-    res.send(body);
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// GET /api/parts/:id/image/:key - Serve one stored product photo as a real, cacheable image
-router.get('/parts/:id/image/:key', async (req, res) => {
-  try {
-    const image = await resolvePartImage(req.params.id, req.params.key);
-    if (!image) {
-      return res.status(404).json({ success: false, message: 'Image not found' });
-    }
-    res.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
-    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
-    if (image.type === 'redirect') {
-      return res.redirect(302, image.url);
-    }
-    res.type(image.mime);
-    res.send(image.buffer);
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

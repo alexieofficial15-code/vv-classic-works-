@@ -11,35 +11,17 @@ const ENGINE_IMAGES = [
   '/hero_engine_7.jpg'
 ];
 
-// The hero video is ~7.6 MB. On phones, tablets in portrait and data-saver connections we
-// show a single static poster image instead, which keeps the page fast and the LCP low.
-const shouldSkipHeroVideo = () => {
-  try {
-    if (typeof window === 'undefined') return false;
-    if (window.matchMedia && window.matchMedia('(max-width: 767px)').matches) return true;
-    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-    if (connection && (connection.saveData || /(^|-)2g$/.test(connection.effectiveType || ''))) return true;
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return true;
-  } catch (e) {
-    /* fall through */
-  }
-  return false;
-};
-
 export default function HeroSection({ onSelectCarModel }) {
   const [activeEngineIndex, setActiveEngineIndex] = useState(0);
-  const [skipVideo] = useState(shouldSkipHeroVideo);
-  const [useLiveVideo, setUseLiveVideo] = useState(() => !shouldSkipHeroVideo());
+  const [useLiveVideo, setUseLiveVideo] = useState(true);
 
-  // Crossfade through all 7 images only when the live video failed to load on a capable device.
-  // Static-poster mode (mobile / data saver) never cycles, so nothing extra is downloaded.
+  // Automatic smooth crossfade cycle through all 7 images as fallback or ambient sequence
   useEffect(() => {
-    if (useLiveVideo || skipVideo) return undefined;
     const timer = setInterval(() => {
       setActiveEngineIndex((prev) => (prev + 1) % ENGINE_IMAGES.length);
     }, 3800);
     return () => clearInterval(timer);
-  }, [useLiveVideo, skipVideo]);
+  }, []);
 
   const scrollToCatalog = () => {
     const catalogEl = document.getElementById('catalog');
@@ -62,37 +44,24 @@ export default function HeroSection({ onSelectCarModel }) {
       {/* Dynamic Video & Fading Image Showcase Background                         */}
       {/* ========================================================================= */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        {/* Real Generated WebM Video Background (Smooth 7-Engine Video Loop) - desktop only */}
-        {useLiveVideo && (
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="metadata"
-            poster="/hero_engine_1.jpg"
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 opacity-85 scale-[1.01]"
-            onError={() => setUseLiveVideo(false)}
-          >
-            <source src="/hero_engine_video.webm" type="video/webm" />
-          </video>
-        )}
-
-        {/* Static poster for mobile / data-saver visitors (single small image, LCP candidate) */}
-        {skipVideo && (
-          <img
-            src="/hero_engine_1.jpg"
-            alt="Hand-built aircooled VW engine"
-            width="1024"
-            height="767"
-            fetchPriority="high"
-            decoding="async"
-            className="absolute inset-0 w-full h-full object-cover opacity-85"
-          />
-        )}
+        {/* Real Generated WebM Video Background (Smooth 7-Engine Video Loop) */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          poster="/hero_engine_1.jpg"
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+            useLiveVideo ? 'opacity-85 scale-[1.01]' : 'opacity-0 pointer-events-none'
+          }`}
+          onError={() => setUseLiveVideo(false)}
+        >
+          <source src="/hero_engine_video.webm" type="video/webm" />
+          <source src="/hero_engine_video.mp4" type="video/mp4" />
+        </video>
 
         {/* High-Resolution Fading Image Layer (All 7 Custom Aircooled Engines) */}
-        {!useLiveVideo && !skipVideo && (
+        {!useLiveVideo && (
           <div className="absolute inset-0 w-full h-full">
             {ENGINE_IMAGES.map((imgSrc, idx) => (
               <div

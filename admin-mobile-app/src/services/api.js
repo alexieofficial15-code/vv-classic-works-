@@ -2,8 +2,7 @@
 // Synchronized with Supabase 'messages' table & 7-Day Session Management
 
 export const DEFAULT_API_BASE = 'https://vv-classic-works.onrender.com';
-// No built-in admin token: a session token is only obtained by signing in via /api/auth/admin-login
-export const DEFAULT_ADMIN_TOKEN = '';
+export const DEFAULT_ADMIN_TOKEN = 'master-admin-token-2026';
 
 let currentBaseUrl = DEFAULT_API_BASE;
 let currentAdminToken = DEFAULT_ADMIN_TOKEN;

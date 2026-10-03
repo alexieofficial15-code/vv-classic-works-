@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { safeStorage } from '../utils/safeStorage';
 import { VW_NAV_CATEGORIES, VEHICLE_SYSTEMS, DETAILED_ENGINES } from '../data/vwNavigationData';
-import { fetchCatalog } from '../data/catalogStore';
+import { API_BASE_URL } from '../config/api';
 import { 
   Car, Cpu, Wrench, ChevronLeft, ChevronRight, ArrowLeft, ArrowRight, Image as ImageIcon, 
   Sparkles, CheckCircle2, SlidersHorizontal, Flame, Zap, Cog, Wind, Sliders, 
@@ -86,8 +85,6 @@ function CategoryImageRotator({ images, categoryName, onOpenGallery, activeVehic
         key={currentIndex}
         src={currentImage} 
         alt={`${categoryName} photo ${currentIndex + 1}`} 
-        loading="lazy"
-        decoding="async" 
         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100 animate-in fade-in duration-500" 
       />
 
@@ -174,29 +171,33 @@ export default function VWVehicleShowcase({
   // Complete Vehicles Database State - loads all complete vehicles cleanly at once
   const [completeVehicles, setCompleteVehicles] = useState([]);
 
-  // Complete vehicles come from the shared catalog request (data/catalogStore.js)
+  // Fetch Complete Vehicles from API
   useEffect(() => {
     let isMounted = true;
-    const loadVehicles = async () => {
+    const fetchVehicles = async () => {
       try {
-        const parts = await fetchCatalog();
-        if (!isMounted) return;
-        const deletedIds = new Set(safeStorage.getJSON('deleted_part_ids', []));
-        const vehicles = parts.filter(p =>
-          !deletedIds.has(p.id) && (
-            p.listingType === 'vehicle' ||
-            p.systemCategory === 'vehicle-complete' ||
-            p.partSubcategory === 'Complete Vehicle' ||
-            p.specificPartCategory === 'Complete Vehicle' ||
-            p.subcatId === 'complete-vehicle'
-          )
-        );
-        setCompleteVehicles(vehicles);
+        const res = await fetch(`${API_BASE_URL}/api/admin/parts`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && isMounted) {
+            const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
+            const vehicles = json.data.filter(p => 
+              !deletedIds.has(p.id) && (
+                p.listingType === 'vehicle' || 
+                p.systemCategory === 'vehicle-complete' ||
+                p.partSubcategory === 'Complete Vehicle' ||
+                p.specificPartCategory === 'Complete Vehicle' ||
+                p.subcatId === 'complete-vehicle'
+              )
+            );
+            setCompleteVehicles(vehicles);
+          }
+        }
       } catch (err) {
         console.warn('Could not fetch complete vehicles from API:', err);
       }
     };
-    loadVehicles();
+    fetchVehicles();
     return () => { isMounted = false; };
   }, [refreshKey]);
 
@@ -581,7 +582,7 @@ export default function VWVehicleShowcase({
                       <div className="space-y-3 sm:space-y-4">
                         <div className="h-28 sm:h-36 bg-[#131314] border border-[#584236]/40 rounded-xs overflow-hidden flex items-center justify-center group-hover:border-[#ff7a1a]/60 transition-colors relative">
                           {model.image ? (
-                            <img src={model.image} alt={model.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                            <img src={model.image} alt={model.name} className="w-full h-full object-cover" />
                           ) : (
                             <div className="text-center text-[#584236] group-hover:text-[#ff7a1a] transition-colors p-3">
                               <Car className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-1" />

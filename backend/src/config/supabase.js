@@ -398,12 +398,6 @@ export function mapMessageToDb(msg) {
  */
 let inMemoryMessages = loadDiskMessages();
 
-const PARTS_CACHE_TTL_MS = 60 * 1000;
-let partsCache = { data: null, at: 0 };
-export function invalidatePartsCache() {
-  partsCache = { data: null, at: 0 };
-}
-
 /**
  * DB Data Access Abstraction Layer (100% Supabase Database)
  */
@@ -411,19 +405,12 @@ export const dbService = {
   // --- SPARE PARTS ---
   async getParts() {
     if (!isSupabaseConfigured) throw new Error('Supabase credentials missing');
-    // Short-lived in-memory cache: the table holds large base64 images, so hitting
-    // Supabase on every page view is slow. Any admin write invalidates it immediately.
-    if (partsCache.data && Date.now() - partsCache.at < PARTS_CACHE_TTL_MS) {
-      return partsCache.data;
-    }
     const { data, error } = await supabase.from('spare_parts').select('*').order('created_at', { ascending: false });
     if (error) {
       console.error('Error fetching spare_parts from Supabase:', error.message);
       throw error;
     }
-    const parts = data ? data.map(mapPartFromDb) : [];
-    partsCache = { data: parts, at: Date.now() };
-    return parts;
+    return data ? data.map(mapPartFromDb) : [];
   },
 
   async addPart(partData) {
@@ -476,7 +463,6 @@ export const dbService = {
 
     const dbRow = mapPartToDb(rawPart);
     const { data, error } = await supabase.from('spare_parts').insert([dbRow]).select();
-    invalidatePartsCache();
     if (error) {
       console.error('Error inserting part into Supabase:', error.message);
       throw error;
@@ -489,7 +475,6 @@ export const dbService = {
     const dbRow = mapPartToDb({ ...updates, id });
     delete dbRow.id; // Don't overwrite PK
     const { data, error } = await supabase.from('spare_parts').update(dbRow).eq('id', id).select();
-    invalidatePartsCache();
     if (error) {
       console.error('Error updating part in Supabase:', error.message);
       throw error;
@@ -500,7 +485,6 @@ export const dbService = {
   async deletePart(id) {
     if (!isSupabaseConfigured) throw new Error('Supabase credentials missing');
     const { error } = await supabase.from('spare_parts').delete().eq('id', id);
-    invalidatePartsCache();
     if (error) {
       console.error('Error deleting part from Supabase:', error.message);
       throw error;

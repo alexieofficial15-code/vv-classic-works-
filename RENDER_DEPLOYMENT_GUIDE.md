@@ -38,10 +38,10 @@ In the Render Dashboard under **Environment Variables**, add the following keys 
 | `PORT` | Render internal port | `10000` (or leave default) |
 | `SUPABASE_URL` | Your Supabase Project URL | `https://xyzcompany.supabase.co` |
 | `SUPABASE_ANON_KEY` | Your Supabase Public Anon Key | `eyJhbGciOi...` |
-| `JWT_SECRET` | Secret key for JWT tokens (required, `openssl rand -hex 48`) | `<long-random-string>` |
-| `ADMIN_EMAIL` | Master Admin Email (required) | `<your-admin-email>` |
-| `ADMIN_PASSWORD` | Master Admin Password (required) | `<strong-unique-password>` |
-| `ADMIN_SECRET_KEY` | Optional extra admin key | `<random-key>` |
+| `JWT_SECRET` | Secret key for JWT tokens | `your_secret_jwt_key_here` |
+| `ADMIN_EMAIL` | Master Admin Email | `admin@rustyaircooled.com` |
+| `ADMIN_PASSWORD` | Master Admin Password | `admin123` |
+| `ADMIN_SECRET_KEY` | Admin Secret Auth Key | `RUSTY-VINTAGE-2026` |
 
 ---
 

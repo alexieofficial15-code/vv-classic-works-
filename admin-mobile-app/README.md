@@ -18,7 +18,7 @@ A dedicated React Native (Expo) mobile application designed specifically for the
 
 3. **Admin Sign-In Authentication Page**:
    - Access to the mobile app is strictly guarded behind a secure Sign-In page (`LoginScreen.js`).
-   - Admin logs in with the `ADMIN_EMAIL` / `ADMIN_PASSWORD` configured on the backend.
+   - Admin logs in with email (`admin@rustyaircooled.com` or custom admin email) and password.
    - Supports alternative secret token / passkey authentication for engineer override.
 
 4. **7-Day Session Management**:
@@ -70,7 +70,7 @@ npx expo start
 - The app will load onto your phone in seconds!
 
 ### Step 4: Sign In
-- Log in with the admin credentials configured on the backend (`ADMIN_EMAIL` / `ADMIN_PASSWORD`). There are no built-in defaults.
+- Log in with your admin credentials (default: `admin@rustyaircooled.com` / `admin123`).
 - Your session is now active and will remain signed in for **7 days**.
 
 ---

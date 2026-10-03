@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { safeStorage } from '../utils/safeStorage';
 import { Filter, Search, ShoppingBag, Eye, Heart, Layers, Check, CheckCircle2, Car, X, Image as ImageIcon, SlidersHorizontal, RotateCcw, ShieldCheck, Wrench, Box, ChevronLeft, ChevronRight } from 'lucide-react';
 import { VW_NAV_CATEGORIES, VEHICLE_SYSTEMS, ENGINE_COMPATIBILITIES, USAGE_TYPES } from '../data/vwNavigationData';
-import { fetchCatalog, getCachedCatalog } from '../data/catalogStore';
+import { API_BASE_URL } from '../config/api';
 import { SPARE_PARTS } from '../data/partsData';
 
 // Auto-Rotating & Swipeable Image Slider for Landing Page Part Cards
@@ -92,8 +91,6 @@ function RotatingPartCardImage({ part, onClickImage }) {
         key={currentIndex}
         src={currentImage}
         alt={`${part.title} photo ${currentIndex + 1}`}
-        loading="lazy"
-        decoding="async" 
         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 animate-in fade-in"
       />
 
@@ -189,39 +186,52 @@ export default function CatalogSection({
     });
   };
 
-  // The catalog comes from one shared, lightweight request (see data/catalogStore.js).
-  // If it was already fetched (e.g. by another section) we render it immediately;
-  // otherwise we show the skeleton instead of stale placeholder parts.
-  const isDeleted = (deletedIds, part) => deletedIds.has(part.id);
+  // Initialize with SPARE_PARTS fallback so parts are instantly available on landing page
   const [catalogItems, setCatalogItems] = useState(() => {
-    const shared = getCachedCatalog();
-    if (!shared) return [];
-    const deletedIds = new Set(safeStorage.getJSON('deleted_part_ids', []));
-    return cleanStaleCache(shared).filter(p => !isDeleted(deletedIds, p));
+    try {
+      // Purge unwanted test drafts from local storage
+      const cached = localStorage.getItem('cached_db_parts');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const cleaned = cleanStaleCache(parsed);
+        if (cleaned.length !== parsed.length) {
+          localStorage.setItem('cached_db_parts', JSON.stringify(cleaned));
+        }
+        if (cleaned.length > 0) return cleaned;
+      }
+    } catch (e) {}
+    return cleanStaleCache(SPARE_PARTS);
   });
-  const [isLoadingParts, setIsLoadingParts] = useState(() => !getCachedCatalog());
+  const [isLoadingParts, setIsLoadingParts] = useState(false);
 
+  // Fetch all parts directly from Supabase / Backend at once
   useEffect(() => {
     let isMounted = true;
-    const loadCatalog = async () => {
-      const deletedIds = new Set(safeStorage.getJSON('deleted_part_ids', []));
+    const fetchCatalogParts = async () => {
       try {
-        const parts = await fetchCatalog();
-        if (!isMounted) return;
-        const cleaned = cleanStaleCache(parts).filter(p => !isDeleted(deletedIds, p));
-        setCatalogItems(cleaned.length > 0 ? cleaned : cleanStaleCache(SPARE_PARTS).filter(p => !isDeleted(deletedIds, p)));
+        const res = await fetch(`${API_BASE_URL}/api/admin/parts`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.data) && isMounted && data.data.length > 0) {
+            const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
+            const cleanedServerParts = cleanStaleCache(data.data).filter(p => !deletedIds.has(p.id));
+            setCatalogItems(cleanedServerParts);
+            try {
+              localStorage.setItem('cached_db_parts', JSON.stringify(cleanedServerParts));
+            } catch (e) {}
+          }
+        }
       } catch (err) {
         console.warn('Backend server unreachable, using local spare parts database.');
-        if (isMounted) {
-          setCatalogItems(cleanStaleCache(SPARE_PARTS).filter(p => !isDeleted(deletedIds, p)));
-        }
+        const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
+        setCatalogItems(cleanStaleCache(SPARE_PARTS).filter(p => !deletedIds.has(p.id)));
       } finally {
         if (isMounted) {
           setIsLoadingParts(false);
         }
       }
     };
-    loadCatalog();
+    fetchCatalogParts();
     return () => { isMounted = false; };
   }, []);
 

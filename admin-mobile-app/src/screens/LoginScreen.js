@@ -15,8 +15,8 @@ import { DEFAULT_API_BASE, loginAdmin, setApiConfig, sanitizeClientInput } from 
 import { saveAdminSession } from '../services/session';
 
 export default function LoginScreen({ onLoginSuccess, isSessionExpired = false }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@rustyaircooled.com');
+  const [password, setPassword] = useState('admin123');
   const [serverUrl, setServerUrl] = useState(DEFAULT_API_BASE);
   const [useTokenMode, setUseTokenMode] = useState(false);
   const [tokenInput, setTokenInput] = useState('');
@@ -156,7 +156,7 @@ export default function LoginScreen({ onLoginSuccess, isSessionExpired = false }
                 <MaterialCommunityIcons name="email-outline" size={18} color="#ff7a1a" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="admin email"
+                  placeholder="admin@rustyaircooled.com"
                   placeholderTextColor="#786154"
                   value={email}
                   onChangeText={setEmail}
