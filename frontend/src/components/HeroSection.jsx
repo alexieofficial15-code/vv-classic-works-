@@ -42,15 +42,16 @@ export default function HeroSection({ onSelectCarModel }) {
       
       {/* ========================================================================= */}
       {/* Dynamic Video & Fading Image Showcase Background                         */}
-      {/* ========================================================================= */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        {/* Real Generated WebM Video Background (Smooth 7-Engine Video Loop) */}
+        {/* Autoplaying Hero Video with metadata preload and instant poster display */}
         <video
           autoPlay
           loop
           muted
           playsInline
+          preload="metadata"
           poster="/hero_engine_1.jpg"
+          style={{ backgroundImage: 'url(/hero_engine_1.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
             useLiveVideo ? 'opacity-85 scale-[1.01]' : 'opacity-0 pointer-events-none'
           }`}

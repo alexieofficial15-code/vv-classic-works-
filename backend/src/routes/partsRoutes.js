@@ -1,10 +1,10 @@
 import express from 'express';
-import { dbService } from '../config/supabase.js';
+import { dbService, supabase, isSupabaseConfigured, mapPartFromDb } from '../config/supabase.js';
 import { ENGINE_HOTSPOTS, YOUTUBE_SHOWCASE } from '../data/db.js';
 
 const router = express.Router();
 
-// GET /api/parts - Search & filter spare parts (Guest Accessible)
+// GET /api/parts - Search & filter spare parts (Lightweight List, Guest Accessible)
 router.get('/parts', async (req, res) => {
   try {
     const { search, era, category, carModelId, sortBy } = req.query;
@@ -14,7 +14,7 @@ router.get('/parts', async (req, res) => {
     if (search) {
       const q = search.toLowerCase();
       results = results.filter(p =>
-        p.title.toLowerCase().includes(q) ||
+        (p.title && p.title.toLowerCase().includes(q)) ||
         (p.oemNumber && p.oemNumber.toLowerCase().includes(q)) ||
         (p.carModelName && p.carModelName.toLowerCase().includes(q)) ||
         (p.castingCode && p.castingCode.toLowerCase().includes(q))
@@ -39,24 +39,75 @@ router.get('/parts', async (req, res) => {
       results.sort((a, b) => b.price - a.price);
     }
 
+    // Map to lightweight summary (stripping large base64 image strings to eliminate 25MB payload)
+    const lightweightParts = results.map(p => {
+      let thumbnailUrl = null;
+      if (p.thumbnailUrl) {
+        thumbnailUrl = p.thumbnailUrl;
+      } else if (p.image && !p.image.startsWith('data:')) {
+        thumbnailUrl = p.image;
+      } else {
+        thumbnailUrl = '/pictures/sample_restoration_photo.jpg';
+      }
+
+      return {
+        id: p.id,
+        title: p.title,
+        price: p.price,
+        category: p.category,
+        systemCategory: p.systemCategory || p.partSystem || p.category,
+        partSubcategory: p.partSubcategory || p.specificPartCategory || p.subcatId,
+        carModelId: p.carModelId,
+        carModelName: p.carModelName,
+        era: p.era,
+        engineSize: p.engineSize,
+        oemNumber: p.oemNumber,
+        castingCode: p.castingCode,
+        inStock: p.inStock,
+        stockCount: p.stockCount,
+        image: thumbnailUrl,
+        thumbnailUrl
+      };
+    });
+
     res.json({
       success: true,
-      count: results.length,
-      data: results
+      count: lightweightParts.length,
+      data: lightweightParts
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// GET /api/parts/:id
+// GET /api/parts/:id - Get full part details with high-res images & specs for modal
 router.get('/parts/:id', async (req, res) => {
   try {
-    const partsList = await dbService.getParts();
-    const part = partsList.find(p => p.id === req.params.id);
+    const { id } = req.params;
+    let part = null;
+
+    if (isSupabaseConfigured) {
+      const { data, error } = await supabase
+        .from('spare_parts')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (data) {
+        part = mapPartFromDb(data);
+      }
+    }
+
+    // Fallback search across list if not found or Supabase not directly queried
+    if (!part) {
+      const partsList = await dbService.getParts();
+      part = partsList.find(p => String(p.id) === String(id));
+    }
+
     if (!part) {
       return res.status(404).json({ success: false, message: 'Spare part not found' });
     }
+
     res.json({ success: true, data: part });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

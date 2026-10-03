@@ -73,6 +73,16 @@ export default function EngineBlueprintInspector({ onAddToCart, onViewPartDetail
   const containerRef = useRef(null);
   const modelViewerRef = useRef(null);
 
+  // Load Google 3D model-viewer on-demand only when this inspector mounts
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !customElements.get('model-viewer')) {
+      const script = document.createElement('script');
+      script.type = 'module';
+      script.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js';
+      document.head.appendChild(script);
+    }
+  }, []);
+
   // Auto-Spin 360 Animation Loop
   useEffect(() => {
     let interval;

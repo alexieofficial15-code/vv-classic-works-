@@ -1,0 +1,10 @@
+# robots.txt for Classic Aircooled VW Works
+# Allow all search engines to crawl public pages
+User-agent: *
+Allow: /
+
+# Disallow private admin routes if any
+Disallow: /#admin
+
+# Sitemap location
+Sitemap: https://www.classicaircooledvwworks.com/sitemap.xml

@@ -1082,17 +1082,16 @@ export default function App() {
         onClose={handleCloseAuth}
         onAuthSuccess={(user, token) => {
           const userRole = (user?.role || '').toLowerCase();
-          const userEmail = (user?.email || '').toLowerCase();
-          const isAdmin = userRole === 'admin' || userEmail === 'admin@rustyaircooled.com';
+          const isAdmin = userRole === 'admin';
 
           setCurrentUser(user);
           setAuthToken(token);
           localStorage.setItem('currentUser', JSON.stringify(user));
           if (token) localStorage.setItem('authToken', token);
 
-          if (isAdmin) {
-            setAdminToken(token || 'master-admin-token-2026');
-            localStorage.setItem('adminToken', token || 'master-admin-token-2026');
+          if (isAdmin && token) {
+            setAdminToken(token);
+            localStorage.setItem('adminToken', token);
             handleOpenAdminPanel();
             navigateToPage('shop');
           } else {
@@ -1107,9 +1106,10 @@ export default function App() {
         isOpen={isAdminLoginOpen}
         onClose={handleCloseAdminLogin}
         onAdminSuccess={(token, user) => {
-          const adminSessionToken = token || 'master-admin-token-2026';
-          setAdminToken(adminSessionToken);
-          localStorage.setItem('adminToken', adminSessionToken);
+          if (token) {
+            setAdminToken(token);
+            localStorage.setItem('adminToken', token);
+          }
           if (user) {
             setCurrentUser(user);
             localStorage.setItem('currentUser', JSON.stringify(user));

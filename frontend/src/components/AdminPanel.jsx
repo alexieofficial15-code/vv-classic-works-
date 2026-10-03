@@ -101,7 +101,7 @@ export default function AdminPanel({
 
   // Fetch all customer conversations without mutating or jumping selected thread
   const fetchConversations = async () => {
-    const token = adminToken || localStorage.getItem('adminToken') || 'master-admin-token-2026';
+    const token = adminToken || localStorage.getItem('adminToken');
     if (!token) return;
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/chat/conversations`, {
@@ -127,7 +127,7 @@ export default function AdminPanel({
   // Fetch thread messages for a specific user
   const fetchThreadMessages = async (userId, userEmail = '') => {
     if (!userId && !userEmail) return;
-    const token = adminToken || localStorage.getItem('adminToken') || 'master-admin-token-2026';
+    const token = adminToken || localStorage.getItem('adminToken');
     if (!token) return;
     try {
       const emailQuery = userEmail ? `?userEmail=${encodeURIComponent(userEmail)}` : '';
@@ -202,7 +202,7 @@ export default function AdminPanel({
     setAdminReplyText('');
     setIsSendingReply(true);
 
-    const token = adminToken || localStorage.getItem('adminToken') || 'master-admin-token-2026';
+    const token = adminToken || localStorage.getItem('adminToken');
     const newMsg = {
       id: `MSG-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       userId: selectedUserThread.userId,
@@ -748,7 +748,7 @@ export default function AdminPanel({
         ? `${API_BASE_URL}/api/admin/parts/${editingPartId}` 
         : `${API_BASE_URL}/api/admin/parts`;
 
-      const activeToken = adminToken || localStorage.getItem('adminToken') || 'master-admin-token-2026';
+      const activeToken = adminToken || localStorage.getItem('adminToken');
       const headers = { 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${activeToken}`
@@ -836,7 +836,7 @@ export default function AdminPanel({
 
     try {
       setIsLoading(true);
-      const activeToken = adminToken || localStorage.getItem('adminToken') || 'master-admin-token-2026';
+      const activeToken = adminToken || localStorage.getItem('adminToken');
       const headers = {
         'Authorization': `Bearer ${activeToken}`
       };
