@@ -12,14 +12,45 @@ dotenv.config();
 
 const app = express();
 
-// Middlewares - Permissive CORS to allow Vercel, Netlify, Render, Mobile browsers, and Localhost
-app.use(cors({
-  origin: true,
+app.set('trust proxy', 1);
+
+// CORS: when CLIENT_ORIGIN is set (comma-separated list of site origins) only those
+// origins plus localhost are allowed. Requests without an Origin header (mobile app,
+// curl, server-to-server) are always allowed. If CLIENT_ORIGIN is unset we stay
+// permissive so a missing env var never takes the site down.
+const allowedOrigins = (process.env.CLIENT_ORIGIN || '')
+  .split(',')
+  .map(o => o.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
+if (allowedOrigins.length === 0) {
+  console.warn('⚠️  CLIENT_ORIGIN is not set: CORS is open to every origin. Set it to your site URL(s), e.g. https://www.classicaircooledvwworks.com');
+}
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.length === 0) return callback(null, true);
+    const clean = origin.replace(/\/+$/, '');
+    if (allowedOrigins.includes(clean) || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(clean)) {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
-}));
-app.options('*', cors());
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
+// Basic security headers
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
 
 // Expand JSON body parser limit to 50MB for mobile photo uploads
 app.use(express.json({ limit: '50mb' }));

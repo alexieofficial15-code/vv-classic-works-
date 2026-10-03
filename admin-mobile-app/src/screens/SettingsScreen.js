@@ -96,7 +96,7 @@ export default function SettingsScreen({
                   {currentSession?.user?.name || 'Master Admin Engineer'}
                 </Text>
                 <Text style={styles.adminEmail}>
-                  {currentSession?.user?.email || 'admin@rustyaircooled.com'}
+                  {currentSession?.user?.email || 'Admin'}
                 </Text>
               </View>
             </View>

@@ -16,31 +16,8 @@ export default function AdminLoginModal({ isOpen, onClose, onAdminSuccess }) {
     setErrorMessage('');
     setIsLoading(true);
 
-    // Hardcoded Standard Master Credentials Validation
-    const MASTER_EMAIL = 'admin@rustyaircooled.com';
-    const MASTER_PASSWORD = 'admin123';
-    const MASTER_SECRET_KEY = 'RUSTY-VINTAGE-2026';
-
-    if (
-      email.trim().toLowerCase() === MASTER_EMAIL &&
-      password === MASTER_PASSWORD &&
-      secretKey.trim() === MASTER_SECRET_KEY
-    ) {
-      setTimeout(() => {
-        setIsLoading(false);
-        onAdminSuccess('master-admin-token-2026', { name: 'Master Engineer', email: MASTER_EMAIL, role: 'admin' });
-        onClose();
-        // Reset form inputs after successful login
-        setEmail('');
-        setPassword('');
-        setSecretKey('');
-      }, 400);
-      return;
-    }
-
     try {
       const res = await fetch(`${API_BASE_URL}/api/auth/admin-login`, {
-
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, secretKey })
@@ -57,7 +34,7 @@ export default function AdminLoginModal({ isOpen, onClose, onAdminSuccess }) {
         setErrorMessage(data.message || 'Invalid admin authentication credentials.');
       }
     } catch (err) {
-      setErrorMessage('Invalid admin authentication credentials.');
+      setErrorMessage('Could not reach the server. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }

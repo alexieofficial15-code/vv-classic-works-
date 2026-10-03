@@ -305,6 +305,10 @@ export default function ReviewsSection() {
               <img 
                 src={review.avatar} 
                 alt={review.author} 
+                width="44"
+                height="44"
+                loading="lazy"
+                decoding="async" 
                 className="w-9 h-9 sm:w-11 sm:h-11 rounded-sm object-cover border border-[#584236] shrink-0 mt-0.5"
               />
               <div className="min-w-0 flex-1 space-y-0.5">

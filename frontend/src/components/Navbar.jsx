@@ -85,7 +85,10 @@ export default function Navbar({
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xs overflow-hidden border border-[#ff7a1a]/60 shadow-[0_0_12px_rgba(255,122,26,0.35)] group-hover:border-[#ff7a1a] transition-all bg-[#141416] flex items-center justify-center shrink-0">
             <img 
               src="/logo.png" 
-              alt="Classic Aircooled VW Works Emblem" 
+              alt="Classic Aircooled VW Works Emblem"
+              width="40"
+              height="40"
+              decoding="async" 
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           </div>

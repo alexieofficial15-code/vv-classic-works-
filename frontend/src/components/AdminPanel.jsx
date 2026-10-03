@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { safeStorage } from '../utils/safeStorage';
 import { API_BASE_URL } from '../config/api';
 import { 
   X, Plus, Trash2, Edit3, ShieldAlert, Database, Layers, Car, Check, Search, 
@@ -38,7 +39,7 @@ export default function AdminPanel({
   adminToken
 }) {
   const [sidebarTab, setSidebarTab] = useState('inventory'); // 'inventory', 'orders', 'chat', 'settings'
-  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('adminActiveTab') || 'add-part'); // 'add-part', 'parts-list', 'requests-manage', 'customer-chat'
+  const [activeTab, setActiveTab] = useState(() => safeStorage.getItem('adminActiveTab') || 'add-part'); // 'add-part', 'parts-list', 'requests-manage', 'customer-chat'
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [parts, setParts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -61,7 +62,7 @@ export default function AdminPanel({
   const [conversations, setConversations] = useState([]);
   const [selectedUserThread, setSelectedUserThread] = useState(() => {
     try {
-      const saved = localStorage.getItem('adminSelectedThread');
+      const saved = safeStorage.getItem('adminSelectedThread');
       return saved ? JSON.parse(saved) : null;
     } catch (e) {
       return null;
@@ -72,14 +73,14 @@ export default function AdminPanel({
 
   // Persist Admin activeTab & thread across browser refreshes
   useEffect(() => {
-    localStorage.setItem('adminActiveTab', activeTab);
+    safeStorage.setItem('adminActiveTab', activeTab);
   }, [activeTab]);
 
   useEffect(() => {
     if (selectedUserThread) {
-      localStorage.setItem('adminSelectedThread', JSON.stringify(selectedUserThread));
+      safeStorage.setItem('adminSelectedThread', JSON.stringify(selectedUserThread));
     } else {
-      localStorage.removeItem('adminSelectedThread');
+      safeStorage.removeItem('adminSelectedThread');
     }
   }, [selectedUserThread]);
 
@@ -101,7 +102,7 @@ export default function AdminPanel({
 
   // Fetch all customer conversations without mutating or jumping selected thread
   const fetchConversations = async () => {
-    const token = adminToken || localStorage.getItem('adminToken') || 'master-admin-token-2026';
+    const token = adminToken || safeStorage.getItem('adminToken') || '';
     if (!token) return;
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/chat/conversations`, {
@@ -110,11 +111,11 @@ export default function AdminPanel({
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         setConversations(data.data);
-        localStorage.setItem('admin_chat_conversations', JSON.stringify(data.data));
+        safeStorage.setItem('admin_chat_conversations', JSON.stringify(data.data));
       }
     } catch (err) {
       console.warn('Admin fetch conversations note:', err.message);
-      const cached = localStorage.getItem('admin_chat_conversations');
+      const cached = safeStorage.getItem('admin_chat_conversations');
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
@@ -127,7 +128,7 @@ export default function AdminPanel({
   // Fetch thread messages for a specific user
   const fetchThreadMessages = async (userId, userEmail = '') => {
     if (!userId && !userEmail) return;
-    const token = adminToken || localStorage.getItem('adminToken') || 'master-admin-token-2026';
+    const token = adminToken || safeStorage.getItem('adminToken') || '';
     if (!token) return;
     try {
       const emailQuery = userEmail ? `?userEmail=${encodeURIComponent(userEmail)}` : '';
@@ -137,11 +138,11 @@ export default function AdminPanel({
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         setThreadMessages(data.data);
-        localStorage.setItem(`admin_chat_thread_${userId}`, JSON.stringify(data.data));
+        safeStorage.setItem(`admin_chat_thread_${userId}`, JSON.stringify(data.data));
       }
     } catch (err) {
       console.warn('Admin fetch thread error:', err.message);
-      const cached = localStorage.getItem(`admin_chat_thread_${userId}`);
+      const cached = safeStorage.getItem(`admin_chat_thread_${userId}`);
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
@@ -154,7 +155,7 @@ export default function AdminPanel({
   // Polling for live chat in admin panel - stable timer that does NOT switch threads
   useEffect(() => {
     if (!isOpen) return;
-    const cachedConvos = localStorage.getItem('admin_chat_conversations');
+    const cachedConvos = safeStorage.getItem('admin_chat_conversations');
     if (cachedConvos) {
       try {
         const parsed = JSON.parse(cachedConvos);
@@ -202,7 +203,7 @@ export default function AdminPanel({
     setAdminReplyText('');
     setIsSendingReply(true);
 
-    const token = adminToken || localStorage.getItem('adminToken') || 'master-admin-token-2026';
+    const token = adminToken || safeStorage.getItem('adminToken') || '';
     const newMsg = {
       id: `MSG-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       userId: selectedUserThread.userId,
@@ -217,8 +218,8 @@ export default function AdminPanel({
     setThreadMessages(prev => [...prev, newMsg]);
 
     const threadKey = `admin_chat_thread_${selectedUserThread.userId}`;
-    const prevList = JSON.parse(localStorage.getItem(threadKey) || '[]');
-    localStorage.setItem(threadKey, JSON.stringify([...prevList, newMsg]));
+    const prevList = safeStorage.getJSON(threadKey, []);
+    safeStorage.setItem(threadKey, JSON.stringify([...prevList, newMsg]));
 
     if (token) {
       try {
@@ -332,8 +333,8 @@ export default function AdminPanel({
       console.warn('Backend fetch fallback to local store');
     }
 
-    const localParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
-    const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
+    const localParts = safeStorage.getJSON('custom_parts', []);
+    const deletedIds = new Set(safeStorage.getJSON('deleted_part_ids', []));
 
     if (serverParts !== null && Array.isArray(serverParts)) {
       // Server database is the authoritative source of truth across all devices
@@ -748,7 +749,7 @@ export default function AdminPanel({
         ? `${API_BASE_URL}/api/admin/parts/${editingPartId}` 
         : `${API_BASE_URL}/api/admin/parts`;
 
-      const activeToken = adminToken || localStorage.getItem('adminToken') || 'master-admin-token-2026';
+      const activeToken = adminToken || safeStorage.getItem('adminToken') || '';
       const headers = { 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${activeToken}`
@@ -764,15 +765,15 @@ export default function AdminPanel({
 
       if (res.ok && data.success) {
         // Clear any old local temp override so DB is source of truth
-        const localParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
+        const localParts = safeStorage.getJSON('custom_parts', []);
         const filteredLocal = localParts.filter(p => p.id !== targetId);
-        localStorage.setItem('custom_parts', JSON.stringify(filteredLocal));
+        safeStorage.setItem('custom_parts', JSON.stringify(filteredLocal));
 
         // Immediately update cached_db_parts so VW Vehicle Showcase & Catalog update instantly
         try {
-          const cached = JSON.parse(localStorage.getItem('cached_db_parts') || '[]');
+          const cached = safeStorage.getJSON('cached_db_parts', []);
           const updatedCached = [newPart, ...cached.filter(p => p.id !== targetId)];
-          localStorage.setItem('cached_db_parts', JSON.stringify(updatedCached));
+          safeStorage.setItem('cached_db_parts', JSON.stringify(updatedCached));
         } catch (e) {}
 
         const successText = isVehicle 
@@ -781,28 +782,28 @@ export default function AdminPanel({
         setStatusMessage(successText);
       } else {
         // Fallback save to LocalStorage if server returns an error
-        const localParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
+        const localParts = safeStorage.getJSON('custom_parts', []);
         const filteredLocal = localParts.filter(p => p.id !== targetId);
-        localStorage.setItem('custom_parts', JSON.stringify([newPart, ...filteredLocal]));
+        safeStorage.setItem('custom_parts', JSON.stringify([newPart, ...filteredLocal]));
 
         try {
-          const cached = JSON.parse(localStorage.getItem('cached_db_parts') || '[]');
+          const cached = safeStorage.getJSON('cached_db_parts', []);
           const updatedCached = [newPart, ...cached.filter(p => p.id !== targetId)];
-          localStorage.setItem('cached_db_parts', JSON.stringify(updatedCached));
+          safeStorage.setItem('cached_db_parts', JSON.stringify(updatedCached));
         } catch (e) {}
 
         setStatusMessage(`⚠️ ${actionText} locally (${data?.message || 'Server error'}).`);
       }
     } catch (err) {
       // Offline fallback
-      const localParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
+      const localParts = safeStorage.getJSON('custom_parts', []);
       const filteredLocal = localParts.filter(p => p.id !== targetId);
-      localStorage.setItem('custom_parts', JSON.stringify([newPart, ...filteredLocal]));
+      safeStorage.setItem('custom_parts', JSON.stringify([newPart, ...filteredLocal]));
 
       try {
-        const cached = JSON.parse(localStorage.getItem('cached_db_parts') || '[]');
+        const cached = safeStorage.getJSON('cached_db_parts', []);
         const updatedCached = [newPart, ...cached.filter(p => p.id !== targetId)];
-        localStorage.setItem('cached_db_parts', JSON.stringify(updatedCached));
+        safeStorage.setItem('cached_db_parts', JSON.stringify(updatedCached));
       } catch (e) {}
 
       const actionText = editingPartId ? 'Updated' : 'Published';
@@ -822,21 +823,21 @@ export default function AdminPanel({
     if (!window.confirm(`Are you sure you want to delete "${title}"?`)) return;
     
     // Save ID to deleted_part_ids so hardcoded or server parts stay deleted
-    const deletedIds = JSON.parse(localStorage.getItem('deleted_part_ids') || '[]');
+    const deletedIds = safeStorage.getJSON('deleted_part_ids', []);
     if (!deletedIds.includes(id)) {
-      localStorage.setItem('deleted_part_ids', JSON.stringify([...deletedIds, id]));
+      safeStorage.setItem('deleted_part_ids', JSON.stringify([...deletedIds, id]));
     }
 
     // Remove from custom_parts in localStorage
-    const localParts = JSON.parse(localStorage.getItem('custom_parts') || '[]');
+    const localParts = safeStorage.getJSON('custom_parts', []);
     const updatedLocal = localParts.filter(p => p.id !== id);
-    localStorage.setItem('custom_parts', JSON.stringify(updatedLocal));
+    safeStorage.setItem('custom_parts', JSON.stringify(updatedLocal));
 
     setParts(prev => prev.filter(p => p.id !== id));
 
     try {
       setIsLoading(true);
-      const activeToken = adminToken || localStorage.getItem('adminToken') || 'master-admin-token-2026';
+      const activeToken = adminToken || safeStorage.getItem('adminToken') || '';
       const headers = {
         'Authorization': `Bearer ${activeToken}`
       };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Trash2, Plus, Minus, ShoppingBag, ShieldCheck, ArrowRight, Lock, CheckCircle2, User, Mail, Phone, MapPin, FileText } from 'lucide-react';
 
 export default function CartDrawer({ 
@@ -8,7 +8,8 @@ export default function CartDrawer({
   currentUser,
   onUpdateQuantity, 
   onRemoveItem, 
-  onProceedToCheckout 
+  onProceedToCheckout,
+  onBeginCheckout
 }) {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,6 +22,33 @@ export default function CartDrawer({
     shippingAddress: currentUser?.city || '',
     notes: ''
   });
+
+  // Keep the form prefilled when the visitor logs in after the cart mounted (only fills empty fields)
+  useEffect(() => {
+    if (!currentUser) return;
+    setGuestForm(prev => ({
+      ...prev,
+      name: prev.name || currentUser.name || '',
+      email: prev.email || currentUser.email || '',
+      phone: prev.phone || currentUser.phone || '',
+      shippingAddress: prev.shippingAddress || currentUser.city || ''
+    }));
+  }, [currentUser]);
+
+  // Lock the page behind the drawer and let Escape close it
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -61,7 +89,12 @@ export default function CartDrawer({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/80 backdrop-blur-md transition-opacity">
+    <div
+      className="fixed inset-0 z-50 overflow-hidden bg-slate-950/80 backdrop-blur-md transition-opacity"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Shopping cart"
+    >
       <div className="absolute inset-0" onClick={onClose} />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10">
@@ -143,7 +176,7 @@ export default function CartDrawer({
                       placeholder="e.g. John Doe"
                       value={guestForm.name}
                       onChange={handleFormChange}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
                     />
                   </div>
                 </div>
@@ -161,7 +194,7 @@ export default function CartDrawer({
                       placeholder="john@classic-vw.com"
                       value={guestForm.email}
                       onChange={handleFormChange}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
                     />
                   </div>
                 </div>
@@ -179,7 +212,7 @@ export default function CartDrawer({
                       placeholder="+1 (555) 019-2834"
                       value={guestForm.phone}
                       onChange={handleFormChange}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
                     />
                   </div>
                 </div>
@@ -197,7 +230,7 @@ export default function CartDrawer({
                       placeholder="Street, City, Postal Code"
                       value={guestForm.shippingAddress}
                       onChange={handleFormChange}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
                     />
                   </div>
                 </div>
@@ -214,7 +247,7 @@ export default function CartDrawer({
                       placeholder="e.g., For a 1968 1600cc Dual Port Beetle"
                       value={guestForm.notes}
                       onChange={handleFormChange}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
                     />
                   </div>
                 </div>
@@ -256,6 +289,10 @@ export default function CartDrawer({
                   <img
                     src={item.image}
                     alt={item.title}
+                    width="64"
+                    height="64"
+                    loading="lazy"
+                    decoding="async" 
                     className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover border border-slate-800 shrink-0"
                   />
 
@@ -331,7 +368,10 @@ export default function CartDrawer({
               </div>
 
               <button
-                onClick={() => setIsCheckingOut(true)}
+                onClick={() => {
+                  if (onBeginCheckout) onBeginCheckout();
+                  setIsCheckingOut(true);
+                }}
                 className="w-full min-h-[48px] flex items-center justify-center gap-2 bg-[#ff7a1a] hover:bg-[#ffb68e] text-slate-950 py-3 sm:py-4 rounded-xl font-extrabold text-xs sm:text-sm shadow-xl transition-all cursor-pointer uppercase tracking-wider font-mono"
               >
                 <span>Proceed To Guest Checkout</span>

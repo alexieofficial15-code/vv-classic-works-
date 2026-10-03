@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { safeStorage } from '../utils/safeStorage';
 import { 
   X, User, Box, Car, Heart, Bell, Navigation, MessageSquare, Settings, 
   Clock, CheckCircle, CheckCircle2, AlertCircle, Truck, PackageCheck, Phone, MessageCircle, 
@@ -30,13 +31,13 @@ export default function UserDashboard({
   onLogout,
   onBackToShop
 }) {
-  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('userDashboardActiveTab') || 'overview'); // 'overview' | 'requests' | 'vehicles' | 'wishlist' | 'notifications' | 'tracking' | 'chat' | 'contact' | 'profile'
+  const [activeTab, setActiveTab] = useState(() => safeStorage.getItem('userDashboardActiveTab') || 'overview'); // 'overview' | 'requests' | 'vehicles' | 'wishlist' | 'notifications' | 'tracking' | 'chat' | 'contact' | 'profile'
   const [trackingSearchInput, setTrackingSearchInput] = useState('');
   const [searchedTrackingResult, setSearchedTrackingResult] = useState(null);
   
   // Persist User Dashboard activeTab across browser refreshes
   useEffect(() => {
-    localStorage.setItem('userDashboardActiveTab', activeTab);
+    safeStorage.setItem('userDashboardActiveTab', activeTab);
   }, [activeTab]);
 
   // New Vehicle Modal State
@@ -68,14 +69,14 @@ export default function UserDashboard({
   const fetchUserChatMessages = async () => {
     if (!currentUser) return;
     const localKey = `chat_user_${currentUser.id || currentUser.email || 'default'}`;
-    const localSaved = JSON.parse(localStorage.getItem(localKey) || '[]');
+    const localSaved = safeStorage.getJSON(localKey, []);
 
     // Show cached messages immediately
     if (localSaved.length > 0 && chatMessages.length === 0) {
       setChatMessages(localSaved);
     }
 
-    const activeToken = authToken || localStorage.getItem('authToken');
+    const activeToken = authToken || safeStorage.getItem('authToken');
     const queryParams = new URLSearchParams({
       userId: currentUser.id || '',
       userName: currentUser.name || userProfile?.name || 'Restorer Member',
@@ -92,7 +93,7 @@ export default function UserDashboard({
       if (data.success && Array.isArray(data.data)) {
         if (data.data.length > 0) {
           setChatMessages(data.data);
-          localStorage.setItem(localKey, JSON.stringify(data.data));
+          safeStorage.setItem(localKey, JSON.stringify(data.data));
           return;
         }
       }
@@ -115,7 +116,7 @@ export default function UserDashboard({
         }
       ];
       setChatMessages(initialWelcome);
-      localStorage.setItem(localKey, JSON.stringify(initialWelcome));
+      safeStorage.setItem(localKey, JSON.stringify(initialWelcome));
     }
   };
 
@@ -156,10 +157,10 @@ export default function UserDashboard({
     // Optimistic UI update
     setChatMessages(prev => [...prev, tempMsg]);
     const localKey = `chat_user_${currentUser.id || currentUser.email || 'default'}`;
-    const currentList = JSON.parse(localStorage.getItem(localKey) || '[]');
-    localStorage.setItem(localKey, JSON.stringify([...currentList, tempMsg]));
+    const currentList = safeStorage.getJSON(localKey, []);
+    safeStorage.setItem(localKey, JSON.stringify([...currentList, tempMsg]));
 
-    const activeToken = authToken || localStorage.getItem('authToken');
+    const activeToken = authToken || safeStorage.getItem('authToken');
     try {
       await fetch(`${API_BASE_URL}/api/chat/send`, {
         method: 'POST',

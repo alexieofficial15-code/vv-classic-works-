@@ -1,49 +1,67 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { safeStorage } from './utils/safeStorage';
 import { API_BASE_URL } from './config/api';
+import { fetchCatalog, getCachedCatalog, invalidateCatalog } from './data/catalogStore';
+import { trackAddToCart, trackBeginCheckout, trackLegacyConversion } from './analytics';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
-import FindPartsWizard from './components/FindPartsWizard';
 import VWVehicleShowcase from './components/VWVehicleShowcase';
-import GuidedSearchModal from './components/GuidedSearchModal';
 import CatalogSection from './components/CatalogSection';
 import ReviewsSection from './components/ReviewsSection';
 import VideoShowcase from './components/VideoShowcase';
 import LocationMapSection from './components/LocationMapSection';
-import PartDetailModal from './components/PartDetailModal';
 import CartDrawer from './components/CartDrawer';
-import AuthModal from './components/AuthModal';
-import AdminLoginModal from './components/AdminLoginModal';
-import AdminPanel from './components/AdminPanel';
-import UserDashboard from './components/UserDashboard';
 import Footer from './components/Footer';
 
+// Heavy / rarely used views are split into their own chunks so they are not part of the
+// initial bundle that every visitor has to download and parse.
+const GuidedSearchModal = lazy(() => import('./components/GuidedSearchModal'));
+const PartDetailModal = lazy(() => import('./components/PartDetailModal'));
+const AuthModal = lazy(() => import('./components/AuthModal'));
+const AdminLoginModal = lazy(() => import('./components/AdminLoginModal'));
+const AdminPanel = lazy(() => import('./components/AdminPanel'));
+const UserDashboard = lazy(() => import('./components/UserDashboard'));
+
+const CART_STORAGE_KEY = 'cart_v1';
+const isInlineImage = (value) => typeof value === 'string' && value.startsWith('data:');
+// Never persist or send inline base64 photos (they blow past the 5 MB storage quota)
+const slimPart = (part) => ({
+  id: part.id,
+  title: part.title || part.name || '',
+  price: Number(part.price) || 0,
+  quantity: Number(part.quantity) || 1,
+  oemNumber: part.oemNumber || '',
+  sku: part.sku || '',
+  image: isInlineImage(part.image) ? '' : (part.image || '')
+});
+const loadStoredCart = () => {
+  const stored = safeStorage.getJSON(CART_STORAGE_KEY, []);
+  if (!Array.isArray(stored)) return [];
+  return stored
+    .filter((item) => item && item.id && Number(item.quantity) > 0)
+    .map(slimPart);
+};
+
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const savedUser = localStorage.getItem('currentUser');
-      return savedUser ? JSON.parse(savedUser) : null;
-    } catch (e) {
-      return null;
-    }
-  });
-  const [authToken, setAuthToken] = useState(() => localStorage.getItem('authToken') || null);
-  const [adminToken, setAdminToken] = useState(() => localStorage.getItem('adminToken') || null);
+  const [currentUser, setCurrentUser] = useState(() => safeStorage.getJSON('currentUser', null));
+  const [authToken, setAuthToken] = useState(() => safeStorage.getItem('authToken') || null);
+  const [adminToken, setAdminToken] = useState(() => safeStorage.getItem('adminToken') || null);
   
   // Persist Admin Panel open state across page refreshes
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(() => {
-    const savedAdminToken = localStorage.getItem('adminToken');
-    const savedAdminOpen = localStorage.getItem('isAdminPanelOpen') === 'true';
+    const savedAdminToken = safeStorage.getItem('adminToken');
+    const savedAdminOpen = safeStorage.getItem('isAdminPanelOpen') === 'true';
     const hasAdminHash = window.location.hash === '#admin';
     return Boolean(savedAdminToken && (savedAdminOpen || hasAdminHash));
   });
 
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(() => window.location.hash === '#cart');
   const [isGuidedSearchOpen, setIsGuidedSearchOpen] = useState(false);
   const [activeModalPart, setActiveModalPart] = useState(null);
 
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState(loadStoredCart);
   const [wishlistIds, setWishlistIds] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState({ 
@@ -60,7 +78,7 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState(() => {
     if (window.location.hash === '#dashboard') return 'dashboard';
     if (window.location.hash === '#admin') return 'shop';
-    return localStorage.getItem('currentPage') || 'shop';
+    return safeStorage.getItem('currentPage') || 'shop';
   });
 
   // User-scoped Dashboard State
@@ -79,7 +97,7 @@ export default function App() {
   const navigateToPage = (newPage) => {
     if (newPage === currentPage) return;
     setCurrentPage(newPage);
-    localStorage.setItem('currentPage', newPage);
+    safeStorage.setItem('currentPage', newPage);
     const targetHash = newPage === 'dashboard' ? '#dashboard' : '#shop';
     if (window.location.hash !== targetHash) {
       window.history.pushState({ page: newPage }, '', targetHash);
@@ -186,7 +204,7 @@ export default function App() {
 
   const handleOpenAdminPanel = () => {
     setIsAdminPanelOpen(true);
-    localStorage.setItem('isAdminPanelOpen', 'true');
+    safeStorage.setItem('isAdminPanelOpen', 'true');
     if (window.location.hash !== '#admin') {
       window.history.pushState({ page: 'admin' }, '', '#admin');
     }
@@ -194,7 +212,7 @@ export default function App() {
 
   const handleCloseAdminPanel = () => {
     setIsAdminPanelOpen(false);
-    localStorage.setItem('isAdminPanelOpen', 'false');
+    safeStorage.setItem('isAdminPanelOpen', 'false');
     if (window.location.hash === '#admin') {
       if (window.history.state?.page === 'admin' && window.history.length > 1) {
         window.history.back();
@@ -226,15 +244,12 @@ export default function App() {
         if (cached) {
           setActiveModalPart(cached);
         } else {
-          fetch(`${API_BASE_URL}/api/admin/parts`)
-            .then(res => res.json())
-            .then(data => {
-              if (data.success && Array.isArray(data.data)) {
-                const found = data.data.find(p => String(p.id) === String(partId));
-                if (found) {
-                  partsCacheRef.current.set(String(found.id), found);
-                  setActiveModalPart(found);
-                }
+          fetchCatalog()
+            .then(parts => {
+              const found = parts.find(p => String(p.id) === String(partId));
+              if (found) {
+                partsCacheRef.current.set(String(found.id), found);
+                setActiveModalPart(found);
               }
             })
             .catch(() => {});
@@ -252,19 +267,19 @@ export default function App() {
       // C. Admin Panel
       if (hash === '#admin') {
         setIsAdminPanelOpen(true);
-        localStorage.setItem('isAdminPanelOpen', 'true');
+        safeStorage.setItem('isAdminPanelOpen', 'true');
       } else {
         setIsAdminPanelOpen(false);
-        localStorage.setItem('isAdminPanelOpen', 'false');
+        safeStorage.setItem('isAdminPanelOpen', 'false');
       }
 
       // D. Page Level View (Dashboard vs Shop)
       if (hash === '#dashboard' || state.page === 'dashboard') {
         setCurrentPage('dashboard');
-        localStorage.setItem('currentPage', 'dashboard');
+        safeStorage.setItem('currentPage', 'dashboard');
       } else {
         setCurrentPage('shop');
-        localStorage.setItem('currentPage', 'shop');
+        safeStorage.setItem('currentPage', 'shop');
       }
     };
 
@@ -304,9 +319,9 @@ export default function App() {
 
   // Restore session from localStorage & verify via GET /api/auth/me on page load
   useEffect(() => {
-    const savedToken = localStorage.getItem('authToken');
-    const savedUser = localStorage.getItem('currentUser');
-    const savedAdminToken = localStorage.getItem('adminToken');
+    const savedToken = safeStorage.getItem('authToken');
+    const savedUser = safeStorage.getJSON('currentUser', null);
+    const savedAdminToken = safeStorage.getItem('adminToken');
 
     if (savedAdminToken) {
       setAdminToken(savedAdminToken);
@@ -321,14 +336,14 @@ export default function App() {
         .then(data => {
           if (data.success && data.user) {
             setCurrentUser(data.user);
-            localStorage.setItem('currentUser', JSON.stringify(data.user));
+            safeStorage.setItem('currentUser', JSON.stringify(data.user));
           } else if (savedUser) {
-            try { setCurrentUser(JSON.parse(savedUser)); } catch (e) {}
+            setCurrentUser(savedUser);
           }
         })
         .catch(() => {
           if (savedUser) {
-            try { setCurrentUser(JSON.parse(savedUser)); } catch (e) {}
+            setCurrentUser(savedUser);
           }
         });
     }
@@ -346,17 +361,15 @@ export default function App() {
       const userKey = `user_${currentUser.id}`;
 
       // 1. User Requests fallback from LocalStorage
-      const savedRequests = localStorage.getItem(`${userKey}_requests`);
-      const initialReqs = savedRequests ? JSON.parse(savedRequests) : [];
+      const initialReqs = safeStorage.getJSON(`${userKey}_requests`, []);
 
       // 2. Saved Vehicles
-      const savedVeh = localStorage.getItem(`${userKey}_vehicles`);
-      setSavedVehicles(savedVeh ? JSON.parse(savedVeh) : []);
+      setSavedVehicles(safeStorage.getJSON(`${userKey}_vehicles`, []));
 
       // 3. Notifications
-      const savedNotifs = localStorage.getItem(`${userKey}_notifications`);
+      const savedNotifs = safeStorage.getJSON(`${userKey}_notifications`, null);
       if (savedNotifs) {
-        setNotifications(JSON.parse(savedNotifs));
+        setNotifications(savedNotifs);
       } else {
         setNotifications([
           {
@@ -368,9 +381,9 @@ export default function App() {
       }
 
       // 4. User Profile
-      const savedProf = localStorage.getItem(`${userKey}_profile`);
+      const savedProf = safeStorage.getJSON(`${userKey}_profile`, null);
       if (savedProf) {
-        setUserProfile(JSON.parse(savedProf));
+        setUserProfile(savedProf);
       } else {
         setUserProfile({
           name: currentUser.name || 'Vintage Restorer',
@@ -410,25 +423,25 @@ export default function App() {
   // Persist user-scoped state
   useEffect(() => {
     if (currentUser && currentUser.id) {
-      localStorage.setItem(`user_${currentUser.id}_requests`, JSON.stringify(userRequests));
+      safeStorage.setItem(`user_${currentUser.id}_requests`, JSON.stringify(userRequests));
     }
   }, [userRequests, currentUser]);
 
   useEffect(() => {
     if (currentUser && currentUser.id) {
-      localStorage.setItem(`user_${currentUser.id}_vehicles`, JSON.stringify(savedVehicles));
+      safeStorage.setItem(`user_${currentUser.id}_vehicles`, JSON.stringify(savedVehicles));
     }
   }, [savedVehicles, currentUser]);
 
   useEffect(() => {
     if (currentUser && currentUser.id) {
-      localStorage.setItem(`user_${currentUser.id}_notifications`, JSON.stringify(notifications));
+      safeStorage.setItem(`user_${currentUser.id}_notifications`, JSON.stringify(notifications));
     }
   }, [notifications, currentUser]);
 
   useEffect(() => {
     if (currentUser && currentUser.id) {
-      localStorage.setItem(`user_${currentUser.id}_profile`, JSON.stringify(userProfile));
+      safeStorage.setItem(`user_${currentUser.id}_profile`, JSON.stringify(userProfile));
     }
   }, [userProfile, currentUser]);
 
@@ -445,9 +458,9 @@ export default function App() {
     setAuthToken(null);
     setAdminToken(null);
     setIsAdminPanelOpen(false);
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('adminToken');
+    safeStorage.removeItem('authToken');
+    safeStorage.removeItem('currentUser');
+    safeStorage.removeItem('adminToken');
     setUserRequests([]);
     setSavedVehicles([]);
     setNotifications([]);
@@ -456,29 +469,18 @@ export default function App() {
   
   // Refresh trigger for parts catalog after admin edit/delete
   const [refreshKey, setRefreshKey] = useState(0);
-  const handleRefreshCatalog = () => setRefreshKey(prev => prev + 1);
-
-  // Google Ads Conversion Tracker Helper (Add to Cart & Product Reservation)
-  const triggerGoogleAdsConversion = () => {
-    if (typeof window !== 'undefined') {
-      try {
-        if (typeof window.gtag === 'function') {
-          window.gtag('event', 'conversion', {
-            'send_to': 'AW-18481077913/_W70CKWVyIsdEJm9u-xE'
-          });
-        } else if (typeof window.gtag_report_conversion === 'function') {
-          window.gtag_report_conversion();
-        } else if (Array.isArray(window.dataLayer)) {
-          window.dataLayer.push({
-            event: 'conversion',
-            send_to: 'AW-18481077913/_W70CKWVyIsdEJm9u-xE'
-          });
-        }
-      } catch (err) {
-        console.warn('Google Ads conversion tracking error:', err);
-      }
-    }
+  const handleRefreshCatalog = () => {
+    invalidateCatalog();
+    setRefreshKey(prev => prev + 1);
   };
+
+  // Keep the cart across refreshes / tab reloads (mobile browsers reload tabs often)
+  useEffect(() => {
+    safeStorage.setJSON(CART_STORAGE_KEY, cartItems.map(slimPart));
+  }, [cartItems]);
+
+  // Request / reserve / order flows still use the original shared conversion label
+  const triggerGoogleAdsConversion = trackLegacyConversion;
 
   // Cart Handlers
   const handleAddToCart = (part) => {
@@ -498,8 +500,7 @@ export default function App() {
       return [...prev, { ...part, quantity: 1 }];
     });
 
-    // Google Ads conversion tracking for Add to Cart: AW-18481077913/_W70CKWVyIsdEJm9u-xE
-    triggerGoogleAdsConversion();
+    trackAddToCart(part);
 
     handleOpenCart();
   };
@@ -846,6 +847,7 @@ export default function App() {
 
       <main className={currentPage === 'dashboard' ? "pt-28 md:pt-36 min-h-screen pb-16 bg-[#0e0e0f]" : "pt-24 md:pt-28 min-h-[80vh]"}>
         {currentPage === 'dashboard' ? (
+          <Suspense fallback={<div className="min-h-[60vh]" aria-busy="true" />}>
           <UserDashboard
             isOpen={true}
             onClose={() => navigateToPage('shop')}
@@ -856,7 +858,7 @@ export default function App() {
             onLogout={handleLogout}
             userRequests={userRequests}
             savedVehicles={savedVehicles}
-            wishlistParts={wishlistIds.map(id => ({ id, title: `Part #${id}`, price: 150, image: 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80' }))}
+            wishlistParts={wishlistIds.map(id => (getCachedCatalog() || []).find(p => p.id === id) || { id, title: `Part #${id}`, price: 150, image: 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80' })}
             notifications={notifications}
             userProfile={userProfile}
             activeVehicleFilter={activeFilter.modelId}
@@ -878,6 +880,7 @@ export default function App() {
               }, 100);
             }}
           />
+          </Suspense>
         ) : (
           <>
             {/* Main Hero Section */}
@@ -925,26 +928,37 @@ export default function App() {
       <Footer />
 
       {/* Step-by-Step Guided Search Modal */}
-      <GuidedSearchModal
-        isOpen={isGuidedSearchOpen}
-        onClose={handleCloseGuidedSearch}
-        onApplySelection={handleSelectFilter}
-      />
+      {isGuidedSearchOpen && (
+        <Suspense fallback={null}>
+          <GuidedSearchModal
+            isOpen={isGuidedSearchOpen}
+            onClose={handleCloseGuidedSearch}
+            onApplySelection={handleSelectFilter}
+          />
+        </Suspense>
+      )}
 
       {/* Part Specifications Modal */}
       {activeModalPart && (
-        <PartDetailModal
-          part={activeModalPart}
-          onClose={handleClosePartDetails}
-          onAddToCart={handleAddToCart}
-          onRequestItem={handleRequestItem}
-          onReserveItem={handleReserveItem}
-        />
+        <Suspense fallback={null}>
+          <PartDetailModal
+            part={activeModalPart}
+            onClose={handleClosePartDetails}
+            onAddToCart={handleAddToCart}
+            onRequestItem={handleRequestItem}
+            onReserveItem={handleReserveItem}
+          />
+        </Suspense>
       )}
 
       {/* Guest Reservation Modal */}
       {guestReservationPart && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto font-technical-data select-none animate-in fade-in">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto font-technical-data select-none animate-in fade-in"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Reserve part"
+        >
           <div className="relative w-full max-w-lg bg-slate-900 border border-amber-500/40 rounded-2xl p-5 sm:p-6 shadow-2xl text-white my-auto space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
@@ -994,7 +1008,7 @@ export default function App() {
                   placeholder="e.g. Michael Schmidt"
                   value={guestResForm.name}
                   onChange={(e) => setGuestResForm(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
                 />
               </div>
 
@@ -1009,7 +1023,7 @@ export default function App() {
                     placeholder="name@email.com"
                     value={guestResForm.email}
                     onChange={(e) => setGuestResForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
                   />
                 </div>
                 <div>
@@ -1022,7 +1036,7 @@ export default function App() {
                     placeholder="+1 (555) 019-2834"
                     value={guestResForm.phone}
                     onChange={(e) => setGuestResForm(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
                   />
                 </div>
               </div>
@@ -1036,7 +1050,7 @@ export default function App() {
                   placeholder="e.g. Austin, Texas, USA"
                   value={guestResForm.city}
                   onChange={(e) => setGuestResForm(prev => ({ ...prev, city: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
                 />
               </div>
 
@@ -1049,7 +1063,7 @@ export default function App() {
                   placeholder="e.g. Need confirmation for 1971 Super Beetle dual port"
                   value={guestResForm.notes}
                   onChange={(e) => setGuestResForm(prev => ({ ...prev, notes: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-base sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
                 />
               </div>
 
@@ -1074,25 +1088,27 @@ export default function App() {
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveFromCart}
         onProceedToCheckout={handleProceedToCheckout}
+        onBeginCheckout={() => trackBeginCheckout(cartItems, cartTotal)}
       />
 
       {/* User Authentication Modal Guard */}
+      {isAuthOpen && (
+      <Suspense fallback={null}>
       <AuthModal
         isOpen={isAuthOpen}
         onClose={handleCloseAuth}
         onAuthSuccess={(user, token) => {
           const userRole = (user?.role || '').toLowerCase();
-          const userEmail = (user?.email || '').toLowerCase();
-          const isAdmin = userRole === 'admin' || userEmail === 'admin@rustyaircooled.com';
+          const isAdmin = userRole === 'admin';
 
           setCurrentUser(user);
           setAuthToken(token);
-          localStorage.setItem('currentUser', JSON.stringify(user));
-          if (token) localStorage.setItem('authToken', token);
+          safeStorage.setItem('currentUser', JSON.stringify(user));
+          if (token) safeStorage.setItem('authToken', token);
 
-          if (isAdmin) {
-            setAdminToken(token || 'master-admin-token-2026');
-            localStorage.setItem('adminToken', token || 'master-admin-token-2026');
+          if (isAdmin && token) {
+            setAdminToken(token);
+            safeStorage.setItem('adminToken', token);
             handleOpenAdminPanel();
             navigateToPage('shop');
           } else {
@@ -1101,26 +1117,33 @@ export default function App() {
         }}
         cartTotal={cartTotal}
       />
+      </Suspense>
+      )}
 
       {/* Admin Gateway Login Modal */}
+      {isAdminLoginOpen && (
+      <Suspense fallback={null}>
       <AdminLoginModal
         isOpen={isAdminLoginOpen}
         onClose={handleCloseAdminLogin}
         onAdminSuccess={(token, user) => {
-          const adminSessionToken = token || 'master-admin-token-2026';
-          setAdminToken(adminSessionToken);
-          localStorage.setItem('adminToken', adminSessionToken);
+          if (!token) return;
+          setAdminToken(token);
+          safeStorage.setItem('adminToken', token);
           if (user) {
             setCurrentUser(user);
-            localStorage.setItem('currentUser', JSON.stringify(user));
+            safeStorage.setItem('currentUser', JSON.stringify(user));
           }
           handleOpenAdminPanel();
           navigateToPage('shop');
         }}
       />
+      </Suspense>
+      )}
 
       {/* Admin Dashboard Control Panel */}
       {isAdminPanelOpen && (
+        <Suspense fallback={null}>
         <AdminPanel
           isOpen={isAdminPanelOpen}
           onClose={handleCloseAdminPanel}
@@ -1130,6 +1153,7 @@ export default function App() {
           onUpdateUserRequestStatus={handleUpdateUserRequestStatus}
           adminToken={adminToken}
         />
+        </Suspense>
       )}
 
     </div>

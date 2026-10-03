@@ -16,7 +16,22 @@ import {
 } from 'lucide-react';
 import { WORKSHOP_REELS } from '../data/partsData';
 
+// Reel videos are 3-7 MB each. Only fetch metadata/first frames on desktop; on phones and
+// data-saver connections nothing is downloaded until the visitor taps play.
+const getVideoPreload = () => {
+  try {
+    if (typeof window === 'undefined') return 'none';
+    if (window.matchMedia && window.matchMedia('(max-width: 767px)').matches) return 'none';
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (connection && connection.saveData) return 'none';
+  } catch (e) {
+    /* fall through */
+  }
+  return 'metadata';
+};
+
 export default function VideoShowcase() {
+  const [videoPreload] = useState(getVideoPreload);
   const [activeIdx, setActiveIdx] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -160,6 +175,7 @@ export default function VideoShowcase() {
                 <video
                   ref={videoRef}
                   src={activeReel.videoUrl}
+                  preload={videoPreload}
                   playsInline
                   loop={isLooping}
                   muted={isMuted}
@@ -184,6 +200,7 @@ export default function VideoShowcase() {
                       type="button"
                       onClick={toggleMute}
                       title={isMuted ? "Unmute Sound" : "Mute Sound"}
+                      aria-label={isMuted ? "Unmute sound" : "Mute sound"}
                       className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-[#ff7a1a] hover:text-black transition-colors"
                     >
                       {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
@@ -194,6 +211,7 @@ export default function VideoShowcase() {
                       type="button"
                       onClick={toggleFullscreen}
                       title="Fullscreen"
+                      aria-label="Fullscreen"
                       className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-[#ff7a1a] hover:text-black transition-colors"
                     >
                       <Maximize2 className="w-3.5 h-3.5" />
@@ -210,6 +228,7 @@ export default function VideoShowcase() {
                         e.stopPropagation();
                         togglePlay();
                       }}
+                      aria-label="Play video"
                       className="w-20 h-20 rounded-full bg-[#ff7a1a] text-black shadow-2xl flex items-center justify-center hover:scale-110 hover:bg-[#ff9645] transition-all duration-300 glow-button"
                     >
                       <Play className="w-9 h-9 ml-1 fill-current" />
@@ -236,6 +255,11 @@ export default function VideoShowcase() {
                   {/* Progress Bar */}
                   <div
                     ref={progressBarRef}
+                    role="progressbar"
+                    aria-label="Video progress"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.round(progress)}
                     onClick={handleProgressClick}
                     className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden cursor-pointer group/bar relative"
                   >
@@ -254,6 +278,7 @@ export default function VideoShowcase() {
                           e.stopPropagation();
                           togglePlay();
                         }}
+                        aria-label={isPlaying ? "Pause video" : "Play video"}
                         className="text-white hover:text-[#ff7a1a] transition-colors"
                       >
                         {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
@@ -266,6 +291,8 @@ export default function VideoShowcase() {
                         type="button"
                         onClick={toggleLoop}
                         title={isLooping ? "Loop On" : "Loop Off"}
+                        aria-label={isLooping ? "Turn loop off" : "Turn loop on"}
+                        aria-pressed={isLooping}
                         className={`text-xs px-1.5 py-0.5 rounded transition-colors ${isLooping ? 'text-[#ff7a1a] bg-[#ff7a1a]/20' : 'text-white/40'
                           }`}
                       >
@@ -277,6 +304,7 @@ export default function VideoShowcase() {
                           type="button"
                           onClick={handlePrev}
                           title="Previous Reel"
+                          aria-label="Previous reel"
                           className="p-1 text-white hover:text-[#ff7a1a] transition-colors"
                         >
                           <ChevronLeft className="w-4 h-4" />
@@ -285,6 +313,7 @@ export default function VideoShowcase() {
                           type="button"
                           onClick={handleNext}
                           title="Next Reel"
+                          aria-label="Next reel"
                           className="p-1 text-white hover:text-[#ff7a1a] transition-colors"
                         >
                           <ChevronRight className="w-4 h-4" />
@@ -380,7 +409,7 @@ export default function VideoShowcase() {
                     <div className="relative aspect-[9/12] w-full rounded overflow-hidden bg-black mb-2">
                       <video
                         src={`${reel.videoUrl}#t=0.5`}
-                        preload="metadata"
+                        preload={videoPreload}
                         muted
                         playsInline
                         className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"

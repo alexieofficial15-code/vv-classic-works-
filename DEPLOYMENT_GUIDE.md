@@ -69,10 +69,10 @@ This guide provides the complete, step-by-step walkthrough to deploy the entire 
 | `SUPABASE_URL` | `https://your-project-id.supabase.co` | From Supabase Project Settings -> API |
 | `SUPABASE_SERVICE_ROLE_KEY` | `eyJhbGciOi...` | From Supabase Project Settings -> API |
 | `SUPABASE_ANON_KEY` | `eyJhbGciOi...` | From Supabase Project Settings -> API |
-| `JWT_SECRET` | `your_secure_random_jwt_secret_here` | Any long random secret string |
-| `ADMIN_EMAIL` | `admin@rustyaircooled.com` | Master Admin login email |
-| `ADMIN_PASSWORD` | `admin123` | Master Admin login password |
-| `ADMIN_SECRET_KEY` | `RUSTY-VINTAGE-2026` | Master Admin portal security key |
+| `JWT_SECRET` | `<long-random-string>` | **Required.** Generate with `openssl rand -hex 48`. Never reuse an example value |
+| `ADMIN_EMAIL` | `<your-admin-email>` | **Required.** Master Admin login email. Admin login is disabled if unset |
+| `ADMIN_PASSWORD` | `<strong-unique-password>` | **Required.** Master Admin login password. Admin login is disabled if unset |
+| `ADMIN_SECRET_KEY` | `<random-key>` | Optional extra key for the admin portal. If set, it must match when supplied |
 
 *(Optional Email Notifications)*: If you want the backend to dispatch real emails upon request status updates, also add:
 `EMAIL_USER`, `EMAIL_PASS` (e.g. Gmail App Password), `EMAIL_HOST` (`smtp.gmail.com`), `EMAIL_PORT` (`587`). If left empty, emails are safely logged to Render logs without errors.

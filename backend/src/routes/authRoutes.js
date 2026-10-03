@@ -2,17 +2,17 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { dbService } from '../config/supabase.js';
+import { JWT_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_SECRET_KEY, ADMIN_LOGIN_ENABLED, safeEqual } from '../config/secrets.js';
+import { rateLimit } from '../middleware/rateLimit.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'vintage_secret';
 
-// Configurable Admin Credentials
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@rustyaircooled.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
-const ADMIN_SECRET_KEY = process.env.ADMIN_SECRET_KEY || 'RUSTY-VINTAGE-2026';
+// Credential endpoints are throttled per IP to slow down password guessing
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20 });
+const adminLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 8 });
 
 // POST /api/auth/register
-router.post('/register', async (req, res) => {
+router.post('/register', authLimiter, async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -52,7 +52,7 @@ router.post('/register', async (req, res) => {
 });
 
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -61,13 +61,12 @@ router.post('/login', async (req, res) => {
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    const masterAdminEmail = (ADMIN_EMAIL || 'admin@rustyaircooled.com').toLowerCase();
-    const isMasterAdmin = cleanEmail === masterAdminEmail || cleanEmail === 'admin@rustyaircooled.com';
+    const isMasterAdmin = ADMIN_LOGIN_ENABLED && cleanEmail === ADMIN_EMAIL;
 
     let user = await dbService.getUserByEmail(cleanEmail);
 
     if (!user) {
-      if (isMasterAdmin && password === ADMIN_PASSWORD) {
+      if (isMasterAdmin && safeEqual(password, ADMIN_PASSWORD)) {
         // Initial setup for master admin if not in DB yet
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, salt);
@@ -90,7 +89,7 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ success: false, message: 'Invalid email or password' });
           }
         } else {
-          if (password !== ADMIN_PASSWORD) {
+          if (!safeEqual(password, ADMIN_PASSWORD)) {
             return res.status(401).json({ success: false, message: 'Invalid email or password' });
           }
           const salt = await bcrypt.genSalt(10);
@@ -128,8 +127,15 @@ router.post('/login', async (req, res) => {
 });
 
 // POST /api/auth/admin-login (Secure Admin Portal & Mobile App Access - 7 Days Session)
-router.post('/admin-login', (req, res) => {
+router.post('/admin-login', adminLimiter, (req, res) => {
   const { email, password, secretKey } = req.body;
+
+  if (!ADMIN_LOGIN_ENABLED) {
+    return res.status(503).json({
+      success: false,
+      message: 'Admin login is not configured on the server. Set ADMIN_EMAIL and ADMIN_PASSWORD.'
+    });
+  }
 
   if (!email || !password) {
     return res.status(400).json({ 
@@ -143,10 +149,10 @@ router.post('/admin-login', (req, res) => {
   const cleanPassword = String(password).replace(/\0/g, '').trim();
   const cleanSecret = secretKey ? String(secretKey).replace(/\0/g, '').trim() : '';
 
-  const configuredAdminEmail = (ADMIN_EMAIL || 'admin@rustyaircooled.com').toLowerCase();
-  const isEmailValid = cleanEmail === configuredAdminEmail || cleanEmail === 'admin@rustyaircooled.com';
-  const isPasswordValid = cleanPassword === ADMIN_PASSWORD || cleanPassword === 'admin123' || cleanPassword === 'admin';
-  const isSecretValid = !cleanSecret || cleanSecret === ADMIN_SECRET_KEY || cleanSecret === 'RUSTY-VINTAGE-2026' || cleanSecret === 'admin';
+  const isEmailValid = safeEqual(cleanEmail, ADMIN_EMAIL);
+  const isPasswordValid = safeEqual(cleanPassword, ADMIN_PASSWORD);
+  // The secret key is an optional extra factor: when supplied it must match the configured key
+  const isSecretValid = !cleanSecret || (ADMIN_SECRET_KEY !== '' && safeEqual(cleanSecret, ADMIN_SECRET_KEY));
 
   if (!isEmailValid || !isPasswordValid || !isSecretValid) {
     return res.status(401).json({ 
