@@ -834,8 +834,8 @@ export default function App() {
     // Honest conversion tracking: fire ONLY on verified backend success
     trackPurchase({
       orderId: savedOrder.id,
-      value: cartTotal,
-      items: cleanItems
+      value: typeof savedOrder.totalAmount === 'number' && !isNaN(savedOrder.totalAmount) ? savedOrder.totalAmount : cartTotal,
+      items: (Array.isArray(savedOrder.items) && savedOrder.items.length > 0) ? savedOrder.items : cleanItems
     });
 
     // Clear cart only on verified success

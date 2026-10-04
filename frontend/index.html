@@ -25,17 +25,22 @@
 
       gtag('config', 'AW-18481077913');
     </script>
-    <!-- Event snippet for Add to cart conversion page -->
+    <!-- Google Ads conversion snippets -->
     <script>
+      // Add to cart conversion snippet (Secondary / Reporting event)
       function gtag_report_conversion(url) {
         var callback = function () {
           if (typeof(url) != 'undefined') {
             window.location = url;
           }
         };
+        // Reporting event: standard e-commerce add_to_cart
+        gtag('event', 'add_to_cart', {
+          currency: 'USD'
+        });
         gtag('event', 'conversion', {
-            'send_to': 'AW-18481077913/_W70CKWVyIsdEJm9u-xE',
-            'event_callback': callback
+          'send_to': 'AW-18481077913/_W70CKWVyIsdEJm9u-xE',
+          'event_callback': callback
         });
         return false;
       }

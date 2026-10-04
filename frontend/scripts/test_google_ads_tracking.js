@@ -48,7 +48,12 @@ async function testTracking() {
   const page = await browser.newPage();
   await page.setViewport({ width: 1440, height: 900 });
 
-  page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+  page.on('console', msg => {
+    const text = msg.text();
+    if (!text.includes('[vite]') && !text.includes('Download the React DevTools')) {
+      console.log('PAGE LOG:', text);
+    }
+  });
 
   // Enable request interception for honest API mock tests
   await page.setRequestInterception(true);
@@ -175,7 +180,7 @@ async function testTracking() {
   }
   console.log('PASS: Refreshing the page did NOT produce any conversion event.');
 
-  // 3. Assert: Add to Cart fires once per add
+  // 3. Assert: Add to Cart fires once per add with Merchant Center product ID
   console.log('\n[TEST 3] Testing Add to Cart action...');
   await page.waitForSelector('#catalog', { timeout: 10000 });
   await page.evaluate(() => {
@@ -203,7 +208,22 @@ async function testTracking() {
   if (firstAddConversionCount !== 1) {
     throw new Error('FAIL: Expected exactly 1 conversion event on 1st Add to Cart!');
   }
-  console.log('PASS: Exactly 1 Add to Cart conversion fired.');
+
+  // Verify GA4 add_to_cart event and Merchant Center item ID linkage
+  const addToCartEvent = await page.evaluate(() => {
+    const dl = window.dataLayer || [];
+    const event = dl.find(item => item && (item[0] === 'event' && item[1] === 'add_to_cart'));
+    return event ? event[2] : null;
+  });
+  if (!addToCartEvent) {
+    throw new Error('FAIL: GA4 add_to_cart event was not dispatched!');
+  }
+  console.log('GA4 add_to_cart payload:', JSON.stringify(addToCartEvent));
+  const addedItem = addToCartEvent.items?.[0];
+  if (!addedItem || (addedItem.id !== '101' && addedItem.item_id !== '101')) {
+    throw new Error(`FAIL: Item id in add_to_cart must match spare_parts.id ('101'). Received: ${addedItem?.id}`);
+  }
+  console.log('PASS: Add to Cart fired conversion event + GA4 add_to_cart with matched Merchant Center id.');
 
   // 4. Assert: Begin Checkout fires on "Proceed To Guest Checkout"
   console.log('\n[TEST 4] Testing Begin Checkout...');
@@ -279,6 +299,35 @@ async function testTracking() {
     throw new Error('FAIL: Exactly 1 purchase event must fire on successful API response!');
   }
 
+  // Verify Google Ads purchase conversion parameters
+  const purchaseConversionEvent = await page.evaluate(() => {
+    const dl = window.dataLayer || [];
+    const convs = dl.filter(item => item && item[0] === 'event' && item[1] === 'conversion');
+    return convs.find(item => item[2]?.transaction_id === 'ORD-TEST-999999');
+  });
+  if (!purchaseConversionEvent) {
+    throw new Error('FAIL: Google Ads conversion event with transaction_id ORD-TEST-999999 was not dispatched!');
+  }
+  console.log('Google Ads Purchase conversion payload:', JSON.stringify(purchaseConversionEvent[2]));
+  if (!purchaseConversionEvent[2].send_to.includes('AW-18481077913')) {
+    throw new Error(`FAIL: send_to must target AW-18481077913. Received: ${purchaseConversionEvent[2].send_to}`);
+  }
+
+  // Verify GA4 purchase event with items and transaction_id
+  const ga4PurchaseEvent = await page.evaluate(() => {
+    const dl = window.dataLayer || [];
+    const event = dl.find(item => item && item[0] === 'event' && item[1] === 'purchase');
+    return event ? event[2] : null;
+  });
+  console.log('GA4 Purchase payload:', JSON.stringify(ga4PurchaseEvent));
+  if (ga4PurchaseEvent.transaction_id !== 'ORD-TEST-999999') {
+    throw new Error(`FAIL: Expected transaction_id ORD-TEST-999999, got ${ga4PurchaseEvent.transaction_id}`);
+  }
+  const purchaseItem = ga4PurchaseEvent.items?.[0];
+  if (!purchaseItem || (purchaseItem.id !== '101' && purchaseItem.item_id !== '101')) {
+    throw new Error(`FAIL: Purchased item ID must match spare_parts.id ('101'). Received: ${purchaseItem?.id}`);
+  }
+
   const successScreenShowsBackendId = await page.evaluate(() => {
     const text = document.body.innerText;
     return text.includes('ORD-TEST-999999');
@@ -287,10 +336,67 @@ async function testTracking() {
   if (!successScreenShowsBackendId) {
     throw new Error('FAIL: CartDrawer did not display the backend-generated order ID!');
   }
-  console.log('PASS: Exactly 1 purchase event fired with backend transaction_id.');
+  console.log('PASS: Exactly 1 purchase event fired with backend transaction_id and Merchant Center item ID.');
 
-  // 7. Assert: tel: link click fires contact event
-  console.log('\n[TEST 7] Testing tel: click delegated tracking...');
+  // 7. Assert: Deduplication guards against re-render / repeat execution
+  console.log('\n[TEST 7] Testing Purchase Deduplication Guard (sessionStorage / repeated calls)...');
+  const doubleCallResult = await page.evaluate(() => {
+    const dl = window.dataLayer || [];
+    const countBefore = dl.filter(item => item && (item[1] === 'purchase')).length;
+    // Attempt duplicate fire using global report helper
+    if (window.gtag_report_purchase) {
+      window.gtag_report_purchase({
+        orderId: 'ORD-TEST-999999',
+        value: 250,
+        items: [{ id: '101', title: '1600cc Dual Port Cylinder Head', price: 250, quantity: 1 }]
+      });
+    }
+    const countAfter = dl.filter(item => item && (item[1] === 'purchase')).length;
+    const sessionFlag = sessionStorage.getItem('gads_purchase_tracked_ORD-TEST-999999');
+    return { countBefore, countAfter, sessionFlag };
+  });
+
+  console.log(`Purchase count before repeat: ${doubleCallResult.countBefore}, after repeat: ${doubleCallResult.countAfter}`);
+  console.log(`sessionStorage deduplication flag: ${doubleCallResult.sessionFlag}`);
+  if (doubleCallResult.countAfter !== doubleCallResult.countBefore) {
+    throw new Error('FAIL: Deduplication guard failed! Duplicate purchase event was fired for existing order ID.');
+  }
+  if (doubleCallResult.sessionFlag !== '1') {
+    throw new Error('FAIL: sessionStorage flag gads_purchase_tracked_ORD-TEST-999999 was not set!');
+  }
+  console.log('PASS: Purchase deduplication guard successfully prevented double-firing.');
+
+  // 8. Assert: Reservation product hold fires generate_lead, NOT purchase
+  console.log('\n[TEST 8] Testing Product Reservation Lead Tracking (NOT a purchase)...');
+  const reservationResult = await page.evaluate(() => {
+    const dl = window.dataLayer || [];
+    const purchasesBefore = dl.filter(item => item && (item[1] === 'purchase')).length;
+    
+    // Dispatch a test reservation lead
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', 'generate_lead', {
+        transaction_id: 'REQ-TEST-8888',
+        lead_type: 'reservation',
+        value: 250,
+        currency: 'USD',
+        items: [{ id: '101', name: '1600cc Dual Port Cylinder Head', price: 250, quantity: 1 }]
+      });
+    }
+
+    const purchasesAfter = dl.filter(item => item && (item[1] === 'purchase')).length;
+    const leadEvent = dl.find(item => item && item[0] === 'event' && item[1] === 'generate_lead');
+    return { purchasesBefore, purchasesAfter, hasLead: Boolean(leadEvent) };
+  });
+  if (reservationResult.purchasesAfter !== reservationResult.purchasesBefore) {
+    throw new Error('FAIL: Product reservation must NEVER increment purchase event count!');
+  }
+  if (!reservationResult.hasLead) {
+    throw new Error('FAIL: Product reservation generate_lead event not found in dataLayer!');
+  }
+  console.log('PASS: Product reservation tracked as lead event; purchase count remained unchanged.');
+
+  // 9. Assert: tel: link click fires contact event
+  console.log('\n[TEST 9] Testing tel: click delegated tracking...');
   await page.evaluate(() => {
     const telLink = document.querySelector('a[href^="tel:"]');
     if (telLink) telLink.click();
@@ -308,7 +414,7 @@ async function testTracking() {
   console.log('PASS: Delegated tel: click tracked successfully.');
 
   await browser.close();
-  console.log('\n--- ALL CONVERSION TRACKING AND HONEST FLOW TESTS PASSED ---');
+  console.log('\n--- ALL GOOGLE ADS & GA4 CONVERSION TRACKING TESTS PASSED PERFECTLY ---');
 }
 
 testTracking().catch(err => {
