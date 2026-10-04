@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { API_BASE_URL } from './config/api';
 import { getCatalogParts, invalidateCatalogCache } from './data/catalogStore';
+import { trackAddToCart, trackPurchase, trackLead, sanitizeImage, sanitizeOrderItem } from './analytics';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import FindPartsWizard from './components/FindPartsWizard';
@@ -410,7 +411,12 @@ export default function App() {
   // Persist user-scoped state
   useEffect(() => {
     if (currentUser && currentUser.id) {
-      localStorage.setItem(`user_${currentUser.id}_requests`, JSON.stringify(userRequests));
+      const sanitizedReqs = userRequests.map(r => ({
+        ...r,
+        partImage: sanitizeImage(r.partImage || r.image) || '',
+        image: sanitizeImage(r.partImage || r.image) || ''
+      }));
+      localStorage.setItem(`user_${currentUser.id}_requests`, JSON.stringify(sanitizedReqs));
     }
   }, [userRequests, currentUser]);
 
@@ -461,28 +467,6 @@ export default function App() {
     setRefreshKey(prev => prev + 1);
   };
 
-  // Google Ads Conversion Tracker Helper (Add to Cart & Product Reservation)
-  const triggerGoogleAdsConversion = () => {
-    if (typeof window !== 'undefined') {
-      try {
-        if (typeof window.gtag === 'function') {
-          window.gtag('event', 'conversion', {
-            'send_to': 'AW-18481077913/_W70CKWVyIsdEJm9u-xE'
-          });
-        } else if (typeof window.gtag_report_conversion === 'function') {
-          window.gtag_report_conversion();
-        } else if (Array.isArray(window.dataLayer)) {
-          window.dataLayer.push({
-            event: 'conversion',
-            send_to: 'AW-18481077913/_W70CKWVyIsdEJm9u-xE'
-          });
-        }
-      } catch (err) {
-        console.warn('Google Ads conversion tracking error:', err);
-      }
-    }
-  };
-
   // Cart Handlers
   const handleAddToCart = (part) => {
     // Validation guard: ensure valid part before updating state or firing tracking
@@ -501,8 +485,8 @@ export default function App() {
       return [...prev, { ...part, quantity: 1 }];
     });
 
-    // Google Ads conversion tracking for Add to Cart: AW-18481077913/_W70CKWVyIsdEJm9u-xE
-    triggerGoogleAdsConversion();
+    // GA4 + Google Ads Add to Cart conversion (fires once per addition)
+    trackAddToCart(part);
 
     handleOpenCart();
   };
@@ -528,13 +512,13 @@ export default function App() {
       return;
     }
 
+    const cleanImage = sanitizeImage(part.image);
     const reqPayload = {
-      id: `REQ-${Math.floor(1000 + Math.random() * 9000)}`,
       partId: part.id,
       partTitle: part.title,
-      partImage: part.image,
+      partImage: cleanImage || '',
       sku: part.sku || part.oemNumber || 'N/A',
-      price: part.price || 0,
+      price: Number(part.price || 0),
       compatibility: part.compatibleModels && part.compatibleModels.length > 0 ? part.compatibleModels[0] : (part.modelYearRange || 'VW Beetle / Bus'),
       type: 'REQUEST',
       status: 'Pending',
@@ -544,7 +528,6 @@ export default function App() {
       userCity: userProfile.city || ''
     };
 
-    let record = reqPayload;
     try {
       const res = await fetch(`${API_BASE_URL}/api/requests`, {
         method: 'POST',
@@ -554,35 +537,44 @@ export default function App() {
         },
         body: JSON.stringify(reqPayload)
       });
-      const data = await res.json();
-      if (data.success && data.data) {
-        record = data.data;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success || !data.data?.id) {
+        throw new Error(data.message || data.error || `Server status ${res.status}`);
       }
+
+      const record = data.data;
+
+      // Honest conversion tracking: fire ONLY on verified backend response
+      trackLead({
+        id: record.id,
+        type: 'request',
+        part,
+        value: Number(part.price || 0)
+      });
+
+      setUserRequests(prev => [record, ...prev.filter(r => r.id !== record.id)]);
+      refreshUserRequests();
+      if (adminToken) fetchAdminRequests();
+
+      setNotifications(prev => [
+        {
+          title: 'Item Request Submitted',
+          message: `Your request for "${part.title}" has been submitted (ID: #${record.id}).`,
+          timestamp: 'Just now'
+        },
+        ...prev
+      ]);
+
+      handleOpenUserDashboard();
     } catch (err) {
-      console.warn('API request creation failed, using offline fallback:', err);
+      console.error('API request creation failed:', err);
+      alert(`Request submission failed: ${err.message}. Please call our shop directly at +1 (945) 287-9865.`);
     }
-
-    setUserRequests(prev => [record, ...prev.filter(r => r.id !== record.id)]);
-    refreshUserRequests();
-    if (adminToken) fetchAdminRequests();
-
-    // Trigger Google Ads conversion on product request
-    triggerGoogleAdsConversion();
-
-    setNotifications(prev => [
-      {
-        title: 'Item Request Submitted',
-        message: `Your request for "${part.title}" has been submitted (ID: #${record.id}).`,
-        timestamp: 'Just now'
-      },
-      ...prev
-    ]);
-
-    handleOpenUserDashboard();
   };
 
   // Guest Reservation Modal State
   const [guestReservationPart, setGuestReservationPart] = useState(null);
+  const [guestResError, setGuestResError] = useState(null);
   const [guestResForm, setGuestResForm] = useState({
     name: '',
     email: '',
@@ -596,16 +588,17 @@ export default function App() {
     if (!currentUser || !authToken) {
       // Allow seamless guest reservation
       setGuestReservationPart(part);
+      setGuestResError(null);
       return;
     }
 
+    const cleanImage = sanitizeImage(part.image);
     const reqPayload = {
-      id: `REQ-${Math.floor(1000 + Math.random() * 9000)}`,
       partId: part.id,
       partTitle: part.title,
-      partImage: part.image,
+      partImage: cleanImage || '',
       sku: part.sku || part.oemNumber || 'N/A',
-      price: part.price || 0,
+      price: Number(part.price || 0),
       compatibility: part.compatibleModels && part.compatibleModels.length > 0 ? part.compatibleModels[0] : (part.modelYearRange || 'VW Beetle / Bus'),
       type: 'RESERVE',
       status: 'Reserved',
@@ -615,7 +608,6 @@ export default function App() {
       userCity: userProfile.city || ''
     };
 
-    let record = reqPayload;
     try {
       const res = await fetch(`${API_BASE_URL}/api/requests`, {
         method: 'POST',
@@ -625,46 +617,55 @@ export default function App() {
         },
         body: JSON.stringify(reqPayload)
       });
-      const data = await res.json();
-      if (data.success && data.data) {
-        record = data.data;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success || !data.data?.id) {
+        throw new Error(data.message || data.error || `Server status ${res.status}`);
       }
+
+      const record = data.data;
+
+      // Honest conversion tracking: fire ONLY on verified backend response
+      trackLead({
+        id: record.id,
+        type: 'reservation',
+        part,
+        value: Number(part.price || 0)
+      });
+
+      setUserRequests(prev => [record, ...prev.filter(r => r.id !== record.id)]);
+      refreshUserRequests();
+      if (adminToken) fetchAdminRequests();
+
+      setNotifications(prev => [
+        {
+          title: 'Item Reserved',
+          message: `Your reservation for "${part.title}" has been placed (ID: #${record.id}).`,
+          timestamp: 'Just now'
+        },
+        ...prev
+      ]);
+
+      alert(`Reservation Confirmed!\n\nYour reservation for "${part.title}" has been placed (Ref: #${record.id}). Our master technicians will hold this item for you.`);
     } catch (err) {
-      console.warn('API reservation creation failed, using offline fallback:', err);
+      console.error('API reservation creation failed:', err);
+      alert(`Reservation failed: ${err.message}. Please call our shop directly at +1 (945) 287-9865.`);
     }
-
-    setUserRequests(prev => [record, ...prev.filter(r => r.id !== record.id)]);
-    refreshUserRequests();
-    if (adminToken) fetchAdminRequests();
-
-    // Trigger Google Ads conversion on product reservation
-    triggerGoogleAdsConversion();
-
-    setNotifications(prev => [
-      {
-        title: 'Item Reserved',
-        message: `Your reservation for "${part.title}" has been placed (ID: #${record.id}).`,
-        timestamp: 'Just now'
-      },
-      ...prev
-    ]);
-
-    alert(`Reservation Confirmed!\n\nYour reservation for "${part.title}" has been placed (Ref: #${record.id}). Our master technicians will hold this item for you.`);
   };
 
   const handleConfirmGuestReservation = async (e) => {
     e.preventDefault();
-    if (!guestReservationPart) return;
+    if (!guestReservationPart || isSubmittingRes) return;
     setIsSubmittingRes(true);
+    setGuestResError(null);
 
     const part = guestReservationPart;
+    const cleanImage = sanitizeImage(part.image);
     const reqPayload = {
-      id: `REQ-${Math.floor(1000 + Math.random() * 9000)}`,
       partId: part.id,
       partTitle: part.title,
-      partImage: part.image,
+      partImage: cleanImage || '',
       sku: part.sku || part.oemNumber || 'N/A',
-      price: part.price || 0,
+      price: Number(part.price || 0),
       compatibility: part.compatibleModels && part.compatibleModels.length > 0 ? part.compatibleModels[0] : (part.modelYearRange || 'VW Beetle / Bus'),
       type: 'RESERVE',
       status: 'Reserved',
@@ -675,7 +676,6 @@ export default function App() {
       notes: guestResForm.notes || ''
     };
 
-    let record = reqPayload;
     try {
       const res = await fetch(`${API_BASE_URL}/api/requests`, {
         method: 'POST',
@@ -684,26 +684,37 @@ export default function App() {
         },
         body: JSON.stringify(reqPayload)
       });
-      const data = await res.json();
-      if (data.success && data.data) {
-        record = data.data;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success || !data.data?.id) {
+        throw new Error(data.message || data.error || `Server returned status ${res.status}`);
       }
+
+      const record = data.data;
+
+      // Honest conversion tracking: fire ONLY on verified backend response
+      trackLead({
+        id: record.id,
+        type: 'reservation',
+        part,
+        value: Number(part.price || 0)
+      });
+
+      setUserRequests(prev => [record, ...prev.filter(r => r.id !== record.id)]);
+      refreshUserRequests();
+      if (adminToken) fetchAdminRequests();
+
+      setIsSubmittingRes(false);
+      setGuestReservationPart(null);
+      setGuestResForm({ name: '', email: '', phone: '', city: '', notes: '' });
+      setGuestResError(null);
+
+      alert(`Reservation Confirmed!\n\nThank you, ${reqPayload.userName}! Your reservation for "${part.title}" is confirmed (Ref: #${record.id}).\nWe have held this item for you and our team will contact you via ${reqPayload.userPhone || reqPayload.userEmail} shortly.`);
     } catch (err) {
-      console.warn('API guest reservation fallback:', err);
+      console.error('API guest reservation failed:', err);
+      // Keep form, keep modal, do NOT fire conversion, show inline error with phone number
+      setGuestResError(err.message || 'Unable to place reservation. Please call our shop directly at +1 (945) 287-9865.');
+      setIsSubmittingRes(false);
     }
-
-    setUserRequests(prev => [record, ...prev.filter(r => r.id !== record.id)]);
-    refreshUserRequests();
-    if (adminToken) fetchAdminRequests();
-
-    // Trigger Google Ads conversion on guest reservation
-    triggerGoogleAdsConversion();
-
-    setIsSubmittingRes(false);
-    setGuestReservationPart(null);
-    setGuestResForm({ name: '', email: '', phone: '', city: '', notes: '' });
-
-    alert(`Reservation Confirmed!\n\nThank you, ${reqPayload.userName}! Your reservation for "${part.title}" is confirmed (Ref: #${record.id}).\nWe have held this item for you and our team will contact you via ${reqPayload.userPhone || reqPayload.userEmail} shortly.`);
   };
 
   const handleAddVehicle = (veh) => {
@@ -767,44 +778,55 @@ export default function App() {
     const finalAddress = checkoutData.shippingAddress || currentUser?.city || 'Workshop Pickup / Delivery Dispatch';
     const finalNotes = checkoutData.notes || '';
 
-    let orderId = `ORD-VINTAGE-${Math.floor(100000 + Math.random() * 900000)}`;
-    try {
-      const headers = { 'Content-Type': 'application/json' };
-      if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+    // Sanitize order items to ensure base64 images are never sent
+    const cleanItems = cartItems.map(sanitizeOrderItem);
 
-      const res = await fetch(`${API_BASE_URL}/api/orders`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          items: cartItems,
-          totalAmount: cartTotal,
-          userName: finalName,
-          userEmail: finalEmail,
-          userPhone: finalPhone,
-          shippingAddress: finalAddress,
-          notes: finalNotes
-        })
-      });
-      const data = await res.json();
-      if (data.success && data.data?.id) {
-        orderId = data.data.id;
-      }
-    } catch (err) {
-      console.warn('Backend order placement fallback:', err);
+    const headers = { 'Content-Type': 'application/json' };
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
+    const res = await fetch(`${API_BASE_URL}/api/orders`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        items: cleanItems,
+        totalAmount: cartTotal,
+        userName: finalName,
+        userEmail: finalEmail,
+        userPhone: finalPhone,
+        shippingAddress: finalAddress,
+        notes: finalNotes
+      })
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    // Honest check: require res.ok AND data.success AND data.data.id
+    if (!res.ok || !data.success || !data.data?.id) {
+      const errMsg = data.message || data.error || `Server returned status ${res.status}`;
+      throw new Error(`Order submission failed: ${errMsg}. Please call our shop at +1 (945) 287-9865.`);
     }
 
-    // Trigger Google Ads conversion tracking on order placement
-    triggerGoogleAdsConversion();
+    const savedOrder = data.data;
 
+    // Honest conversion tracking: fire ONLY on verified backend success
+    trackPurchase({
+      orderId: savedOrder.id,
+      value: cartTotal,
+      items: cleanItems
+    });
+
+    // Clear cart only on verified success
     setCartItems([]);
     refreshUserRequests();
     if (adminToken) fetchAdminRequests();
 
     if (currentUser) {
-      alert(`Order #${orderId} Placed Successfully!\n\nThank you, ${finalName}! Confirmation sent to ${finalEmail}.`);
+      alert(`Order #${savedOrder.id} Placed Successfully!\n\nThank you, ${finalName}! Confirmation sent to ${finalEmail}.`);
       setIsCartOpen(false);
       handleOpenUserDashboard();
     }
+
+    return savedOrder;
   };
 
   const handleSelectFilter = (filterObj, options = {}) => {
@@ -1055,6 +1077,16 @@ export default function App() {
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
                 />
               </div>
+
+              {guestResError && (
+                <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300 font-mono space-y-1 animate-in fade-in">
+                  <div className="font-bold text-rose-400">Reservation Notice</div>
+                  <p className="text-[11px] leading-relaxed">{guestResError}</p>
+                  <div className="text-[11px] pt-1">
+                    Call shop directly: <a href="tel:19452879865" className="text-amber-400 underline font-bold hover:text-amber-300">+1 (945) 287-9865</a>
+                  </div>
+                </div>
+              )}
 
               <button
                 type="submit"

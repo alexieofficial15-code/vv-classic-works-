@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Trash2, Plus, Minus, ShoppingBag, ShieldCheck, ArrowRight, Lock, CheckCircle2, User, Mail, Phone, MapPin, FileText } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ShoppingBag, ShieldCheck, ArrowRight, Lock, CheckCircle2, User, Mail, Phone, MapPin, FileText, AlertCircle } from 'lucide-react';
+import { trackBeginCheckout } from '../analytics';
 
 export default function CartDrawer({ 
   isOpen, 
@@ -12,6 +13,7 @@ export default function CartDrawer({
 }) {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
   const [orderSuccess, setOrderSuccess] = useState(null);
 
   const [guestForm, setGuestForm] = useState({
@@ -35,26 +37,34 @@ export default function CartDrawer({
 
   const handleFinalOrderSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true);
+    setSubmitError(null);
 
     try {
       if (onProceedToCheckout) {
-        await onProceedToCheckout({
+        const savedOrder = await onProceedToCheckout({
           name: guestForm.name || currentUser?.name || 'Guest Restorer',
           email: guestForm.email || currentUser?.email || 'guest@aircooledworks.com',
           phone: guestForm.phone || '',
           shippingAddress: guestForm.shippingAddress || 'Workshop Pickup / Direct Delivery',
           notes: guestForm.notes || ''
         });
+
+        if (savedOrder && savedOrder.id) {
+          setOrderSuccess({
+            id: savedOrder.id,
+            name: savedOrder.userName || guestForm.name || currentUser?.name || 'Customer',
+            email: savedOrder.userEmail || guestForm.email || currentUser?.email || ''
+          });
+          setIsCheckingOut(false);
+        } else {
+          throw new Error('Order could not be confirmed by the server. Please call our shop at +1 (945) 287-9865.');
+        }
       }
-      setOrderSuccess({
-        id: `ORD-VINTAGE-${Math.floor(100000 + Math.random() * 900000)}`,
-        name: guestForm.name || currentUser?.name || 'Customer',
-        email: guestForm.email || currentUser?.email || ''
-      });
-      setIsCheckingOut(false);
     } catch (err) {
       console.error('Checkout error:', err);
+      setSubmitError(err.message || 'Unable to submit your order. Please call us directly at +1 (945) 287-9865.');
     } finally {
       setIsSubmitting(false);
     }
@@ -219,9 +229,22 @@ export default function CartDrawer({
                   </div>
                 </div>
 
+                {submitError && (
+                  <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300 font-mono space-y-1 animate-in fade-in">
+                    <div className="flex items-center gap-1.5 font-bold text-rose-400">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>Order Submission Error</span>
+                    </div>
+                    <p className="text-[11px] leading-relaxed">{submitError}</p>
+                    <div className="text-[11px] pt-1">
+                      Direct Support: <a href="tel:19452879865" className="text-amber-400 underline font-bold hover:text-amber-300">+1 (945) 287-9865</a>
+                    </div>
+                  </div>
+                )}
+
                 <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[10px] text-amber-300 font-mono flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>Verified Order: Workshop Invoice will be sent directly to your email. No card charged upfront!</span>
+                  <span>Verified Order: Workshop Invoice sent upon review. No card charged upfront! Final price & shipping confirmed by shop before payment.</span>
                 </div>
 
                 <button
@@ -318,6 +341,9 @@ export default function CartDrawer({
                   <span>INSURED FREIGHT (EST.):</span>
                   <span className="text-white">${estimatedShipping.toLocaleString()}</span>
                 </div>
+                <div className="text-[10px] text-slate-400 font-mono italic">
+                  *Shipping is an estimate. Final crating, freight, and total cost are confirmed directly by the shop prior to fulfillment.
+                </div>
                 <div className="flex justify-between text-sm font-bold text-amber-400 border-t border-slate-800 pt-2">
                   <span>GRAND TOTAL:</span>
                   <span>${grandTotal.toLocaleString()} USD</span>
@@ -331,7 +357,10 @@ export default function CartDrawer({
               </div>
 
               <button
-                onClick={() => setIsCheckingOut(true)}
+                onClick={() => {
+                  trackBeginCheckout(cartItems, grandTotal);
+                  setIsCheckingOut(true);
+                }}
                 className="w-full min-h-[48px] flex items-center justify-center gap-2 bg-[#ff7a1a] hover:bg-[#ffb68e] text-slate-950 py-3 sm:py-4 rounded-xl font-extrabold text-xs sm:text-sm shadow-xl transition-all cursor-pointer uppercase tracking-wider font-mono"
               >
                 <span>Proceed To Guest Checkout</span>
