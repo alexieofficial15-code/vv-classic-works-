@@ -17,6 +17,7 @@ import AuthModal from './components/AuthModal';
 import AdminLoginModal from './components/AdminLoginModal';
 import AdminPanel from './components/AdminPanel';
 import UserDashboard from './components/UserDashboard';
+import StickyCallBar from './components/StickyCallBar';
 import Footer from './components/Footer';
 
 export default function App() {
@@ -844,7 +845,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#131314] text-[#e5e2e3] font-technical-data selection:bg-[#ff7a1a] selection:text-black">
+    <div className="min-h-screen bg-[#131314] text-[#e5e2e3] font-technical-data selection:bg-[#ff7a1a] selection:text-black pb-14 md:pb-0">
       
       {/* Sticky Top Volkswagen Navigation Bar (Hidden on User Dashboard Portal) */}
       {currentPage !== 'dashboard' && (
@@ -1166,6 +1167,19 @@ export default function App() {
           adminToken={adminToken}
         />
       )}
+
+      {/* Sticky Mobile "Call Now" & WhatsApp Bar */}
+      <StickyCallBar
+        isModalOpen={Boolean(
+          isCartOpen ||
+          isAuthOpen ||
+          isAdminLoginOpen ||
+          isAdminPanelOpen ||
+          isGuidedSearchOpen ||
+          activeModalPart ||
+          guestReservationPart
+        )}
+      />
 
     </div>
   );
