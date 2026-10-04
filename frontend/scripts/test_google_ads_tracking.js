@@ -48,12 +48,7 @@ async function testTracking() {
   const page = await browser.newPage();
   await page.setViewport({ width: 1440, height: 900 });
 
-  const consoleErrors = [];
-  page.on('console', msg => {
-    if (msg.type() === 'error') {
-      consoleErrors.push(msg.text());
-    }
-  });
+  page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 
   // Enable request interception for honest API mock tests
   await page.setRequestInterception(true);
@@ -63,16 +58,32 @@ async function testTracking() {
 
   page.on('request', req => {
     const url = req.url();
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': '*'
+    };
+
+    if (req.method() === 'OPTIONS') {
+      req.respond({
+        status: 200,
+        headers: corsHeaders
+      });
+      return;
+    }
+
     if (url.includes('/api/orders') && req.method() === 'POST') {
       if (mockOrderStatus === 500) {
         req.respond({
           status: 500,
+          headers: corsHeaders,
           contentType: 'application/json',
           body: JSON.stringify({ success: false, message: 'Simulated backend checkout failure' })
         });
       } else {
         req.respond({
           status: 200,
+          headers: corsHeaders,
           contentType: 'application/json',
           body: JSON.stringify({
             success: true,
@@ -85,12 +96,14 @@ async function testTracking() {
       if (mockRequestStatus === 500) {
         req.respond({
           status: 500,
+          headers: corsHeaders,
           contentType: 'application/json',
           body: JSON.stringify({ success: false, message: 'Simulated backend request failure' })
         });
       } else {
         req.respond({
           status: 200,
+          headers: corsHeaders,
           contentType: 'application/json',
           body: JSON.stringify({
             success: true,
@@ -99,6 +112,37 @@ async function testTracking() {
           })
         });
       }
+    } else if (url.includes('/api/catalog') || (url.includes('/api/parts') && req.method() === 'GET')) {
+      req.respond({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [
+            {
+              id: '101',
+              title: '1600cc Dual Port Cylinder Head',
+              price: 250,
+              inStock: true,
+              sku: 'EMPI-040-101',
+              oemNumber: '040-101-355',
+              image: 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80',
+              category: 'Engine System'
+            },
+            {
+              id: '102',
+              title: 'Counterweighted Crankshaft 69mm',
+              price: 320,
+              inStock: true,
+              sku: 'SCAT-69MM',
+              oemNumber: '113-105-101',
+              image: 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80',
+              category: 'Engine System'
+            }
+          ]
+        })
+      });
     } else {
       req.continue();
     }
@@ -108,16 +152,12 @@ async function testTracking() {
   await page.goto('http://localhost:5173/', { waitUntil: 'networkidle2' });
 
   // 1. Assert: No conversion on initial load
-  const initialDataLayer = await page.evaluate(() => window.dataLayer || []);
-  const initialConversions = initialDataLayer.filter(item => {
-    if (!item) return false;
-    if (item[0] === 'event' && item[1] === 'conversion') return true;
-    if (item.event === 'conversion') return true;
-    return false;
+  const initialConversionCount = await page.evaluate(() => {
+    const dl = window.dataLayer || [];
+    return dl.filter(item => item && ((item[0] === 'event' && item[1] === 'conversion') || item.event === 'conversion')).length;
   });
-
-  console.log(`Conversions on page load: ${initialConversions.length} (Expected: 0)`);
-  if (initialConversions.length !== 0) {
+  console.log(`Conversions on page load: ${initialConversionCount} (Expected: 0)`);
+  if (initialConversionCount !== 0) {
     throw new Error('FAIL: Conversion event fired on initial page load!');
   }
   console.log('PASS: Opening page did NOT produce any conversion event.');
@@ -125,15 +165,12 @@ async function testTracking() {
   // 2. Assert: No conversion on page refresh
   console.log('\n[TEST 2] Refreshing page...');
   await page.reload({ waitUntil: 'networkidle2' });
-  const refreshDataLayer = await page.evaluate(() => window.dataLayer || []);
-  const refreshConversions = refreshDataLayer.filter(item => {
-    if (!item) return false;
-    if (item[0] === 'event' && item[1] === 'conversion') return true;
-    if (item.event === 'conversion') return true;
-    return false;
+  const refreshConversionCount = await page.evaluate(() => {
+    const dl = window.dataLayer || [];
+    return dl.filter(item => item && ((item[0] === 'event' && item[1] === 'conversion') || item.event === 'conversion')).length;
   });
-  console.log(`Conversions after page refresh: ${refreshConversions.length} (Expected: 0)`);
-  if (refreshConversions.length !== 0) {
+  console.log(`Conversions after page refresh: ${refreshConversionCount} (Expected: 0)`);
+  if (refreshConversionCount !== 0) {
     throw new Error('FAIL: Conversion event fired on page refresh!');
   }
   console.log('PASS: Refreshing the page did NOT produce any conversion event.');
@@ -145,7 +182,11 @@ async function testTracking() {
     const el = document.getElementById('catalog');
     if (el) el.scrollIntoView();
   });
-  await new Promise(r => setTimeout(r, 800));
+
+  await page.waitForFunction(() => {
+    const buttons = Array.from(document.querySelectorAll('button'));
+    return buttons.some(b => b.textContent.includes('Add To Cart'));
+  }, { timeout: 15000 });
 
   await page.evaluate(() => {
     const buttons = Array.from(document.querySelectorAll('button'));
@@ -154,16 +195,12 @@ async function testTracking() {
   });
   await new Promise(r => setTimeout(r, 800));
 
-  const afterFirstAddDataLayer = await page.evaluate(() => window.dataLayer || []);
-  const firstConversions = afterFirstAddDataLayer.filter(item => {
-    if (!item) return false;
-    if (item[0] === 'event' && item[1] === 'conversion') return true;
-    if (item.event === 'conversion') return true;
-    return false;
+  const firstAddConversionCount = await page.evaluate(() => {
+    const dl = window.dataLayer || [];
+    return dl.filter(item => item && ((item[0] === 'event' && item[1] === 'conversion') || item.event === 'conversion')).length;
   });
-
-  console.log(`Conversions after 1st Add to Cart: ${firstConversions.length} (Expected: 1)`);
-  if (firstConversions.length !== 1) {
+  console.log(`Conversions after 1st Add to Cart: ${firstAddConversionCount} (Expected: 1)`);
+  if (firstAddConversionCount !== 1) {
     throw new Error('FAIL: Expected exactly 1 conversion event on 1st Add to Cart!');
   }
   console.log('PASS: Exactly 1 Add to Cart conversion fired.');
@@ -177,15 +214,12 @@ async function testTracking() {
   });
   await new Promise(r => setTimeout(r, 600));
 
-  const afterBeginCheckout = await page.evaluate(() => window.dataLayer || []);
-  const beginCheckoutEvents = afterBeginCheckout.filter(item => {
-    if (!item) return false;
-    if (item[0] === 'event' && item[1] === 'begin_checkout') return true;
-    if (item.event === 'begin_checkout') return true;
-    return false;
+  const beginCheckoutCount = await page.evaluate(() => {
+    const dl = window.dataLayer || [];
+    return dl.filter(item => item && ((item[0] === 'event' && item[1] === 'begin_checkout') || item.event === 'begin_checkout')).length;
   });
-  console.log(`begin_checkout events captured: ${beginCheckoutEvents.length} (Expected: >= 1)`);
-  if (beginCheckoutEvents.length === 0) {
+  console.log(`begin_checkout events captured: ${beginCheckoutCount} (Expected: >= 1)`);
+  if (beginCheckoutCount === 0) {
     throw new Error('FAIL: begin_checkout event did not fire!');
   }
   console.log('PASS: begin_checkout fired successfully.');
@@ -194,36 +228,24 @@ async function testTracking() {
   console.log('\n[TEST 5] Testing Checkout with failed API (500 Error)...');
   mockOrderStatus = 500;
 
-  // Fill guest checkout form
+  // Fill guest checkout form with native typing
+  await page.type('input[name="name"]', 'John Doe');
+  await page.type('input[name="email"]', 'john@vintage.com');
+  await page.type('input[name="phone"]', '+19452879865');
+  await page.type('input[name="shippingAddress"]', '14826 Yarberry St, Houston TX');
+
   await page.evaluate(() => {
-    const nameInput = document.querySelector('input[name="name"]');
-    const emailInput = document.querySelector('input[name="email"]');
-    const phoneInput = document.querySelector('input[name="phone"]');
-    const addressInput = document.querySelector('input[name="shippingAddress"]');
-
-    if (nameInput) nameInput.value = 'John Doe';
-    if (nameInput) nameInput.dispatchEvent(new Event('input', { bubbles: true }));
-    if (emailInput) emailInput.value = 'john@vintage.com';
-    if (emailInput) emailInput.dispatchEvent(new Event('input', { bubbles: true }));
-    if (phoneInput) phoneInput.value = '+1 945 287-9865';
-    if (phoneInput) phoneInput.dispatchEvent(new Event('input', { bubbles: true }));
-    if (addressInput) addressInput.value = '14826 Yarberry St, Houston TX';
-    if (addressInput) addressInput.dispatchEvent(new Event('input', { bubbles: true }));
-
-    const submitBtn = document.querySelector('button[type="submit"]');
-    if (submitBtn) submitBtn.click();
+    const form = document.querySelector('form');
+    if (form) form.requestSubmit();
   });
-  await new Promise(r => setTimeout(r, 1200));
+  await new Promise(r => setTimeout(r, 1500));
 
-  const afterFailedOrder = await page.evaluate(() => window.dataLayer || []);
-  const purchaseAfterFail = afterFailedOrder.filter(item => {
-    if (!item) return false;
-    if (item[0] === 'event' && item[1] === 'purchase') return true;
-    if (item.event === 'purchase') return true;
-    return false;
+  const purchaseAfterFailCount = await page.evaluate(() => {
+    const dl = window.dataLayer || [];
+    return dl.filter(item => item && ((item[0] === 'event' && item[1] === 'purchase') || item.event === 'purchase')).length;
   });
-  console.log(`Purchase events after failed API call: ${purchaseAfterFail.length} (Expected: 0)`);
-  if (purchaseAfterFail.length !== 0) {
+  console.log(`Purchase events after failed API call: ${purchaseAfterFailCount} (Expected: 0)`);
+  if (purchaseAfterFailCount !== 0) {
     throw new Error('FAIL: Purchase conversion fired even though the API call failed!');
   }
 
@@ -243,21 +265,17 @@ async function testTracking() {
   mockOrderStatus = 200;
 
   await page.evaluate(() => {
-    const submitBtn = document.querySelector('button[type="submit"]');
-    if (submitBtn) submitBtn.click();
+    const form = document.querySelector('form');
+    if (form) form.requestSubmit();
   });
-  await new Promise(r => setTimeout(r, 1200));
+  await new Promise(r => setTimeout(r, 1500));
 
-  const afterSuccessOrder = await page.evaluate(() => window.dataLayer || []);
-  const purchaseAfterSuccess = afterSuccessOrder.filter(item => {
-    if (!item) return false;
-    if (item[0] === 'event' && item[1] === 'purchase') return true;
-    if (item.event === 'purchase') return true;
-    return false;
+  const purchaseAfterSuccessCount = await page.evaluate(() => {
+    const dl = window.dataLayer || [];
+    return dl.filter(item => item && ((item[0] === 'event' && item[1] === 'purchase') || item.event === 'purchase')).length;
   });
-
-  console.log(`Purchase events after success: ${purchaseAfterSuccess.length} (Expected: 1)`);
-  if (purchaseAfterSuccess.length !== 1) {
+  console.log(`Purchase events after success: ${purchaseAfterSuccessCount} (Expected: 1)`);
+  if (purchaseAfterSuccessCount !== 1) {
     throw new Error('FAIL: Exactly 1 purchase event must fire on successful API response!');
   }
 
@@ -270,6 +288,24 @@ async function testTracking() {
     throw new Error('FAIL: CartDrawer did not display the backend-generated order ID!');
   }
   console.log('PASS: Exactly 1 purchase event fired with backend transaction_id.');
+
+  // 7. Assert: tel: link click fires contact event
+  console.log('\n[TEST 7] Testing tel: click delegated tracking...');
+  await page.evaluate(() => {
+    const telLink = document.querySelector('a[href^="tel:"]');
+    if (telLink) telLink.click();
+  });
+  await new Promise(r => setTimeout(r, 400));
+
+  const contactEventCount = await page.evaluate(() => {
+    const dl = window.dataLayer || [];
+    return dl.filter(item => item && ((item[0] === 'event' && item[1] === 'contact') || item.event === 'contact')).length;
+  });
+  console.log(`Contact events after tel: click: ${contactEventCount} (Expected: >= 1)`);
+  if (contactEventCount === 0) {
+    throw new Error('FAIL: Delegated tel: click did not fire contact event!');
+  }
+  console.log('PASS: Delegated tel: click tracked successfully.');
 
   await browser.close();
   console.log('\n--- ALL CONVERSION TRACKING AND HONEST FLOW TESTS PASSED ---');
