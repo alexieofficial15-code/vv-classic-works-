@@ -39,9 +39,9 @@ In the Render Dashboard under **Environment Variables**, add the following keys 
 | `SUPABASE_URL` | Your Supabase Project URL | `https://xyzcompany.supabase.co` |
 | `SUPABASE_ANON_KEY` | Your Supabase Public Anon Key | `eyJhbGciOi...` |
 | `JWT_SECRET` | Secret key for JWT tokens | `your_secret_jwt_key_here` |
-| `ADMIN_EMAIL` | Master Admin Email | `admin@rustyaircooled.com` |
-| `ADMIN_PASSWORD` | Master Admin Password | `admin123` |
-| `ADMIN_SECRET_KEY` | Admin Secret Auth Key | `RUSTY-VINTAGE-2026` |
+| `ADMIN_EMAIL` | Master Admin Email | `your_admin_email@example.com` |
+| `ADMIN_PASSWORD` | Master Admin Password | `your_strong_admin_password_here` |
+| `ADMIN_SECRET_KEY` | Admin Secret Auth Key | `your_optional_secret_key_here` |
 
 ---
 

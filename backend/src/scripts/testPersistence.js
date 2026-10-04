@@ -8,7 +8,7 @@ async function runPersistenceTest() {
   console.log('Supabase Configured:', isSupabaseConfigured);
 
   const timestamp = Date.now();
-  const testEmail = `test_persist_${timestamp}@rustyaircooled.com`;
+  const testEmail = `test_persist_${timestamp}@classicaircooledvwworks.com`;
   const testPartId = `part-persist-${timestamp}`;
   const testOrderId = `ORD-PERSIST-${timestamp}`;
 

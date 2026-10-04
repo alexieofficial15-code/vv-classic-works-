@@ -1,9 +1,9 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import { dbService } from '../config/supabase.js';
+import { JWT_SECRET } from '../config/secrets.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'vintage_secret';
 
 // Optional Auth middleware for submitting requests (Allows both Guests and Registered Users)
 const optionalAuthenticate = (req, res, next) => {

@@ -16,14 +16,42 @@ const app = express();
 // Gzip/deflate compression for all API responses
 app.use(compression());
 
-// Middlewares - Permissive CORS to allow Vercel, Netlify, Render, Mobile browsers, and Localhost
+// CORS Configuration: restricted if CLIENT_ORIGIN is set, else permissive with warning
+const clientOriginEnv = process.env.CLIENT_ORIGIN;
+let corsOrigin;
+
+if (clientOriginEnv && clientOriginEnv.trim() !== '') {
+  const allowedOrigins = clientOriginEnv
+    .split(',')
+    .map(o => o.trim().replace(/\/+$/, ''))
+    .filter(Boolean);
+
+  corsOrigin = (origin, callback) => {
+    // Allow requests with no origin (such as mobile apps, native requests, curl)
+    if (!origin) return callback(null, true);
+
+    const normalized = origin.trim().replace(/\/+$/, '');
+    const isAllowed = allowedOrigins.includes(normalized) ||
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalized);
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked: Origin ${origin} is not allowed`));
+    }
+  };
+} else {
+  console.warn('⚠️  [SECURITY WARNING] CLIENT_ORIGIN is not set in environment. Permissive CORS is currently active.');
+  corsOrigin = true;
+}
+
 app.use(cors({
-  origin: true,
+  origin: corsOrigin,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
-app.options('*', cors());
+app.options('*', cors({ origin: corsOrigin, credentials: true }));
 
 // Expand JSON body parser limit to 50MB for mobile photo uploads
 app.use(express.json({ limit: '50mb' }));

@@ -17,10 +17,10 @@ Open `backend/.env` and fill in your Supabase credentials:
 
 ```env
 PORT=5000
-JWT_SECRET=vintage_restorer_master_jwt_secret_key_2026_x89a2
-ADMIN_EMAIL=admin@rustyaircooled.com
-ADMIN_PASSWORD=admin123
-ADMIN_SECRET_KEY=RUSTY-VINTAGE-2026
+JWT_SECRET=your_jwt_secret_key_here
+ADMIN_EMAIL=your_admin_email@example.com
+ADMIN_PASSWORD=your_admin_password_here
+ADMIN_SECRET_KEY=your_optional_secret_key_here
 
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_ANON_KEY=your-supabase-anon-key

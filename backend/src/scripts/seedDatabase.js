@@ -46,15 +46,15 @@ async function runSeeder() {
     // 3. Seed Default Test User
     console.log('👤 Checking Users in Supabase...');
     try {
-      const testUser = await dbService.getUserByEmail('test@rustyaircooled.com');
+      const testUser = await dbService.getUserByEmail('test@classicaircooledvwworks.com');
       if (!testUser) {
         await dbService.createUser({
           name: 'Master Restorer',
-          email: 'test@rustyaircooled.com',
+          email: 'test@classicaircooledvwworks.com',
           passwordHash: '$2a$10$w09Zk5l1M/S5V0/H8.q9Ou/dMvE7w9N5p1A4B3C2D1E0F',
           role: 'USER'
         });
-        console.log('  + Inserted default test user: test@rustyaircooled.com');
+        console.log('  + Inserted default test user: test@classicaircooledvwworks.com');
       } else {
         console.log('  . Found existing test user in Supabase.');
       }

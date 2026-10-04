@@ -2,10 +2,9 @@
 // Synchronized with Supabase 'messages' table & 7-Day Session Management
 
 export const DEFAULT_API_BASE = 'https://vv-classic-works.onrender.com';
-export const DEFAULT_ADMIN_TOKEN = 'master-admin-token-2026';
 
 let currentBaseUrl = DEFAULT_API_BASE;
-let currentAdminToken = DEFAULT_ADMIN_TOKEN;
+let currentAdminToken = null;
 
 /**
  * Sanitize text inputs before sending across the wire
