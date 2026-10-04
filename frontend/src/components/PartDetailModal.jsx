@@ -204,7 +204,9 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
               </h2>
 
               <div className="text-xl sm:text-2xl font-extrabold text-amber-400 font-display mb-3 sm:mb-4">
-                ${part.price ? part.price.toLocaleString() : '0.00'} USD
+                {(part.price && Number(part.price) > 0) 
+                  ? `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(part.price)} USD`
+                  : 'Contact for price'}
               </div>
 
               {/* Complete Vehicle Documentation & Attributes (only if specs exist) */}
@@ -311,7 +313,11 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
                   className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 bg-[#ff7a1a] hover:bg-[#ffb68e] text-black py-2.5 sm:py-3 px-4 rounded-xl font-bold text-xs sm:text-sm shadow-xl transition-all uppercase tracking-wider cursor-pointer"
                 >
                   <ShoppingBag className="w-4 h-4" />
-                  <span>Add To Cart (${part.price ? part.price.toLocaleString() : '0.00'})</span>
+                  <span>
+                    Add To Cart {(part.price && Number(part.price) > 0) 
+                      ? `(${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(part.price)})`
+                      : ''}
+                  </span>
                 </button>
 
                 <button

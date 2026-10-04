@@ -4,6 +4,56 @@ import { VW_NAV_CATEGORIES, VEHICLE_SYSTEMS, ENGINE_COMPATIBILITIES, USAGE_TYPES
 import { API_BASE_URL } from '../config/api';
 import { getCatalogParts, getCachedCatalogParts } from '../data/catalogStore';
 
+/**
+ * Format catalog card price with currency symbol and 2 decimals (e.g. $3,450.00).
+ * Plain text element ensures search engines and Google Merchant Center crawlers match price.
+ */
+function formatCardPrice(price) {
+  const num = typeof price === 'string' ? parseFloat(price) : Number(price);
+  if (isNaN(num) || num <= 0) {
+    return 'Contact for price';
+  }
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(num);
+}
+
+/**
+ * Resolve stock state for product cards: 'In stock', 'Only N left', or 'Sold out'
+ */
+function getStockBadgeData(part) {
+  const inStockFlag = part.inStock ?? part.in_stock;
+  const rawStock = part.stock;
+  const stockNum = (rawStock !== undefined && rawStock !== null && rawStock !== '') 
+    ? parseInt(rawStock, 10) 
+    : null;
+
+  if (inStockFlag === false || (stockNum !== null && !isNaN(stockNum) && stockNum <= 0)) {
+    return {
+      text: 'Sold out',
+      badgeClass: 'text-rose-400 bg-rose-500/10 border-rose-500/30',
+      dotClass: 'bg-rose-500'
+    };
+  }
+
+  if (stockNum !== null && !isNaN(stockNum) && stockNum > 0 && stockNum <= 3) {
+    return {
+      text: `Only ${stockNum} left`,
+      badgeClass: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+      dotClass: 'bg-amber-400 animate-pulse'
+    };
+  }
+
+  return {
+    text: 'In stock',
+    badgeClass: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+    dotClass: 'bg-emerald-400'
+  };
+}
+
 // Auto-Rotating & Swipeable Image Slider for Landing Page Part Cards
 function RotatingPartCardImage({ part, onClickImage }) {
   const images = useMemo(() => {
@@ -434,6 +484,11 @@ export default function CatalogSection({
                   <div className="h-4 bg-[#141415] rounded w-5/6"></div>
                   <div className="h-3 bg-[#141415] rounded w-1/2"></div>
                 </div>
+                {/* Price & Stock Skeleton Placeholder to prevent layout shift */}
+                <div className="pt-2 pb-1 border-t border-[#584236]/20 flex items-center justify-between mb-2">
+                  <div className="h-5 bg-[#ff7a1a]/20 rounded w-24"></div>
+                  <div className="h-4 bg-[#141415] rounded w-16"></div>
+                </div>
                 <div className="pt-2 border-t border-[#584236]/20 space-y-2">
                   <div className="h-9 bg-[#ff7a1a]/15 rounded-xs w-full"></div>
                   <div className="grid grid-cols-2 gap-2">
@@ -530,7 +585,7 @@ export default function CatalogSection({
                       </button>
                     </div>
 
-                    <div className="space-y-1 sm:space-y-1.5 mb-3">
+                    <div className="space-y-1 sm:space-y-1.5 mb-2">
                       <span className="text-[9px] sm:text-[10px] text-[#ff7a1a] uppercase font-bold block truncate">
                         {part.systemCategory || part.partSystem || 'Vehicle Part'} { (part.partSubcategory || part.specificPartCategory || part.subcatId) ? `• ${part.partSubcategory || part.specificPartCategory || part.subcatId}` : '' }
                       </span>
@@ -542,14 +597,35 @@ export default function CatalogSection({
                         {part.title}
                       </h3>
                       {part.oemNumber && (
-                        <div className="text-[10px] text-[#83cffb] truncate">
+                        <div className="text-[10px] text-[#83cffb] truncate font-mono">
                           OEM // {part.oemNumber}
                         </div>
                       )}
                     </div>
+
+                    {/* Prominent Price & Stock Status Row */}
+                    <div className="pt-2 pb-1 border-t border-[#584236]/30 flex items-center justify-between gap-2 flex-wrap mb-2">
+                      <div className="flex flex-col">
+                        <span 
+                          className={`font-mono font-extrabold tracking-tight ${(part.price && Number(part.price) > 0) ? 'text-base sm:text-lg text-amber-400' : 'text-xs text-[#a78b7d]'}`}
+                          itemProp="price"
+                        >
+                          {formatCardPrice(part.price)}
+                        </span>
+                      </div>
+                      {(() => {
+                        const stockInfo = getStockBadgeData(part);
+                        return (
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-xs text-[10px] font-mono border ${stockInfo.badgeClass}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${stockInfo.dotClass}`} />
+                            <span>{stockInfo.text}</span>
+                          </span>
+                        );
+                      })()}
+                    </div>
                   </div>
 
-                  <div className="pt-2.5 sm:pt-3 border-t border-[#584236]/30 flex flex-col space-y-2">
+                  <div className="pt-2 sm:pt-2.5 border-t border-[#584236]/30 flex flex-col space-y-2">
                     {/* Primary Button: ADD TO CART */}
                     <button
                       onClick={() => handleAdd(part)}

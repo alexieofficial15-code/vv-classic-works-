@@ -193,6 +193,26 @@ async function testTracking() {
     return buttons.some(b => b.textContent.includes('Add To Cart'));
   }, { timeout: 15000 });
 
+  // Assert: Prominent price and stock status visible immediately on product card
+  const cardPriceInfo = await page.evaluate(() => {
+    const priceEl = document.querySelector('[itemprop="price"]');
+    const catalogEl = document.getElementById('catalog');
+    const hasStock = catalogEl ? (catalogEl.innerText.includes('In stock') || catalogEl.innerText.includes('left')) : false;
+    return {
+      priceText: priceEl ? priceEl.textContent.trim() : null,
+      hasStock
+    };
+  });
+  console.log(`Product card price displayed: "${cardPriceInfo.priceText}" (Expected: "$250.00")`);
+  console.log(`Product card stock state displayed: ${cardPriceInfo.hasStock}`);
+  if (!cardPriceInfo.priceText || !cardPriceInfo.priceText.includes('$250.00')) {
+    throw new Error(`FAIL: Product card missing prominent formatted price "$250.00"! Found: ${cardPriceInfo.priceText}`);
+  }
+  if (!cardPriceInfo.hasStock) {
+    throw new Error('FAIL: Product card missing visible stock status badge!');
+  }
+  console.log('PASS: Product card displays prominent formatted price ($250.00) and stock state immediately without clicking specs.');
+
   await page.evaluate(() => {
     const buttons = Array.from(document.querySelectorAll('button'));
     const firstCartBtn = buttons.find(b => b.textContent.includes('Add To Cart'));

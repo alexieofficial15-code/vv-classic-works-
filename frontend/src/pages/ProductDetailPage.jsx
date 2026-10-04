@@ -217,7 +217,14 @@ export default function ProductDetailPage({
             </h1>
 
             <div className="text-3xl font-extrabold text-amber-400 font-display">
-              ${price.toLocaleString()} <span className="text-xs font-mono text-slate-400">USD</span>
+              {price > 0 ? (
+                <>
+                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(price)}{' '}
+                  <span className="text-xs font-mono text-slate-400">USD</span>
+                </>
+              ) : (
+                <span className="text-xl text-[#a78b7d]">Contact for price</span>
+              )}
             </div>
 
             <p className="text-xs sm:text-sm text-[#e0c0b1] leading-relaxed">

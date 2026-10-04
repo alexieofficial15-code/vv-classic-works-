@@ -5,10 +5,15 @@ import { ENGINE_HOTSPOTS, YOUTUBE_SHOWCASE } from '../data/db.js';
 
 const router = express.Router();
 
-// Helper to replace large inline base64 images with lightweight API URLs
+// Helper to replace large inline base64 images with lightweight API URLs and ensure price/stock exist
 export function transformPartForCatalog(part) {
   if (!part) return part;
   const p = { ...part };
+
+  // Guarantee clean price and stock fields for Google Merchant Center & Catalog Cards
+  p.price = typeof p.price === 'number' && !isNaN(p.price) ? p.price : (parseFloat(p.price) || 0);
+  p.stock = (p.stock !== undefined && p.stock !== null && !isNaN(parseInt(p.stock, 10))) ? parseInt(p.stock, 10) : 0;
+  p.inStock = Boolean(p.inStock ?? p.in_stock ?? true);
 
   if (typeof p.image === 'string' && p.image.startsWith('data:')) {
     p.image = `/api/parts/${p.id}/image/main`;
