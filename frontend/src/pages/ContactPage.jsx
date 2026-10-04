@@ -1,7 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Phone, MapPin, Clock, Mail, MessageCircle, ArrowLeft, Wrench, ShieldCheck } from 'lucide-react';
+import { updateDocumentMeta } from '../utils/router';
 
 export default function ContactPage({ onNavigate }) {
+  useEffect(() => {
+    updateDocumentMeta({
+      title: 'Contact Workshop & Garage | Classic Aircooled VW Works',
+      description: 'Contact Classic Aircooled VW Works in Houston, TX. Phone: +1 (945) 287-9865. Address: 14826 Yarberry St.',
+      canonicalPath: '/contact',
+      ogType: 'website'
+    });
+  }, []);
   const rawWhatsapp = import.meta.env.VITE_WHATSAPP_NUMBER;
   const whatsappNumber = rawWhatsapp ? String(rawWhatsapp).replace(/\D/g, '') : null;
   const hasWhatsapp = Boolean(whatsappNumber && whatsappNumber.length >= 7);

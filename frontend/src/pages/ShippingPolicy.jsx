@@ -1,7 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Truck, ArrowLeft, Phone, MapPin, ShieldCheck, AlertCircle } from 'lucide-react';
+import { updateDocumentMeta } from '../utils/router';
 
 export default function ShippingPolicy({ onNavigate }) {
+  useEffect(() => {
+    updateDocumentMeta({
+      title: 'Shipping Policy & Palletized Freight | Classic Aircooled VW Works',
+      description: 'Shipping and freight policy for classic VW engines, transaxles, and parts dispatched from Houston, TX.',
+      canonicalPath: '/shipping',
+      ogType: 'website'
+    });
+  }, []);
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 text-[#e0c0b1] font-technical-data">
       <div className="mb-8">

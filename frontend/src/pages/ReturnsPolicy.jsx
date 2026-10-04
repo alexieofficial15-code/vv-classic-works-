@@ -1,7 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { RotateCcw, ArrowLeft, Phone, AlertTriangle, CheckCircle } from 'lucide-react';
+import { updateDocumentMeta } from '../utils/router';
 
 export default function ReturnsPolicy({ onNavigate }) {
+  useEffect(() => {
+    updateDocumentMeta({
+      title: 'Returns & Refund Policy | Classic Aircooled VW Works',
+      description: 'Return policy, core deposit terms, and RMA guidelines for vintage aircooled VW components.',
+      canonicalPath: '/returns',
+      ogType: 'website'
+    });
+  }, []);
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 text-[#e0c0b1] font-technical-data">
       <div className="mb-8">

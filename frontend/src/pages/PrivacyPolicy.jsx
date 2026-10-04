@@ -1,7 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Shield, ArrowLeft, Phone, MapPin, Clock, Mail } from 'lucide-react';
+import { updateDocumentMeta } from '../utils/router';
 
 export default function PrivacyPolicy({ onNavigate }) {
+  useEffect(() => {
+    updateDocumentMeta({
+      title: 'Privacy Policy | Classic Aircooled VW Works',
+      description: 'Privacy policy for Classic Aircooled VW Works. Learn how customer data, orders, and tracking cookies are collected and protected.',
+      canonicalPath: '/privacy',
+      ogType: 'website'
+    });
+  }, []);
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 text-[#e0c0b1] font-technical-data">
       <div className="mb-8">

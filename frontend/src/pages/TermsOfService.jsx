@@ -1,7 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FileText, ArrowLeft, Phone, ShieldCheck } from 'lucide-react';
+import { updateDocumentMeta } from '../utils/router';
 
 export default function TermsOfService({ onNavigate }) {
+  useEffect(() => {
+    updateDocumentMeta({
+      title: 'Terms of Service | Classic Aircooled VW Works',
+      description: 'Terms of service and sale for Classic Aircooled VW Works engines, parts, and restoration services.',
+      canonicalPath: '/terms',
+      ogType: 'website'
+    });
+  }, []);
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 text-[#e0c0b1] font-technical-data">
       <div className="mb-8">

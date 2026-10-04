@@ -17,7 +17,8 @@ export default function Navbar({
   onSelectFilter,
   currentUser,
   onLogout,
-  onNavigateToShop
+  onNavigateToShop,
+  onNavigate
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeHoverCat, setActiveHoverCat] = useState(null);
@@ -79,8 +80,15 @@ export default function Navbar({
         
         {/* Brand Logo Header */}
         <button 
-          onClick={onNavigateToShop} 
-          className="flex items-center space-x-2 sm:space-x-3 group shrink-0 text-left focus:outline-none"
+          onClick={(e) => {
+            if (onNavigate) {
+              e.preventDefault();
+              onNavigate('/');
+            } else if (onNavigateToShop) {
+              onNavigateToShop();
+            }
+          }} 
+          className="flex items-center space-x-2 sm:space-x-3 group shrink-0 text-left focus:outline-none cursor-pointer"
         >
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xs overflow-hidden border border-[#ff7a1a]/60 shadow-[0_0_12px_rgba(255,122,26,0.35)] group-hover:border-[#ff7a1a] transition-all bg-[#141416] flex items-center justify-center shrink-0">
             <img 
@@ -155,7 +163,13 @@ export default function Navbar({
 
           {/* Workshop Location Button */}
           <a
-            href="#workshop-location"
+            href="/contact"
+            onClick={(e) => {
+              if (onNavigate) {
+                e.preventDefault();
+                onNavigate('/contact');
+              }
+            }}
             className="hidden md:flex items-center gap-1.5 font-label-caps text-xs text-[#e0c0b1] hover:text-[#ff7a1a] bg-[#201f20] hover:bg-[#2c2b2d] border border-[#584236]/40 px-2.5 py-2 min-h-[40px] sm:min-h-[44px] uppercase font-bold tracking-wider rounded-xs transition-all shadow-sm"
             title="Houston Workshop & Garage Map"
           >
@@ -262,8 +276,45 @@ export default function Navbar({
             })}
           </div>
 
-          {/* Right Side: Browse All Parts Dropdown Button */}
-          <div className="flex items-center space-x-2" onMouseLeave={handleMouseLeave}>
+          {/* Right Side: Landing Pages + Browse All Parts Dropdown Button */}
+          <div className="flex items-center space-x-1 sm:space-x-2" onMouseLeave={handleMouseLeave}>
+            <a
+              href="/engines"
+              onClick={(e) => {
+                if (onNavigate) {
+                  e.preventDefault();
+                  onNavigate('/engines');
+                }
+              }}
+              className="py-2 px-3 text-[#e0c0b1] hover:text-[#ff7a1a] transition-colors font-bold tracking-wider"
+            >
+              Engines
+            </a>
+            <a
+              href="/parts"
+              onClick={(e) => {
+                if (onNavigate) {
+                  e.preventDefault();
+                  onNavigate('/parts');
+                }
+              }}
+              className="py-2 px-3 text-[#e0c0b1] hover:text-[#ff7a1a] transition-colors font-bold tracking-wider"
+            >
+              Parts
+            </a>
+            <a
+              href="/restoration"
+              onClick={(e) => {
+                if (onNavigate) {
+                  e.preventDefault();
+                  onNavigate('/restoration');
+                }
+              }}
+              className="py-2 px-3 text-[#e0c0b1] hover:text-[#ff7a1a] transition-colors font-bold tracking-wider mr-1"
+            >
+              Restoration
+            </a>
+
             {(() => {
               const partsObj = { menuType: 'parts', id: 'all-parts' };
               const isPinned = pinnedCat?.menuType === 'parts';
@@ -346,6 +397,49 @@ export default function Navbar({
             </div>
             <ChevronRight className="w-4 h-4 text-[#ff7a1a]" />
           </button>
+
+          {/* Quick Landing Page Navigation Links */}
+          <div className="grid grid-cols-3 gap-2 pt-1 font-mono text-center">
+            <a
+              href="/engines"
+              onClick={(e) => {
+                if (onNavigate) {
+                  e.preventDefault();
+                  onNavigate('/engines');
+                  setMobileMenuOpen(false);
+                }
+              }}
+              className="py-2.5 px-2 bg-[#201f20] hover:bg-[#2c2b2d] border border-[#584236]/50 text-[#ffb68e] text-[11px] font-bold uppercase rounded-xs transition-colors"
+            >
+              Engines
+            </a>
+            <a
+              href="/parts"
+              onClick={(e) => {
+                if (onNavigate) {
+                  e.preventDefault();
+                  onNavigate('/parts');
+                  setMobileMenuOpen(false);
+                }
+              }}
+              className="py-2.5 px-2 bg-[#201f20] hover:bg-[#2c2b2d] border border-[#584236]/50 text-[#ffb68e] text-[11px] font-bold uppercase rounded-xs transition-colors"
+            >
+              Parts
+            </a>
+            <a
+              href="/restoration"
+              onClick={(e) => {
+                if (onNavigate) {
+                  e.preventDefault();
+                  onNavigate('/restoration');
+                  setMobileMenuOpen(false);
+                }
+              }}
+              className="py-2.5 px-2 bg-[#201f20] hover:bg-[#2c2b2d] border border-[#584236]/50 text-[#ffb68e] text-[11px] font-bold uppercase rounded-xs transition-colors"
+            >
+              Restoration
+            </a>
+          </div>
 
           {/* Accordion Categories */}
           <div className="space-y-2 pt-1">

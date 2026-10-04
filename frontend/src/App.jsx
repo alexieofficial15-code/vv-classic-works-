@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { API_BASE_URL } from './config/api';
 import { getCatalogParts, invalidateCatalogCache } from './data/catalogStore';
 import { trackAddToCart, trackPurchase, trackLead, sanitizeImage, sanitizeOrderItem } from './analytics';
+import { useRouter, updateDocumentMeta, slugify } from './utils/router';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import FindPartsWizard from './components/FindPartsWizard';
@@ -19,6 +20,18 @@ import AdminPanel from './components/AdminPanel';
 import UserDashboard from './components/UserDashboard';
 import StickyCallBar from './components/StickyCallBar';
 import Footer from './components/Footer';
+
+// Route Pages
+import EnginesPage from './pages/EnginesPage';
+import PartsPage from './pages/PartsPage';
+import RestorationPage from './pages/RestorationPage';
+import ProductDetailPage from './pages/ProductDetailPage';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import ShippingPolicy from './pages/ShippingPolicy';
+import ReturnsPolicy from './pages/ReturnsPolicy';
+import TermsOfService from './pages/TermsOfService';
+import ContactPage from './pages/ContactPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -59,12 +72,9 @@ export default function App() {
     engineSize: 'ALL' 
   });
 
-  // Page Navigation State ('shop' | 'dashboard') - Persisted across refreshes
-  const [currentPage, setCurrentPage] = useState(() => {
-    if (window.location.hash === '#dashboard') return 'dashboard';
-    if (window.location.hash === '#admin') return 'shop';
-    return localStorage.getItem('currentPage') || 'shop';
-  });
+  // Client-side Router Hook
+  const { pathname, hash, route, navigate } = useRouter();
+  const isDashboardView = hash === '#dashboard';
 
   // User-scoped Dashboard State
   const [userRequests, setUserRequests] = useState([]);
@@ -78,35 +88,39 @@ export default function App() {
   // Cache of parts for fast lookup during browser Back / Forward navigation
   const partsCacheRef = useRef(new Map());
 
-  // Navigation helpers that record history states (allowing Browser Back / Forward to work)
-  const navigateToPage = (newPage) => {
-    if (newPage === currentPage) return;
-    setCurrentPage(newPage);
-    localStorage.setItem('currentPage', newPage);
-    const targetHash = newPage === 'dashboard' ? '#dashboard' : '#shop';
-    if (window.location.hash !== targetHash) {
-      window.history.pushState({ page: newPage }, '', targetHash);
+  const handleOpenUserDashboard = () => {
+    if (!currentUser) {
+      handleOpenAuth();
+    } else {
+      if (window.location.hash !== '#dashboard') {
+        window.history.pushState(null, '', window.location.pathname + window.location.search + '#dashboard');
+      }
+    }
+  };
+
+  const handleCloseUserDashboard = () => {
+    if (window.location.hash === '#dashboard') {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
     }
   };
 
   const handleViewPartDetails = (part) => {
     if (!part) return;
-    partsCacheRef.current.set(String(part.id), part);
-    setActiveModalPart(part);
-    const partHash = `#part-${part.id}`;
-    if (window.location.hash !== partHash) {
-      window.history.pushState({ modal: 'part', partId: part.id, page: currentPage }, '', partHash);
-    }
+    const slug = slugify(part.title);
+    navigate(`/parts/item/${part.id}-${slug}`);
   };
 
   const handleClosePartDetails = () => {
     setActiveModalPart(null);
     if (window.location.hash.startsWith('#part-')) {
-      if (window.history.state?.modal === 'part' && window.history.length > 1) {
+      if (window.history.length > 1) {
         window.history.back();
       } else {
-        const fallback = currentPage === 'dashboard' ? '#dashboard' : '#shop';
-        window.history.replaceState({ page: currentPage }, '', fallback);
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
       }
     }
   };
@@ -114,18 +128,17 @@ export default function App() {
   const handleOpenCart = () => {
     setIsCartOpen(true);
     if (window.location.hash !== '#cart') {
-      window.history.pushState({ modal: 'cart', page: currentPage }, '', '#cart');
+      window.history.pushState(null, '', window.location.pathname + window.location.search + '#cart');
     }
   };
 
   const handleCloseCart = () => {
     setIsCartOpen(false);
     if (window.location.hash === '#cart') {
-      if (window.history.state?.modal === 'cart' && window.history.length > 1) {
+      if (window.history.length > 1) {
         window.history.back();
       } else {
-        const fallback = currentPage === 'dashboard' ? '#dashboard' : '#shop';
-        window.history.replaceState({ page: currentPage }, '', fallback);
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
       }
     }
   };
@@ -133,18 +146,17 @@ export default function App() {
   const handleOpenGuidedSearch = () => {
     setIsGuidedSearchOpen(true);
     if (window.location.hash !== '#guided-search') {
-      window.history.pushState({ modal: 'guided-search', page: currentPage }, '', '#guided-search');
+      window.history.pushState(null, '', window.location.pathname + window.location.search + '#guided-search');
     }
   };
 
   const handleCloseGuidedSearch = () => {
     setIsGuidedSearchOpen(false);
     if (window.location.hash === '#guided-search') {
-      if (window.history.state?.modal === 'guided-search' && window.history.length > 1) {
+      if (window.history.length > 1) {
         window.history.back();
       } else {
-        const fallback = currentPage === 'dashboard' ? '#dashboard' : '#shop';
-        window.history.replaceState({ page: currentPage }, '', fallback);
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
       }
     }
   };
@@ -152,18 +164,17 @@ export default function App() {
   const handleOpenAuth = () => {
     setIsAuthOpen(true);
     if (window.location.hash !== '#auth') {
-      window.history.pushState({ modal: 'auth', page: currentPage }, '', '#auth');
+      window.history.pushState(null, '', window.location.pathname + window.location.search + '#auth');
     }
   };
 
   const handleCloseAuth = () => {
     setIsAuthOpen(false);
     if (window.location.hash === '#auth') {
-      if (window.history.state?.modal === 'auth' && window.history.length > 1) {
+      if (window.history.length > 1) {
         window.history.back();
       } else {
-        const fallback = currentPage === 'dashboard' ? '#dashboard' : '#shop';
-        window.history.replaceState({ page: currentPage }, '', fallback);
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
       }
     }
   };
@@ -171,18 +182,17 @@ export default function App() {
   const handleOpenAdminLogin = () => {
     setIsAdminLoginOpen(true);
     if (window.location.hash !== '#admin-login') {
-      window.history.pushState({ modal: 'admin-login', page: currentPage }, '', '#admin-login');
+      window.history.pushState(null, '', window.location.pathname + window.location.search + '#admin-login');
     }
   };
 
   const handleCloseAdminLogin = () => {
     setIsAdminLoginOpen(false);
     if (window.location.hash === '#admin-login') {
-      if (window.history.state?.modal === 'admin-login' && window.history.length > 1) {
+      if (window.history.length > 1) {
         window.history.back();
       } else {
-        const fallback = currentPage === 'dashboard' ? '#dashboard' : '#shop';
-        window.history.replaceState({ page: currentPage }, '', fallback);
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
       }
     }
   };
@@ -191,7 +201,7 @@ export default function App() {
     setIsAdminPanelOpen(true);
     localStorage.setItem('isAdminPanelOpen', 'true');
     if (window.location.hash !== '#admin') {
-      window.history.pushState({ page: 'admin' }, '', '#admin');
+      window.history.pushState(null, '', window.location.pathname + window.location.search + '#admin');
     }
   };
 
@@ -199,80 +209,99 @@ export default function App() {
     setIsAdminPanelOpen(false);
     localStorage.setItem('isAdminPanelOpen', 'false');
     if (window.location.hash === '#admin') {
-      if (window.history.state?.page === 'admin' && window.history.length > 1) {
+      if (window.history.length > 1) {
         window.history.back();
       } else {
-        const fallback = currentPage === 'dashboard' ? '#dashboard' : '#shop';
-        window.history.replaceState({ page: currentPage }, '', fallback);
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
       }
     }
   };
 
-  // Browser History & Popstate (Back/Forward buttons) listener
+  // Sync modal and hash states whenever hash changes (including browser Back/Forward)
   useEffect(() => {
-    // 1. Ensure initial page entry exists in browser history
-    const initialHash = window.location.hash;
-    const initialPage = initialHash === '#dashboard' ? 'dashboard' : 'shop';
-    if (!window.history.state) {
-      window.history.replaceState({ page: initialPage }, '', initialHash || '#shop');
+    setIsCartOpen(hash === '#cart');
+    setIsGuidedSearchOpen(hash === '#guided-search');
+    setIsAuthOpen(hash === '#auth');
+    setIsAdminLoginOpen(hash === '#admin-login');
+
+    if (hash === '#admin') {
+      setIsAdminPanelOpen(true);
+      localStorage.setItem('isAdminPanelOpen', 'true');
+    } else {
+      setIsAdminPanelOpen(false);
+      localStorage.setItem('isAdminPanelOpen', 'false');
     }
 
-    // 2. React to Browser "Back" and "Forward" buttons
-    const handlePopState = (event) => {
-      const hash = window.location.hash;
-      const state = event.state || {};
-
-      // A. Part Detail Modal
-      if (hash.startsWith('#part-')) {
-        const partId = hash.replace('#part-', '');
-        const cached = partsCacheRef.current.get(String(partId));
-        if (cached) {
-          setActiveModalPart(cached);
-        } else {
-          getCatalogParts()
-            .then(parts => {
-              if (Array.isArray(parts)) {
-                const found = parts.find(p => String(p.id) === String(partId));
-                if (found) {
-                  partsCacheRef.current.set(String(found.id), found);
-                  setActiveModalPart(found);
-                }
-              }
-            })
-            .catch(() => {});
-        }
+    if (hash.startsWith('#part-')) {
+      const partId = hash.replace('#part-', '');
+      const cached = partsCacheRef.current.get(String(partId));
+      if (cached) {
+        setActiveModalPart(cached);
       } else {
-        setActiveModalPart(null);
+        getCatalogParts().then(parts => {
+          if (Array.isArray(parts)) {
+            const found = parts.find(p => String(p.id) === String(partId));
+            if (found) {
+              partsCacheRef.current.set(String(found.id), found);
+              setActiveModalPart(found);
+            }
+          }
+        }).catch(() => {});
       }
+    } else {
+      setActiveModalPart(null);
+    }
+  }, [hash]);
 
-      // B. Modals
-      setIsCartOpen(hash === '#cart');
-      setIsGuidedSearchOpen(hash === '#guided-search');
-      setIsAuthOpen(hash === '#auth');
-      setIsAdminLoginOpen(hash === '#admin-login');
+  // Set AutoPartsStore/LocalBusiness JSON-LD on Homepage
+  useEffect(() => {
+    if (route.name === 'home') {
+      const homeJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'AutoPartsStore',
+        name: 'Classic Aircooled VW Works',
+        image: 'https://www.classicaircooledvwworks.com/logo.png',
+        telephone: '+19452879865',
+        url: 'https://www.classicaircooledvwworks.com',
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: '14826 Yarberry St',
+          addressLocality: 'Houston',
+          addressRegion: 'TX',
+          postalCode: '77039',
+          addressCountry: 'US'
+        },
+        geo: {
+          '@type': 'GeoCoordinates',
+          latitude: 29.9045,
+          longitude: -95.3341
+        },
+        openingHoursSpecification: [
+          {
+            '@type': 'OpeningHoursSpecification',
+            dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+            opens: '08:00',
+            closes: '18:00'
+          },
+          {
+            '@type': 'OpeningHoursSpecification',
+            dayOfWeek: 'Saturday',
+            opens: '09:00',
+            closes: '16:00'
+          }
+        ],
+        priceRange: '$$'
+      };
 
-      // C. Admin Panel
-      if (hash === '#admin') {
-        setIsAdminPanelOpen(true);
-        localStorage.setItem('isAdminPanelOpen', 'true');
-      } else {
-        setIsAdminPanelOpen(false);
-        localStorage.setItem('isAdminPanelOpen', 'false');
-      }
-
-      // D. Page Level View (Dashboard vs Shop)
-      if (hash === '#dashboard' || state.page === 'dashboard') {
-        setCurrentPage('dashboard');
-        localStorage.setItem('currentPage', 'dashboard');
-      } else {
-        setCurrentPage('shop');
-        localStorage.setItem('currentPage', 'shop');
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+      updateDocumentMeta({
+        title: 'Classic Aircooled VW Works | Aircooled VW Engines, Parts & Restoration',
+        description: 'Classic Aircooled VW Works — High Performance Aircooled VW Engines, Authentic Spare Parts, Type 1 Beetle, Type 2 Bus, Type 3, and Karmann Ghia Restoration.',
+        canonicalPath: '/',
+        ogType: 'website',
+        jsonLd: homeJsonLd
+      });
+    }
+  }, [route.name]);
 
   const fetchAdminRequests = async () => {
     if (!adminToken) return;
@@ -439,14 +468,6 @@ export default function App() {
     }
   }, [userProfile, currentUser]);
 
-  const handleOpenUserDashboard = () => {
-    if (!currentUser) {
-      handleOpenAuth();
-    } else {
-      navigateToPage('dashboard');
-    }
-  };
-
   const handleLogout = () => {
     setCurrentUser(null);
     setAuthToken(null);
@@ -458,7 +479,8 @@ export default function App() {
     setUserRequests([]);
     setSavedVehicles([]);
     setNotifications([]);
-    navigateToPage('shop');
+    handleCloseUserDashboard();
+    navigate('/');
   };
   
   // Refresh trigger for parts catalog after admin edit/delete
@@ -848,7 +870,7 @@ export default function App() {
     <div className="min-h-screen bg-[#131314] text-[#e5e2e3] font-technical-data selection:bg-[#ff7a1a] selection:text-black pb-14 md:pb-0">
       
       {/* Sticky Top Volkswagen Navigation Bar (Hidden on User Dashboard Portal) */}
-      {currentPage !== 'dashboard' && (
+      {!isDashboardView && (
         <Navbar
           cartCount={cartItems.reduce((acc, item) => acc + item.quantity, 0)}
           userRequestsCount={userRequests.length}
@@ -861,21 +883,24 @@ export default function App() {
           onOpenAdminLogin={handleOpenAdminLogin}
           activeFilter={activeFilter}
           onSelectFilter={(filterObj, options) => {
-            navigateToPage('shop');
+            if (route.name !== 'home' && route.name !== 'parts') {
+              navigate('/parts');
+            }
             handleSelectFilter(filterObj, options);
           }}
           currentUser={currentUser}
           onLogout={handleLogout}
-          onNavigateToShop={() => navigateToPage('shop')}
+          onNavigateToShop={() => navigate('/')}
+          onNavigate={navigate}
         />
       )}
 
-      <main className={currentPage === 'dashboard' ? "pt-28 md:pt-36 min-h-screen pb-16 bg-[#0e0e0f]" : "pt-24 md:pt-28 min-h-[80vh]"}>
-        {currentPage === 'dashboard' ? (
+      <main className={isDashboardView ? "pt-28 md:pt-36 min-h-screen pb-16 bg-[#0e0e0f]" : "pt-24 md:pt-28 min-h-[80vh]"}>
+        {isDashboardView ? (
           <UserDashboard
             isOpen={true}
-            onClose={() => navigateToPage('shop')}
-            onBackToShop={() => navigateToPage('shop')}
+            onClose={handleCloseUserDashboard}
+            onBackToShop={handleCloseUserDashboard}
             currentUser={currentUser}
             authToken={authToken}
             onOpenAuth={handleOpenAuth}
@@ -890,21 +915,82 @@ export default function App() {
             onRemoveVehicle={handleRemoveVehicle}
             onSelectActiveVehicleFilter={(model) => {
               handleSelectFilter({ modelId: model });
-              navigateToPage('shop');
+              handleCloseUserDashboard();
             }}
             onRequestItem={handleRequestItem}
             onReserveItem={handleReserveItem}
             onRemoveWishlist={(id) => setWishlistIds(prev => prev.filter(wId => wId !== id))}
             onUpdateProfile={(updated) => setUserProfile(updated)}
             onOpenCatalog={() => {
-              navigateToPage('shop');
-              setTimeout(() => {
-                const catalogEl = document.getElementById('catalog');
-                if (catalogEl) catalogEl.scrollIntoView({ behavior: 'smooth' });
-              }, 100);
+              handleCloseUserDashboard();
+              navigate('/parts');
             }}
           />
-        ) : (
+        ) : route.name === 'engines' ? (
+          <EnginesPage
+            onAddToCart={handleAddToCart}
+            onRequestItem={handleRequestItem}
+            onReserveItem={handleReserveItem}
+            onViewPartDetails={handleViewPartDetails}
+            onToggleWishlist={handleToggleWishlist}
+            wishlistIds={wishlistIds}
+            searchTerm={searchTerm}
+            onNavigate={navigate}
+          />
+        ) : route.name === 'parts' ? (
+          <PartsPage
+            onAddToCart={handleAddToCart}
+            onRequestItem={handleRequestItem}
+            onReserveItem={handleReserveItem}
+            onViewPartDetails={handleViewPartDetails}
+            onToggleWishlist={handleToggleWishlist}
+            wishlistIds={wishlistIds}
+            searchTerm={searchTerm}
+            onNavigate={navigate}
+          />
+        ) : route.name === 'parts-category' ? (
+          <PartsPage
+            category={route.params?.category}
+            onAddToCart={handleAddToCart}
+            onRequestItem={handleRequestItem}
+            onReserveItem={handleReserveItem}
+            onViewPartDetails={handleViewPartDetails}
+            onToggleWishlist={handleToggleWishlist}
+            wishlistIds={wishlistIds}
+            searchTerm={searchTerm}
+            onNavigate={navigate}
+          />
+        ) : route.name === 'restoration' ? (
+          <RestorationPage
+            onAddToCart={handleAddToCart}
+            onRequestItem={handleRequestItem}
+            onReserveItem={handleReserveItem}
+            onViewPartDetails={handleViewPartDetails}
+            onToggleWishlist={handleToggleWishlist}
+            wishlistIds={wishlistIds}
+            searchTerm={searchTerm}
+            onNavigate={navigate}
+          />
+        ) : route.name === 'product' ? (
+          <ProductDetailPage
+            productId={route.params?.id}
+            productSlug={route.params?.slug}
+            onAddToCart={handleAddToCart}
+            onRequestItem={handleRequestItem}
+            onReserveItem={handleReserveItem}
+            onNavigate={navigate}
+          />
+        ) : route.name === 'privacy' ? (
+          <PrivacyPolicy onNavigate={navigate} />
+        ) : route.name === 'shipping' ? (
+          <ShippingPolicy onNavigate={navigate} />
+        ) : route.name === 'returns' ? (
+          <ReturnsPolicy onNavigate={navigate} />
+        ) : route.name === 'terms' ? (
+          <TermsOfService onNavigate={navigate} />
+        ) : route.name === 'contact' ? (
+          <ContactPage onNavigate={navigate} />
+        ) : route.name === 'home' ? (
           <>
             {/* Main Hero Section */}
             <HeroSection />
@@ -944,11 +1030,13 @@ export default function App() {
             {/* Houston Workshop & Interactive Google Map Location Section */}
             <LocationMapSection />
           </>
+        ) : (
+          <NotFoundPage onNavigate={navigate} />
         )}
       </main>
 
       {/* Footer */}
-      <Footer />
+      <Footer onNavigate={navigate} />
 
       {/* Step-by-Step Guided Search Modal */}
       <GuidedSearchModal
@@ -1129,9 +1217,8 @@ export default function App() {
             setAdminToken(token);
             localStorage.setItem('adminToken', token);
             handleOpenAdminPanel();
-            navigateToPage('shop');
           } else {
-            navigateToPage('dashboard');
+            handleOpenUserDashboard();
           }
         }}
         cartTotal={cartTotal}
@@ -1151,7 +1238,6 @@ export default function App() {
             localStorage.setItem('currentUser', JSON.stringify(user));
           }
           handleOpenAdminPanel();
-          navigateToPage('shop');
         }}
       />
 
