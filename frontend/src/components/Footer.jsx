@@ -1,15 +1,22 @@
 import React from 'react';
 import { MapPin, Phone, Clock, ExternalLink, Video, ShieldCheck } from 'lucide-react';
 
-export default function Footer() {
+export default function Footer({ onNavigate }) {
   const FACEBOOK_URL = "https://www.facebook.com/share/1BwLuMhq42/";
   const YOUTUBE_URL = "https://youtube.com/@classicaircooledvwworks?si=MUB5pYzgHnGiUR4I";
   const PHONE_NUMBER = "1945-287-9865";
   const PHONE_TEL = "tel:19452879865";
 
+  const handleNav = (path) => (e) => {
+    if (onNavigate && path.startsWith('/')) {
+      e.preventDefault();
+      onNavigate(path);
+    }
+  };
+
   return (
     <footer className="w-full mt-16 sm:mt-24 bg-[#0e0e0f] border-t border-[#584236]/30 text-[#e0c0b1]">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 px-4 sm:px-8 md:px-16 py-10 sm:py-16 max-w-[1440px] mx-auto font-body-md text-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 px-4 sm:px-8 md:px-16 pt-10 sm:pt-16 pb-8 max-w-[1440px] mx-auto font-body-md text-sm">
         
         {/* Column 1: Brand & Workshop Location */}
         <div className="col-span-1 space-y-4">
@@ -56,14 +63,12 @@ export default function Footer() {
         {/* Column 2: Navigation Links */}
         <div className="flex flex-col gap-2.5 font-label-caps text-xs tracking-wider uppercase">
           <span className="font-bold text-white font-mono text-[11px] mb-1">Navigation</span>
-          <a className="hover:text-[#ff7a1a] transition-colors py-1 min-h-[30px] flex items-center" href="#vintage-cars">Vintage Cars</a>
-          <a className="hover:text-[#ff7a1a] transition-colors py-1 min-h-[30px] flex items-center" href="#catalog">Parts Catalog</a>
+          <a className="hover:text-[#ff7a1a] transition-colors py-1 min-h-[30px] flex items-center" href="/engines" onClick={handleNav('/engines')}>Complete Engines</a>
+          <a className="hover:text-[#ff7a1a] transition-colors py-1 min-h-[30px] flex items-center" href="/parts" onClick={handleNav('/parts')}>Parts Catalog</a>
+          <a className="hover:text-[#ff7a1a] transition-colors py-1 min-h-[30px] flex items-center" href="/restoration" onClick={handleNav('/restoration')}>Restoration Services</a>
           <a className="hover:text-[#ff7a1a] transition-colors py-1 min-h-[30px] flex items-center" href="#reviews">Customer Reviews</a>
-          <a className="hover:text-[#ff7a1a] transition-colors flex items-center gap-1.5 py-1 min-h-[30px]" href="#workshop-location">
-            <MapPin className="w-3.5 h-3.5 text-[#ff7a1a]" /> Workshop Map
-          </a>
-          <a className="hover:text-[#ff7a1a] transition-colors flex items-center gap-1.5 py-1 min-h-[30px]" href="#workshop">
-            <Video className="w-3.5 h-3.5 text-[#ff7a1a]" /> Video Showcase
+          <a className="hover:text-[#ff7a1a] transition-colors flex items-center gap-1.5 py-1 min-h-[30px]" href="/contact" onClick={handleNav('/contact')}>
+            <MapPin className="w-3.5 h-3.5 text-[#ff7a1a]" /> Contact & Workshop Map
           </a>
         </div>
 
@@ -146,10 +151,28 @@ export default function Footer() {
 
           <div className="pt-2 border-t border-[#584236]/30 text-[11px] text-[#a78b7d] space-y-1">
             <p>Houston Garage & Dyno Tuning Lab</p>
-            <p>© {new Date().getFullYear()} CLASSIC AIRCOOLED VW WORKS. All rights reserved.</p>
+            <p>14826 Yarberry St, Houston, TX 77039</p>
           </div>
         </div>
 
+      </div>
+
+      {/* Trust & Policy Legal Bar */}
+      <div className="border-t border-[#584236]/30 px-4 sm:px-8 md:px-16 py-4 max-w-[1440px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-technical-data text-[#a78b7d]">
+        <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-1 text-[11px]">
+          <a href="/privacy" onClick={handleNav('/privacy')} className="hover:text-[#ff7a1a] transition-colors">Privacy Policy</a>
+          <span>•</span>
+          <a href="/shipping" onClick={handleNav('/shipping')} className="hover:text-[#ff7a1a] transition-colors">Shipping Policy</a>
+          <span>•</span>
+          <a href="/returns" onClick={handleNav('/returns')} className="hover:text-[#ff7a1a] transition-colors">Returns & Refunds</a>
+          <span>•</span>
+          <a href="/terms" onClick={handleNav('/terms')} className="hover:text-[#ff7a1a] transition-colors">Terms of Service</a>
+          <span>•</span>
+          <a href="/contact" onClick={handleNav('/contact')} className="hover:text-[#ff7a1a] transition-colors">Contact Us</a>
+        </div>
+        <div className="text-[11px] text-[#715b50]">
+          © {new Date().getFullYear()} CLASSIC AIRCOOLED VW WORKS. All rights reserved.
+        </div>
       </div>
     </footer>
   );

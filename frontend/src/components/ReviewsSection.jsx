@@ -1,14 +1,19 @@
 import React, { useState, useMemo } from 'react';
-import { Star, ShieldCheck, CheckCircle, ThumbsUp, Quote, Filter, Sparkles, MapPin, Wrench, Award, CheckCircle2, Mail } from 'lucide-react';
+import { Star, ShieldCheck, CheckCircle, ThumbsUp, Quote, Filter, Sparkles, MapPin, Wrench, Award, CheckCircle2 } from 'lucide-react';
+
+function getInitials(name = '') {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 0 || !parts[0]) return 'VW';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 const CUSTOMER_REVIEWS = [
   {
     id: 1,
     author: 'Dan Johnson',
-    email: 'danjohnson4322@gmail.com',
     role: 'Master Engine Builder',
     location: 'Austin, TX',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
     rating: 5,
     date: '3 days ago',
     category: 'TYPE 1 BEETLE',
@@ -22,10 +27,8 @@ const CUSTOMER_REVIEWS = [
   {
     id: 2,
     author: 'Christopher Thomas Jr.',
-    email: 'christopher.thomasjr0@gmail.com',
     role: 'Classic VW Engine Specialist',
     location: 'Portland, OR',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
     rating: 5,
     date: '1 week ago',
     category: 'PERFORMANCE & FUEL',
@@ -39,10 +42,8 @@ const CUSTOMER_REVIEWS = [
   {
     id: 3,
     author: 'Michael R.',
-    email: 'micheal486975@gmail.com',
     role: 'Restoration Shop Owner',
     location: 'Denver, CO',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
     rating: 5,
     date: '2 weeks ago',
     category: 'BUS & TRANSPORTER',
@@ -56,10 +57,8 @@ const CUSTOMER_REVIEWS = [
   {
     id: 4,
     author: 'Julian Moreau',
-    email: 'dakotabruceclark@gmail.com',
     role: 'Vintage Porsche & VW Builder',
     location: 'San Diego, CA',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&q=80',
     rating: 5,
     date: '3 weeks ago',
     category: 'COMPLETE ENGINES',
@@ -73,10 +72,8 @@ const CUSTOMER_REVIEWS = [
   {
     id: 5,
     author: 'Gretchen Weber',
-    email: 'jeanlenny811@gmail.com',
     role: 'VW Aircooled Enthusiast',
     location: 'Chicago, IL',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
     rating: 5,
     date: '1 month ago',
     category: 'PERFORMANCE & FUEL',
@@ -90,10 +87,8 @@ const CUSTOMER_REVIEWS = [
   {
     id: 6,
     author: 'Craig Thornhill',
-    email: 'craigthornhill.vw@gmail.com',
     role: 'Overland & Vintage Camper Mechanic',
     location: 'Seattle, WA',
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80',
     rating: 5,
     date: '1 month ago',
     category: 'BUS & TRANSPORTER',
@@ -107,10 +102,8 @@ const CUSTOMER_REVIEWS = [
   {
     id: 7,
     author: 'Rodney Culp',
-    email: 'culprodney.works@gmail.com',
     role: 'Lead Fabricator & Restorer',
     location: 'Danville, AL',
-    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=200&q=80',
     rating: 5,
     date: '1 month ago',
     category: 'TYPE 1 BEETLE',
@@ -124,10 +117,8 @@ const CUSTOMER_REVIEWS = [
   {
     id: 8,
     author: 'Tariq Al-Mansoor',
-    email: 'tariq.almansoor77@gmail.com',
     role: 'Air-Cooled Club President',
     location: 'Scottsdale, AZ',
-    avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=200&q=80',
     rating: 5,
     date: '2 months ago',
     category: 'TYPE 1 BEETLE',
@@ -141,10 +132,8 @@ const CUSTOMER_REVIEWS = [
   {
     id: 9,
     author: 'Hannah Lindqvist',
-    email: 'hannah.lindqvist.nord@gmail.com',
     role: 'Historical Vehicle Restorer',
     location: 'Minneapolis, MN',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
     rating: 5,
     date: '2 months ago',
     category: 'PERFORMANCE & FUEL',
@@ -300,25 +289,19 @@ export default function ReviewsSection() {
               </p>
             </div>
 
-            {/* Author Details, Location, Email & Vehicle Badge */}
+            {/* Author Details, Location & Vehicle Badge */}
             <div className="pt-3 sm:pt-4 border-t border-[#584236]/30 flex items-start gap-2.5 sm:gap-3.5">
-              <img 
-                src={review.avatar} 
-                alt={review.author} 
-                className="w-9 h-9 sm:w-11 sm:h-11 rounded-sm object-cover border border-[#584236] shrink-0 mt-0.5"
-              />
+              <div 
+                className="w-9 h-9 sm:w-11 sm:h-11 rounded-sm bg-amber-500/10 border border-[#ff7a1a]/40 text-[#ff7a1a] font-bold font-mono text-xs sm:text-sm flex items-center justify-center shrink-0 mt-0.5 select-none shadow-sm"
+                aria-label={`Initials for ${review.author}`}
+              >
+                {getInitials(review.author)}
+              </div>
               <div className="min-w-0 flex-1 space-y-0.5">
                 <div className="flex items-center gap-1.5 font-h3 text-xs text-[#e5e2e3] font-bold truncate">
                   <span>{review.author}</span>
                   <CheckCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#83cffb] shrink-0" title="Verified Purchaser" />
                 </div>
-                
-                {review.email && (
-                  <div className="flex items-center gap-1 text-[9px] sm:text-[10px] text-[#83cffb] font-technical-data truncate">
-                    <Mail className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#83cffb] shrink-0" />
-                    <span className="truncate">{review.email}</span>
-                  </div>
-                )}
 
                 <div className="flex items-center gap-1 text-[9px] sm:text-[10px] text-[#a78b7d] font-technical-data truncate">
                   <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#ff7a1a] shrink-0" /> {review.role} • {review.location}
