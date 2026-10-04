@@ -95,6 +95,8 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
                   key={activeImageIndex}
                   src={allImages[activeImageIndex]}
                   alt={`${part.title} - photo ${activeImageIndex + 1}`}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-opacity duration-300 animate-in fade-in"
                 />
 
@@ -152,7 +154,13 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
                           : 'border-slate-800 opacity-60 hover:opacity-100'
                       }`}
                     >
-                      <img src={thumbUrl} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                      <img 
+                        src={thumbUrl} 
+                        alt={`Thumbnail ${idx + 1}`} 
+                        loading="lazy" 
+                        decoding="async" 
+                        className="w-full h-full object-cover" 
+                      />
                     </button>
                   ))}
                 </div>

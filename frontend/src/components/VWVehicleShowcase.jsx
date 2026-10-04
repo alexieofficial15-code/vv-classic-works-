@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { VW_NAV_CATEGORIES, VEHICLE_SYSTEMS, DETAILED_ENGINES } from '../data/vwNavigationData';
 import { API_BASE_URL } from '../config/api';
+import { getCatalogParts } from '../data/catalogStore';
 import { 
   Car, Cpu, Wrench, ChevronLeft, ChevronRight, ArrowLeft, ArrowRight, Image as ImageIcon, 
   Sparkles, CheckCircle2, SlidersHorizontal, Flame, Zap, Cog, Wind, Sliders, 
@@ -85,6 +86,8 @@ function CategoryImageRotator({ images, categoryName, onOpenGallery, activeVehic
         key={currentIndex}
         src={currentImage} 
         alt={`${categoryName} photo ${currentIndex + 1}`} 
+        loading="lazy"
+        decoding="async"
         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100 animate-in fade-in duration-500" 
       />
 
@@ -171,33 +174,28 @@ export default function VWVehicleShowcase({
   // Complete Vehicles Database State - loads all complete vehicles cleanly at once
   const [completeVehicles, setCompleteVehicles] = useState([]);
 
-  // Fetch Complete Vehicles from API
+  // Fetch Complete Vehicles from shared catalogStore
   useEffect(() => {
     let isMounted = true;
-    const fetchVehicles = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/parts`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && Array.isArray(json.data) && isMounted) {
-            const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
-            const vehicles = json.data.filter(p => 
-              !deletedIds.has(p.id) && (
-                p.listingType === 'vehicle' || 
-                p.systemCategory === 'vehicle-complete' ||
-                p.partSubcategory === 'Complete Vehicle' ||
-                p.specificPartCategory === 'Complete Vehicle' ||
-                p.subcatId === 'complete-vehicle'
-              )
-            );
-            setCompleteVehicles(vehicles);
-          }
+    getCatalogParts()
+      .then(parts => {
+        if (isMounted && Array.isArray(parts)) {
+          const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
+          const vehicles = parts.filter(p => 
+            !deletedIds.has(p.id) && (
+              p.listingType === 'vehicle' || 
+              p.systemCategory === 'vehicle-complete' ||
+              p.partSubcategory === 'Complete Vehicle' ||
+              p.specificPartCategory === 'Complete Vehicle' ||
+              p.subcatId === 'complete-vehicle'
+            )
+          );
+          setCompleteVehicles(vehicles);
         }
-      } catch (err) {
-        console.warn('Could not fetch complete vehicles from API:', err);
-      }
-    };
-    fetchVehicles();
+      })
+      .catch(err => {
+        console.warn('Could not fetch complete vehicles from store:', err);
+      });
     return () => { isMounted = false; };
   }, [refreshKey]);
 

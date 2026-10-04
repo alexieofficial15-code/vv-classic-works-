@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Filter, Search, ShoppingBag, Eye, Heart, Layers, Check, CheckCircle2, Car, X, Image as ImageIcon, SlidersHorizontal, RotateCcw, ShieldCheck, Wrench, Box, ChevronLeft, ChevronRight } from 'lucide-react';
 import { VW_NAV_CATEGORIES, VEHICLE_SYSTEMS, ENGINE_COMPATIBILITIES, USAGE_TYPES } from '../data/vwNavigationData';
 import { API_BASE_URL } from '../config/api';
+import { getCatalogParts, getCachedCatalogParts } from '../data/catalogStore';
 
 // Auto-Rotating & Swipeable Image Slider for Landing Page Part Cards
 function RotatingPartCardImage({ part, onClickImage }) {
@@ -199,47 +200,39 @@ export default function CatalogSection({
     });
   };
 
-  // Start with loading skeleton until live Supabase parts arrive (never show hardcoded dummy parts)
+  // Initialize with in-memory cached parts if available, otherwise show real loading skeleton
   const [catalogItems, setCatalogItems] = useState(() => {
-    try {
-      const cached = localStorage.getItem('cached_db_parts');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        const cleaned = cleanStaleCache(parsed);
-        const isHardcodedMock = cleaned.some(p => p.id === 'part-vw-weber-44-kit');
-        if (cleaned.length > 8 && !isHardcodedMock) return cleaned;
-      }
-    } catch (e) {}
+    const cached = getCachedCatalogParts();
+    if (Array.isArray(cached) && cached.length > 0) {
+      const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
+      return cleanStaleCache(cached).filter(p => !deletedIds.has(p.id));
+    }
     return [];
   });
-  const [isLoadingParts, setIsLoadingParts] = useState(true);
+  const [isLoadingParts, setIsLoadingParts] = useState(() => {
+    const cached = getCachedCatalogParts();
+    return !Array.isArray(cached) || cached.length === 0;
+  });
 
-  // Fetch all parts directly from the new lightweight /api/parts endpoint
+  // Fetch all parts through shared catalogStore (single network fetch, cached in memory)
   useEffect(() => {
     let isMounted = true;
-    const fetchCatalogParts = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/parts`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && Array.isArray(data.data) && isMounted && data.data.length > 0) {
-            const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
-            const cleanedServerParts = cleanStaleCache(data.data).filter(p => !deletedIds.has(p.id));
-            setCatalogItems(cleanedServerParts);
-            try {
-              localStorage.setItem('cached_db_parts', JSON.stringify(cleanedServerParts));
-            } catch (e) {}
-          }
+    getCatalogParts()
+      .then(parts => {
+        if (isMounted && Array.isArray(parts)) {
+          const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
+          const cleanedServerParts = cleanStaleCache(parts).filter(p => !deletedIds.has(p.id));
+          setCatalogItems(cleanedServerParts);
         }
-      } catch (err) {
+      })
+      .catch(err => {
         console.warn('Backend server unreachable, error fetching catalog parts:', err);
-      } finally {
+      })
+      .finally(() => {
         if (isMounted) {
           setIsLoadingParts(false);
         }
-      }
-    };
-    fetchCatalogParts();
+      });
     return () => { isMounted = false; };
   }, []);
 

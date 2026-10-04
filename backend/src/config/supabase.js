@@ -398,19 +398,36 @@ export function mapMessageToDb(msg) {
  */
 let inMemoryMessages = loadDiskMessages();
 
+// 60-second in-memory cache for fast catalog responses
+let partsCache = null;
+let partsCacheTime = 0;
+const PARTS_CACHE_TTL = 60 * 1000; // 60s
+
+export function invalidatePartsCache() {
+  partsCache = null;
+  partsCacheTime = 0;
+}
+
 /**
  * DB Data Access Abstraction Layer (100% Supabase Database)
  */
 export const dbService = {
   // --- SPARE PARTS ---
   async getParts() {
+    const now = Date.now();
+    if (partsCache && (now - partsCacheTime < PARTS_CACHE_TTL)) {
+      return partsCache;
+    }
     if (!isSupabaseConfigured) throw new Error('Supabase credentials missing');
     const { data, error } = await supabase.from('spare_parts').select('*').order('created_at', { ascending: false });
     if (error) {
       console.error('Error fetching spare_parts from Supabase:', error.message);
       throw error;
     }
-    return data ? data.map(mapPartFromDb) : [];
+    const result = data ? data.map(mapPartFromDb) : [];
+    partsCache = result;
+    partsCacheTime = now;
+    return result;
   },
 
   async addPart(partData) {
@@ -467,6 +484,7 @@ export const dbService = {
       console.error('Error inserting part into Supabase:', error.message);
       throw error;
     }
+    invalidatePartsCache();
     return data && data[0] ? mapPartFromDb(data[0]) : rawPart;
   },
 
@@ -479,6 +497,7 @@ export const dbService = {
       console.error('Error updating part in Supabase:', error.message);
       throw error;
     }
+    invalidatePartsCache();
     return data && data[0] ? mapPartFromDb(data[0]) : null;
   },
 
@@ -489,6 +508,7 @@ export const dbService = {
       console.error('Error deleting part from Supabase:', error.message);
       throw error;
     }
+    invalidatePartsCache();
     return true;
   },
 

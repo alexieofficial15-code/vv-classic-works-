@@ -31,7 +31,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Cache-Control headers for public catalog & parts endpoints (fast browser & CDN caching)
 app.use('/api/parts', (req, res, next) => {
-  if (req.method === 'GET') {
+  if (req.method === 'GET' && !req.path.includes('/image/')) {
     res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=600');
   }
   next();

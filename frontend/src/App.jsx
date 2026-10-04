@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { API_BASE_URL } from './config/api';
+import { getCatalogParts, invalidateCatalogCache } from './data/catalogStore';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import FindPartsWizard from './components/FindPartsWizard';
@@ -226,11 +227,10 @@ export default function App() {
         if (cached) {
           setActiveModalPart(cached);
         } else {
-          fetch(`${API_BASE_URL}/api/admin/parts`)
-            .then(res => res.json())
-            .then(data => {
-              if (data.success && Array.isArray(data.data)) {
-                const found = data.data.find(p => String(p.id) === String(partId));
+          getCatalogParts()
+            .then(parts => {
+              if (Array.isArray(parts)) {
+                const found = parts.find(p => String(p.id) === String(partId));
                 if (found) {
                   partsCacheRef.current.set(String(found.id), found);
                   setActiveModalPart(found);
@@ -456,7 +456,10 @@ export default function App() {
   
   // Refresh trigger for parts catalog after admin edit/delete
   const [refreshKey, setRefreshKey] = useState(0);
-  const handleRefreshCatalog = () => setRefreshKey(prev => prev + 1);
+  const handleRefreshCatalog = () => {
+    invalidateCatalogCache();
+    setRefreshKey(prev => prev + 1);
+  };
 
   // Google Ads Conversion Tracker Helper (Add to Cart & Product Reservation)
   const triggerGoogleAdsConversion = () => {
