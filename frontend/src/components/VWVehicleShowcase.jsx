@@ -176,7 +176,7 @@ export default function VWVehicleShowcase({
     let isMounted = true;
     const fetchVehicles = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/admin/parts`);
+        const res = await fetch(`${API_BASE_URL}/api/parts`);
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data) && isMounted) {

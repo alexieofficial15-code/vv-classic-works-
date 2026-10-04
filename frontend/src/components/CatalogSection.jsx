@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Filter, Search, ShoppingBag, Eye, Heart, Layers, Check, CheckCircle2, Car, X, Image as ImageIcon, SlidersHorizontal, RotateCcw, ShieldCheck, Wrench, Box, ChevronLeft, ChevronRight } from 'lucide-react';
 import { VW_NAV_CATEGORIES, VEHICLE_SYSTEMS, ENGINE_COMPATIBILITIES, USAGE_TYPES } from '../data/vwNavigationData';
 import { API_BASE_URL } from '../config/api';
-import { SPARE_PARTS } from '../data/partsData';
 
 // Auto-Rotating & Swipeable Image Slider for Landing Page Part Cards
 function RotatingPartCardImage({ part, onClickImage }) {
@@ -19,6 +18,7 @@ function RotatingPartCardImage({ part, onClickImage }) {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
 
@@ -78,7 +78,7 @@ function RotatingPartCardImage({ part, onClickImage }) {
 
   return (
     <div 
-      className="relative w-full h-full overflow-hidden cursor-pointer select-none"
+      className="relative w-full h-full overflow-hidden cursor-pointer select-none bg-[#0e0e0f]"
       onClick={onClickImage}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
@@ -87,11 +87,24 @@ function RotatingPartCardImage({ part, onClickImage }) {
       onTouchEnd={onTouchEnd}
       title="Click to view all photos & specifications"
     >
+      {/* Box loads first immediately with placeholder shimmer while image arrives */}
+      {!imageLoaded && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#141415] text-[#584236] z-0 animate-pulse">
+          <ImageIcon className="w-6 h-6 mb-1 opacity-40 text-[#ff7a1a]" />
+          <span className="text-[9px] text-[#a78b7d]/70 font-mono">Loading Photo...</span>
+        </div>
+      )}
+
       <img
         key={currentIndex}
         src={currentImage}
         alt={`${part.title} photo ${currentIndex + 1}`}
-        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 animate-in fade-in"
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setImageLoaded(true)}
+        className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-500 relative z-1 ${
+          imageLoaded ? 'opacity-100' : 'opacity-0'
+        }`}
       />
 
       {images.length > 1 && (
@@ -186,30 +199,27 @@ export default function CatalogSection({
     });
   };
 
-  // Initialize with SPARE_PARTS fallback so parts are instantly available on landing page
+  // Start with loading skeleton until live Supabase parts arrive (never show hardcoded dummy parts)
   const [catalogItems, setCatalogItems] = useState(() => {
     try {
-      // Purge unwanted test drafts from local storage
       const cached = localStorage.getItem('cached_db_parts');
       if (cached) {
         const parsed = JSON.parse(cached);
         const cleaned = cleanStaleCache(parsed);
-        if (cleaned.length !== parsed.length) {
-          localStorage.setItem('cached_db_parts', JSON.stringify(cleaned));
-        }
-        if (cleaned.length > 0) return cleaned;
+        const isHardcodedMock = cleaned.some(p => p.id === 'part-vw-weber-44-kit');
+        if (cleaned.length > 8 && !isHardcodedMock) return cleaned;
       }
     } catch (e) {}
-    return cleanStaleCache(SPARE_PARTS);
+    return [];
   });
-  const [isLoadingParts, setIsLoadingParts] = useState(false);
+  const [isLoadingParts, setIsLoadingParts] = useState(true);
 
-  // Fetch all parts directly from Supabase / Backend at once
+  // Fetch all parts directly from the new lightweight /api/parts endpoint
   useEffect(() => {
     let isMounted = true;
     const fetchCatalogParts = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/admin/parts`);
+        const res = await fetch(`${API_BASE_URL}/api/parts`);
         if (res.ok) {
           const data = await res.json();
           if (data.success && Array.isArray(data.data) && isMounted && data.data.length > 0) {
@@ -222,9 +232,7 @@ export default function CatalogSection({
           }
         }
       } catch (err) {
-        console.warn('Backend server unreachable, using local spare parts database.');
-        const deletedIds = new Set(JSON.parse(localStorage.getItem('deleted_part_ids') || '[]'));
-        setCatalogItems(cleanStaleCache(SPARE_PARTS).filter(p => !deletedIds.has(p.id)));
+        console.warn('Backend server unreachable, error fetching catalog parts:', err);
       } finally {
         if (isMounted) {
           setIsLoadingParts(false);
@@ -420,14 +428,26 @@ export default function CatalogSection({
         </div>
         {isLoadingParts && catalogItems.length === 0 ? (
           <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4 md:gap-6 animate-pulse">
-            {[1, 2, 3, 4].map((n) => (
-              <div key={n} className="bg-[#201f20]/60 border border-[#584236]/30 p-4 rounded-xs space-y-3">
-                <div className="h-44 bg-[#141415] rounded-xs flex items-center justify-center text-[#a78b7d] text-xs font-mono">
-                  Loading Live Inventory...
+            {Array.from({ length: 24 }).map((_, idx) => (
+              <div key={idx} className="bg-[#201f20]/60 border border-[#584236]/30 p-3 sm:p-4 rounded-xs flex flex-col justify-between space-y-3">
+                <div className="h-40 sm:h-44 md:h-48 bg-[#141415] rounded-xs flex items-center justify-center text-[#a78b7d] text-xs font-mono border border-[#584236]/30">
+                  <div className="flex items-center gap-1.5 opacity-60">
+                    <span className="w-2 h-2 rounded-full bg-[#ff7a1a] animate-ping" />
+                    <span>Loading Part...</span>
+                  </div>
                 </div>
-                <div className="h-4 bg-[#141415] rounded w-3/4"></div>
-                <div className="h-3 bg-[#141415] rounded w-1/2"></div>
-                <div className="h-8 bg-[#ff7a1a]/20 rounded w-full mt-3"></div>
+                <div className="space-y-1.5">
+                  <div className="h-3 bg-[#141415] rounded w-1/3"></div>
+                  <div className="h-4 bg-[#141415] rounded w-5/6"></div>
+                  <div className="h-3 bg-[#141415] rounded w-1/2"></div>
+                </div>
+                <div className="pt-2 border-t border-[#584236]/20 space-y-2">
+                  <div className="h-9 bg-[#ff7a1a]/15 rounded-xs w-full"></div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="h-8 bg-[#141415] rounded-xs"></div>
+                    <div className="h-8 bg-[#141415] rounded-xs"></div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
