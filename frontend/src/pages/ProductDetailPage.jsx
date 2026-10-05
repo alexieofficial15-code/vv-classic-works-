@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingBag, ShieldCheck, ArrowLeft, Phone, CheckCircle2, AlertCircle, Wrench, Package, Truck, ArrowRight } from 'lucide-react';
 import { API_BASE_URL } from '../config/api';
-import { getCatalogParts } from '../data/catalogStore';
 import { updateDocumentMeta, slugify } from '../utils/router';
 
 export default function ProductDetailPage({
@@ -21,40 +20,39 @@ export default function ProductDetailPage({
     setLoading(true);
     setError(null);
 
-    // 1. Try local catalogStore cache first for instant rendering
-    const localList = getCatalogParts();
-    const cachedItem = localList.find(p => String(p.id) === String(productId));
-    if (cachedItem && isMounted) {
-      setPart(cachedItem);
-      setLoading(false);
-    }
-
-    // 2. Fetch full part record from API
-    fetch(`${API_BASE_URL}/api/parts/${productId}`)
-      .then(res => {
-        if (!res.ok) throw new Error('Part not found');
-        return res.json();
-      })
-      .then(data => {
+    async function loadPart() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/parts/${productId}`);
+        if (!res.ok) throw new Error(`Part #${productId} not found`);
+        const data = await res.json();
         if (isMounted) {
           if (data.success && data.data) {
-            setPart(data.data);
-          } else if (cachedItem) {
-            setPart(cachedItem);
+            const partData = { ...data.data };
+            if (typeof partData.image === 'string' && partData.image.startsWith('/api/')) {
+              partData.image = `${API_BASE_URL}${partData.image}`;
+            }
+            setPart(partData);
           } else {
-            throw new Error('Part data unavailable');
+            throw new Error(data.message || 'Part data unavailable');
           }
-          setLoading(false);
         }
-      })
-      .catch(err => {
+      } catch (err) {
         if (isMounted) {
-          if (!cachedItem) {
-            setError(err.message || 'Unable to load part details');
-          }
+          setError(err.message || 'Unable to load part details');
+        }
+      } finally {
+        if (isMounted) {
           setLoading(false);
         }
-      });
+      }
+    }
+
+    if (productId) {
+      loadPart();
+    } else {
+      setError('Invalid part reference');
+      setLoading(false);
+    }
 
     return () => { isMounted = false; };
   }, [productId]);
