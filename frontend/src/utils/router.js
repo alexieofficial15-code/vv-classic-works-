@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { SPARE_PARTS, VINTAGE_CARS } from '../data/partsData';
+import { getCachedCatalogParts } from '../data/catalogStore';
 
 /**
  * Slugify a title for URL-safe representation
@@ -15,17 +17,62 @@ export function slugify(text) {
 
 /**
  * Parse an :id-:slug product URL parameter into { id, slug }
+ * Handles part IDs with hyphens (e.g. "part-vw-turbo-engine-2276-slug-here")
  */
 export function parseProductSlug(param) {
   if (!param) return { id: null, slug: '' };
-  const firstHyphen = param.indexOf('-');
-  if (firstHyphen === -1) {
-    return { id: param, slug: '' };
+
+  // 1. Check in-memory catalog cache if available
+  try {
+    const cached = getCachedCatalogParts();
+    if (Array.isArray(cached) && cached.length > 0) {
+      const match = cached.find(p => p.id === param || param.startsWith(`${p.id}-`));
+      if (match) {
+        return {
+          id: match.id,
+          slug: param === match.id ? '' : param.slice(match.id.length + 1)
+        };
+      }
+    }
+  } catch (_) {}
+
+  // 2. Check static spare parts database
+  try {
+    if (Array.isArray(SPARE_PARTS)) {
+      const match = SPARE_PARTS.find(p => p.id === param || param.startsWith(`${p.id}-`));
+      if (match) {
+        return {
+          id: match.id,
+          slug: param === match.id ? '' : param.slice(match.id.length + 1)
+        };
+      }
+    }
+  } catch (_) {}
+
+  // 3. Check vintage cars database
+  try {
+    if (Array.isArray(VINTAGE_CARS)) {
+      const match = VINTAGE_CARS.find(c => c.id === param || param.startsWith(`${c.id}-`));
+      if (match) {
+        return {
+          id: match.id,
+          slug: param === match.id ? '' : param.slice(match.id.length + 1)
+        };
+      }
+    }
+  } catch (_) {}
+
+  // 4. Fallback for numeric IDs (e.g. "42-carburetor-kit")
+  const numericMatch = param.match(/^(\d+)-(.*)$/);
+  if (numericMatch) {
+    return {
+      id: numericMatch[1],
+      slug: numericMatch[2]
+    };
   }
-  return {
-    id: param.substring(0, firstHyphen),
-    slug: param.substring(firstHyphen + 1)
-  };
+
+  // 5. Default fallback: keep the full param as ID so that detail pages can query it
+  return { id: param, slug: '' };
 }
 
 /**

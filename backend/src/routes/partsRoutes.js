@@ -236,7 +236,7 @@ router.get('/parts/:id', async (req, res) => {
     // Fallback search across list if not found or Supabase not directly queried
     if (!part) {
       const partsList = await dbService.getParts();
-      part = partsList.find(p => String(p.id) === String(id));
+      part = partsList.find(p => String(p.id) === String(id) || String(id).startsWith(`${p.id}-`));
     }
 
     if (!part) {

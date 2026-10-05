@@ -975,6 +975,7 @@ export default function App() {
           <ProductDetailPage
             productId={route.params?.id}
             productSlug={route.params?.slug}
+            rawParam={route.params?.raw}
             onAddToCart={handleAddToCart}
             onRequestItem={handleRequestItem}
             onReserveItem={handleReserveItem}
