@@ -110,8 +110,8 @@ export default function App() {
 
   const handleViewPartDetails = (part) => {
     if (!part) return;
-    const slug = slugify(part.title);
-    navigate(`/parts/item/${part.id}-${slug}`);
+    partsCacheRef.current.set(String(part.id), part);
+    setActiveModalPart(part);
   };
 
   const handleClosePartDetails = () => {

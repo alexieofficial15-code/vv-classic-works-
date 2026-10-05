@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, ShoppingBag, ShieldCheck, CheckCircle2, Award, Cpu, FileText, Wrench, Box, MessageCircle, Phone, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
+import { X, ShoppingBag, ShieldCheck, CheckCircle2, Award, Cpu, FileText, Wrench, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function PartDetailModal({ part, onClose, onAddToCart, onRequestItem, onReserveItem }) {
-  if (!part) return null;
-
-  // Gather all photos for this post
+  // 1. Gather all photos for this post (hooks placed at top level)
   const allImages = useMemo(() => {
+    if (!part) return ['https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80'];
     const list = [];
     if (part.image) list.push(part.image);
     if (Array.isArray(part.additionalImages)) {
@@ -19,6 +18,11 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
+
+  // Reset active image index when part changes
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [part?.id]);
 
   const handlePrev = (e) => {
     if (e) e.stopPropagation();
@@ -35,21 +39,23 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
 
   const onTouchStart = (e) => {
     setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
+    if (e.targetTouches && e.targetTouches[0]) {
+      setTouchStart(e.targetTouches[0].clientX);
+    }
   };
 
   const onTouchMove = (e) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    if (e.targetTouches && e.targetTouches[0]) {
+      setTouchEnd(e.targetTouches[0].clientX);
+    }
   };
 
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
     const distance = touchStart - touchEnd;
     if (distance > minSwipeDistance) {
-      // Swiped left -> Go to next picture
       handleNext();
     } else if (distance < -minSwipeDistance) {
-      // Swiped right -> Go to previous picture
       handlePrev();
     }
   };
@@ -57,13 +63,71 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
   // Keyboard navigation (ArrowLeft & ArrowRight)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'ArrowLeft') handlePrev();
-      if (e.key === 'ArrowRight') handleNext();
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft') {
+        setActiveImageIndex(prev => (prev === 0 ? allImages.length - 1 : prev - 1));
+      }
+      if (e.key === 'ArrowRight') {
+        setActiveImageIndex(prev => (prev === allImages.length - 1 ? 0 : prev + 1));
+      }
+      if (e.key === 'Escape' && onClose) onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [allImages.length]);
+  }, [allImages.length, onClose]);
+
+  // Safe coercion for compatibility models / vehicles
+  const compatibilityList = useMemo(() => {
+    if (!part) return ['Universal Fitment'];
+    if (Array.isArray(part.compatibleModels) && part.compatibleModels.length > 0) {
+      return part.compatibleModels;
+    }
+    if (Array.isArray(part.compatibleVehicles) && part.compatibleVehicles.length > 0) {
+      return part.compatibleVehicles;
+    }
+    if (typeof part.compatibleModels === 'string' && part.compatibleModels.trim()) {
+      return part.compatibleModels.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    if (typeof part.compatibleVehicles === 'string' && part.compatibleVehicles.trim()) {
+      return part.compatibleVehicles.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    return [part.modelYearRange || 'Universal Fitment'];
+  }, [part]);
+
+  // Safe coercion for specifications array / object / JSON string
+  const safeSpecifications = useMemo(() => {
+    if (!part || !part.specifications) return [];
+    let specs = part.specifications;
+    if (typeof specs === 'string') {
+      try {
+        specs = JSON.parse(specs);
+      } catch {
+        return [];
+      }
+    }
+    if (Array.isArray(specs)) {
+      return specs.filter(s => s && typeof s === 'object' && ('key' in s || 'value' in s));
+    }
+    if (typeof specs === 'object' && specs !== null) {
+      return Object.entries(specs).map(([key, value]) => ({ key, value: String(value) }));
+    }
+    return [];
+  }, [part]);
+
+  // Safe coercion for description and provenance text
+  const safeDescription = useMemo(() => {
+    if (!part) return 'No description provided.';
+    const desc = part.description || part.provenance;
+    if (typeof desc === 'string') return desc;
+    if (typeof desc === 'object' && desc !== null) {
+      return desc.text || desc.content || desc.description || JSON.stringify(desc);
+    }
+    return 'No description provided.';
+  }, [part]);
+
+  // Early return safely AFTER all hooks are called
+  if (!part) return null;
+
+  const priceNum = Number(part.price || 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
@@ -94,7 +158,7 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
                 <img
                   key={activeImageIndex}
                   src={allImages[activeImageIndex]}
-                  alt={`${part.title} - photo ${activeImageIndex + 1}`}
+                  alt={`${part.title || 'Part'} - photo ${activeImageIndex + 1}`}
                   loading="lazy"
                   decoding="async"
                   className="w-full h-full object-cover transition-opacity duration-300 animate-in fade-in"
@@ -204,8 +268,8 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
               </h2>
 
               <div className="text-xl sm:text-2xl font-extrabold text-amber-400 font-display mb-3 sm:mb-4">
-                {(part.price && Number(part.price) > 0) 
-                  ? `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(part.price)} USD`
+                {priceNum > 0 
+                  ? `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(priceNum)} USD`
                   : 'Contact for price'}
               </div>
 
@@ -262,24 +326,24 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
               {/* Provenance / Technical Description */}
               <div className="bg-slate-950/80 rounded-xl p-3 sm:p-3.5 border border-slate-800 mb-3 sm:mb-4">
                 <div className="text-[9px] sm:text-[10px] font-mono text-amber-400 uppercase mb-1 flex items-center gap-1">
-                  <FileText className="w-3 h-3" /> PROVENANCE & TECHNICAL DESCRIPTION
+                  <FileText className="w-3 h-3" /> PROVENANCE &amp; TECHNICAL DESCRIPTION
                 </div>
                 <p className="text-[11px] sm:text-xs text-slate-300 leading-relaxed font-sans line-clamp-4">
-                  {part.description || part.provenance || 'No description provided.'}
+                  {safeDescription}
                 </p>
               </div>
 
               {/* Technical Specifications List */}
-              {Array.isArray(part.specifications) && part.specifications.length > 0 && (
+              {safeSpecifications.length > 0 && (
                 <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-6">
                   <div className="text-[10px] sm:text-xs font-mono text-slate-400 uppercase tracking-widest flex items-center gap-1">
                     <Wrench className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" /> Specifications:
                   </div>
                   <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-mono">
-                    {part.specifications.map((spec, i) => (
+                    {safeSpecifications.map((spec, i) => (
                       <div key={i} className="bg-slate-950 p-2 sm:p-2.5 rounded-lg border border-slate-800">
-                        <span className="text-slate-500 block text-[9px] sm:text-[10px] truncate">{spec.key}</span>
-                        <span className="text-slate-200 font-semibold truncate block">{spec.value}</span>
+                        <span className="text-slate-500 block text-[9px] sm:text-[10px] truncate">{String(spec.key || '')}</span>
+                        <span className="text-slate-200 font-semibold truncate block">{String(spec.value || '')}</span>
                       </div>
                     ))}
                   </div>
@@ -292,10 +356,10 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
                   <Cpu className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" /> Compatibility Matrix:
                 </div>
                 <ul className="text-[11px] sm:text-xs text-slate-300 space-y-1 font-mono pl-1">
-                  {(part.compatibleModels || part.compatibleVehicles || [part.modelYearRange || 'Universal Fitment']).slice(0, 3).map((v, i) => (
+                  {compatibilityList.slice(0, 3).map((v, i) => (
                     <li key={i} className="flex items-center gap-1.5 truncate">
                       <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400 flex-shrink-0" />
-                      <span className="truncate">{v}</span>
+                      <span className="truncate">{typeof v === 'string' ? v : JSON.stringify(v)}</span>
                     </li>
                   ))}
                 </ul>
@@ -314,8 +378,8 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
                 >
                   <ShoppingBag className="w-4 h-4" />
                   <span>
-                    Add To Cart {(part.price && Number(part.price) > 0) 
-                      ? `(${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(part.price)})`
+                    Add To Cart {priceNum > 0 
+                      ? `(${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(priceNum)})`
                       : ''}
                   </span>
                 </button>
