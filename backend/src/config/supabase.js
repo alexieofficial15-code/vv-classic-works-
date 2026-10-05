@@ -145,6 +145,75 @@ export function mapPartFromDb(row) {
   };
 }
 
+export function mapLightPartFromDb(row) {
+  if (!row) return null;
+  const isHttpImage = typeof row.image === 'string' && row.image.startsWith('http');
+  const imageUrl = isHttpImage ? row.image : `/api/parts/${row.id}/image/main`;
+
+  return {
+    id: row.id,
+    title: row.title || 'Untitled Part',
+    oemNumber: row.oem_number || '',
+    sku: row.oem_number || row.casting_code || '',
+    carModelId: row.car_model_id || '',
+    carModelName: row.car_model_name || '',
+    vehicleCategory: row.car_model_id || '',
+    modelYearRange: row.car_model_name || row.era || '',
+    engineType: row.engine_type || row.engine_size || '',
+    engineSize: row.engine_size || row.engine_type || '',
+    category: row.category || '',
+    subcategory: row.category || '',
+    partSubcategory: row.category || '',
+    systemCategory: row.category || '',
+    mainSystem: row.category || '',
+    partSystem: row.category || '',
+    era: row.era || '',
+    price: parseFloat(row.price) || 0,
+    wholesalePrice: 0,
+    rating: parseFloat(row.rating) || 5.0,
+    reviewsCount: parseInt(row.reviews_count, 10) || 1,
+    condition: row.condition || 'NOS (New Old Stock)',
+    rarityScore: row.rarity_score || 'Rare (85/100)',
+    stock: parseInt(row.stock_count ?? row.stock, 10) || 1,
+    inStock: Boolean(row.in_stock ?? true),
+    has_image: true,
+    hasImage: true,
+    image: imageUrl,
+    additionalImages: [
+      imageUrl,
+      isHttpImage ? imageUrl : `/api/parts/${row.id}/image/a0`,
+      isHttpImage ? imageUrl : `/api/parts/${row.id}/image/a1`
+    ],
+    videoUrl: '',
+    material: '',
+    finish: '',
+    weight: '',
+    dimensions: '',
+    performanceType: '',
+    storageLocation: '',
+    listingType: 'spare-part',
+    vinNumber: '',
+    mileage: '',
+    engineInstalled: '',
+    transmissionType: '',
+    exteriorColor: '',
+    interiorColor: '',
+    titleStatus: 'Clean Title',
+    caseType: '',
+    inductionSetup: '',
+    coolingShroud: '',
+    dynoHorsepower: '',
+    castingCode: row.casting_code || '',
+    provenance: '',
+    description: '',
+    specifications: [],
+    compatibleVehicles: [],
+    compatibleModels: [row.car_model_name || 'Universal Air-Cooled VW'],
+    compatibleEngineSizes: [],
+    createdAt: row.created_at || new Date().toISOString()
+  };
+}
+
 export function mapPartToDb(part) {
   const extraMeta = {
     subcategory: part.subcategory || part.subcatId || part.partSubcategory || '',
@@ -418,16 +487,66 @@ export const dbService = {
     if (partsCache && (now - partsCacheTime < PARTS_CACHE_TTL)) {
       return partsCache;
     }
-    if (!isSupabaseConfigured) throw new Error('Supabase credentials missing');
-    const { data, error } = await supabase.from('spare_parts').select('*').order('created_at', { ascending: false });
+    if (!isSupabaseConfigured) {
+      if (partsCache) return partsCache;
+      throw new Error('Supabase credentials missing');
+    }
+
+    // Select ONLY light columns (excludes heavy base64 image and specifications to prevent statement timeouts)
+    const { data, error } = await supabase
+      .from('spare_parts')
+      .select('id, title, price, category, car_model_id, car_model_name, era, engine_type, engine_size:engine_type, oem_number, casting_code, in_stock, stock, stock_count:stock, created_at, condition, rarity_score, rating, reviews_count')
+      .order('created_at', { ascending: false });
+
     if (error) {
       console.error('Error fetching spare_parts from Supabase:', error.message);
+      if (partsCache) {
+        console.warn('Returning stale cached parts after Supabase error');
+        return partsCache;
+      }
       throw error;
     }
-    const result = data ? data.map(mapPartFromDb) : [];
+
+    const result = data ? data.map(mapLightPartFromDb) : [];
     partsCache = result;
     partsCacheTime = now;
     return result;
+  },
+
+  async getPartImage(id) {
+    if (!isSupabaseConfigured) return null;
+    try {
+      const { data, error } = await supabase
+        .from('spare_parts')
+        .select('id, image, specifications')
+        .eq('id', id)
+        .maybeSingle();
+      if (error || !data) return null;
+      return {
+        id: data.id,
+        image: data.image || '',
+        specifications: data.specifications || []
+      };
+    } catch (err) {
+      console.error(`Error fetching image for part ${id}:`, err.message);
+      return null;
+    }
+  },
+
+  async getPartById(id) {
+    if (!isSupabaseConfigured) return null;
+    try {
+      const { data, error } = await supabase
+        .from('spare_parts')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (error || !data) return null;
+      return mapPartFromDb(data);
+    } catch (err) {
+      console.error(`Error fetching part ${id}:`, err.message);
+      return null;
+    }
   },
 
   async addPart(partData) {

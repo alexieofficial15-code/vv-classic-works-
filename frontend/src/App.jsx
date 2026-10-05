@@ -1,7 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { API_BASE_URL } from './config/api';
 import { getCatalogParts, invalidateCatalogCache } from './data/catalogStore';
-import { trackAddToCart, trackPurchase, trackLead, sanitizeImage, sanitizeOrderItem } from './analytics';
+import {
+  trackAddToCart,
+  trackPurchase,
+  trackLead,
+  triggerGoogleAdsConversion,
+  sanitizeImage,
+  sanitizeOrderItem
+} from './analytics';
+import { AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { useRouter, updateDocumentMeta, slugify } from './utils/router';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
@@ -58,6 +66,21 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isGuidedSearchOpen, setIsGuidedSearchOpen] = useState(false);
   const [activeModalPart, setActiveModalPart] = useState(null);
+  
+  // Global action notification status banner (Success / Error)
+  const [actionStatus, setActionStatus] = useState(null); // { type: 'success' | 'error', title, message, referenceId }
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+  const [isSubmittingReserve, setIsSubmittingReserve] = useState(false);
+  const [isSubmittingCheckout, setIsSubmittingCheckout] = useState(false);
+
+  // Auto-dismiss actionStatus banner
+  useEffect(() => {
+    if (!actionStatus) return;
+    const timer = setTimeout(() => {
+      setActionStatus(null);
+    }, actionStatus.type === 'error' ? 12000 : 8000);
+    return () => clearTimeout(timer);
+  }, [actionStatus]);
 
   const [cartItems, setCartItems] = useState([]);
   const [wishlistIds, setWishlistIds] = useState([]);
@@ -535,6 +558,10 @@ export default function App() {
       return;
     }
 
+    if (isSubmittingRequest) return;
+    setIsSubmittingRequest(true);
+    setActionStatus(null);
+
     const cleanImage = sanitizeImage(part.image);
     const reqPayload = {
       partId: part.id,
@@ -551,6 +578,9 @@ export default function App() {
       userCity: userProfile.city || ''
     };
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/requests`, {
         method: 'POST',
@@ -558,16 +588,26 @@ export default function App() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
         },
-        body: JSON.stringify(reqPayload)
+        body: JSON.stringify(reqPayload),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
       const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.success || !data.data?.id) {
-        throw new Error(data.message || data.error || `Server status ${res.status}`);
+
+      // Treat success ONLY when res.ok && data.success && data.data?.id
+      if (!res.ok || !data?.success || !data?.data?.id) {
+        throw new Error("We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
       }
 
       const record = data.data;
 
       // Honest conversion tracking: fire ONLY on verified backend response
+      triggerGoogleAdsConversion({
+        id: record.id,
+        type: 'request',
+        part,
+        value: Number(part.price || 0)
+      });
       trackLead({
         id: record.id,
         type: 'request',
@@ -588,16 +628,29 @@ export default function App() {
         ...prev
       ]);
 
-      handleOpenUserDashboard();
+      setActionStatus({
+        type: 'success',
+        title: 'Request Submitted Successfully',
+        message: `Your request for "${part.title}" has been confirmed.`,
+        referenceId: record.id
+      });
     } catch (err) {
+      clearTimeout(timeoutId);
       console.error('API request creation failed:', err);
-      alert(`Request submission failed: ${err.message}. Please call our shop directly at +1 (945) 287-9865.`);
+      setActionStatus({
+        type: 'error',
+        title: 'Request Submission Failed',
+        message: "We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865."
+      });
+    } finally {
+      setIsSubmittingRequest(false);
     }
   };
 
   // Guest Reservation Modal State
   const [guestReservationPart, setGuestReservationPart] = useState(null);
   const [guestResError, setGuestResError] = useState(null);
+  const [guestResSuccess, setGuestResSuccess] = useState(null);
   const [guestResForm, setGuestResForm] = useState({
     name: '',
     email: '',
@@ -605,15 +658,20 @@ export default function App() {
     city: '',
     notes: ''
   });
-  const [isSubmittingRes, setIsSubmittingRes] = useState(false);
+  const [isSubmittingGuestRes, setIsSubmittingGuestRes] = useState(false);
 
   const handleReserveItem = async (part) => {
     if (!currentUser || !authToken) {
       // Allow seamless guest reservation
       setGuestReservationPart(part);
       setGuestResError(null);
+      setGuestResSuccess(null);
       return;
     }
+
+    if (isSubmittingReserve) return;
+    setIsSubmittingReserve(true);
+    setActionStatus(null);
 
     const cleanImage = sanitizeImage(part.image);
     const reqPayload = {
@@ -631,6 +689,9 @@ export default function App() {
       userCity: userProfile.city || ''
     };
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/requests`, {
         method: 'POST',
@@ -638,16 +699,26 @@ export default function App() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
         },
-        body: JSON.stringify(reqPayload)
+        body: JSON.stringify(reqPayload),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
       const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.success || !data.data?.id) {
-        throw new Error(data.message || data.error || `Server status ${res.status}`);
+
+      // Treat success ONLY when res.ok && data.success && data.data?.id
+      if (!res.ok || !data?.success || !data?.data?.id) {
+        throw new Error("We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
       }
 
       const record = data.data;
 
       // Honest conversion tracking: fire ONLY on verified backend response
+      triggerGoogleAdsConversion({
+        id: record.id,
+        type: 'reservation',
+        part,
+        value: Number(part.price || 0)
+      });
       trackLead({
         id: record.id,
         type: 'reservation',
@@ -668,18 +739,31 @@ export default function App() {
         ...prev
       ]);
 
-      alert(`Reservation Confirmed!\n\nYour reservation for "${part.title}" has been placed (Ref: #${record.id}). Our master technicians will hold this item for you.`);
+      setActionStatus({
+        type: 'success',
+        title: 'Reservation Confirmed Successfully',
+        message: `Your reservation for "${part.title}" has been confirmed. Our technicians will hold this item for you.`,
+        referenceId: record.id
+      });
     } catch (err) {
+      clearTimeout(timeoutId);
       console.error('API reservation creation failed:', err);
-      alert(`Reservation failed: ${err.message}. Please call our shop directly at +1 (945) 287-9865.`);
+      setActionStatus({
+        type: 'error',
+        title: 'Reservation Failed',
+        message: "We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865."
+      });
+    } finally {
+      setIsSubmittingReserve(false);
     }
   };
 
   const handleConfirmGuestReservation = async (e) => {
     e.preventDefault();
-    if (!guestReservationPart || isSubmittingRes) return;
-    setIsSubmittingRes(true);
+    if (!guestReservationPart || isSubmittingGuestRes) return;
+    setIsSubmittingGuestRes(true);
     setGuestResError(null);
+    setGuestResSuccess(null);
 
     const part = guestReservationPart;
     const cleanImage = sanitizeImage(part.image);
@@ -699,22 +783,35 @@ export default function App() {
       notes: guestResForm.notes || ''
     };
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/requests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(reqPayload)
+        body: JSON.stringify(reqPayload),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
       const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.success || !data.data?.id) {
-        throw new Error(data.message || data.error || `Server returned status ${res.status}`);
+
+      // Treat success ONLY when res.ok && data.success && data.data?.id
+      if (!res.ok || !data?.success || !data?.data?.id) {
+        throw new Error("We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
       }
 
       const record = data.data;
 
       // Honest conversion tracking: fire ONLY on verified backend response
+      triggerGoogleAdsConversion({
+        id: record.id,
+        type: 'reservation',
+        part,
+        value: Number(part.price || 0)
+      });
       trackLead({
         id: record.id,
         type: 'reservation',
@@ -726,17 +823,20 @@ export default function App() {
       refreshUserRequests();
       if (adminToken) fetchAdminRequests();
 
-      setIsSubmittingRes(false);
-      setGuestReservationPart(null);
-      setGuestResForm({ name: '', email: '', phone: '', city: '', notes: '' });
-      setGuestResError(null);
-
-      alert(`Reservation Confirmed!\n\nThank you, ${reqPayload.userName}! Your reservation for "${part.title}" is confirmed (Ref: #${record.id}).\nWe have held this item for you and our team will contact you via ${reqPayload.userPhone || reqPayload.userEmail} shortly.`);
+      // Show inline success banner with real server reference ID
+      setGuestResSuccess({
+        id: record.id,
+        title: part.title,
+        name: reqPayload.userName,
+        contact: reqPayload.userPhone || reqPayload.userEmail
+      });
     } catch (err) {
+      clearTimeout(timeoutId);
       console.error('API guest reservation failed:', err);
-      // Keep form, keep modal, do NOT fire conversion, show inline error with phone number
-      setGuestResError(err.message || 'Unable to place reservation. Please call our shop directly at +1 (945) 287-9865.');
-      setIsSubmittingRes(false);
+      // Keep form data, keep modal, do NOT fire conversion, show inline red error
+      setGuestResError("We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
+    } finally {
+      setIsSubmittingGuestRes(false);
     }
   };
 
@@ -795,6 +895,9 @@ export default function App() {
 
   // Unified Order Placement Handler (Guest Checkout + Logged-in Members)
   const handleProceedToCheckout = async (checkoutData = {}) => {
+    if (isSubmittingCheckout) return;
+    setIsSubmittingCheckout(true);
+
     const finalName = checkoutData.name || currentUser?.name || 'Guest Restorer';
     const finalEmail = checkoutData.email || currentUser?.email || 'guest@aircooledworks.com';
     const finalPhone = checkoutData.phone || currentUser?.phone || '';
@@ -807,50 +910,86 @@ export default function App() {
     const headers = { 'Content-Type': 'application/json' };
     if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
 
-    const res = await fetch(`${API_BASE_URL}/api/orders`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        items: cleanItems,
-        totalAmount: cartTotal,
-        userName: finalName,
-        userEmail: finalEmail,
-        userPhone: finalPhone,
-        shippingAddress: finalAddress,
-        notes: finalNotes
-      })
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
 
-    const data = await res.json().catch(() => ({}));
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/orders`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          items: cleanItems,
+          totalAmount: cartTotal,
+          userName: finalName,
+          userEmail: finalEmail,
+          userPhone: finalPhone,
+          shippingAddress: finalAddress,
+          notes: finalNotes
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
 
-    // Honest check: require res.ok AND data.success AND data.data.id
-    if (!res.ok || !data.success || !data.data?.id) {
-      const errMsg = data.message || data.error || `Server returned status ${res.status}`;
-      throw new Error(`Order submission failed: ${errMsg}. Please call our shop at +1 (945) 287-9865.`);
+      const data = await res.json().catch(() => ({}));
+
+      // Treat success ONLY when res.ok && data.success && data.data?.id
+      if (!res.ok || !data?.success || !data?.data?.id) {
+        throw new Error("We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
+      }
+
+      const savedOrder = data.data;
+
+      // Honest conversion tracking: fire ONLY on verified backend success
+      triggerGoogleAdsConversion({
+        type: 'purchase',
+        orderId: savedOrder.id,
+        value: typeof savedOrder.totalAmount === 'number' && !isNaN(savedOrder.totalAmount) ? savedOrder.totalAmount : cartTotal,
+        items: (Array.isArray(savedOrder.items) && savedOrder.items.length > 0) ? savedOrder.items : cleanItems
+      });
+      trackPurchase({
+        orderId: savedOrder.id,
+        value: typeof savedOrder.totalAmount === 'number' && !isNaN(savedOrder.totalAmount) ? savedOrder.totalAmount : cartTotal,
+        items: (Array.isArray(savedOrder.items) && savedOrder.items.length > 0) ? savedOrder.items : cleanItems
+      });
+
+      // Clear cart only on verified success
+      setCartItems([]);
+      refreshUserRequests();
+      if (adminToken) fetchAdminRequests();
+
+      if (currentUser) {
+        setActionStatus({
+          type: 'success',
+          title: 'Order Placed Successfully',
+          message: `Thank you, ${finalName}! Confirmation sent to ${finalEmail}.`,
+          referenceId: savedOrder.id
+        });
+        setIsCartOpen(false);
+        handleOpenUserDashboard();
+      }
+
+      return savedOrder;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.error('API order placement failed:', err);
+      throw new Error("We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
+    } finally {
+      setIsSubmittingCheckout(false);
     }
-
-    const savedOrder = data.data;
-
-    // Honest conversion tracking: fire ONLY on verified backend success
-    trackPurchase({
-      orderId: savedOrder.id,
-      value: typeof savedOrder.totalAmount === 'number' && !isNaN(savedOrder.totalAmount) ? savedOrder.totalAmount : cartTotal,
-      items: (Array.isArray(savedOrder.items) && savedOrder.items.length > 0) ? savedOrder.items : cleanItems
-    });
-
-    // Clear cart only on verified success
-    setCartItems([]);
-    refreshUserRequests();
-    if (adminToken) fetchAdminRequests();
-
-    if (currentUser) {
-      alert(`Order #${savedOrder.id} Placed Successfully!\n\nThank you, ${finalName}! Confirmation sent to ${finalEmail}.`);
-      setIsCartOpen(false);
-      handleOpenUserDashboard();
-    }
-
-    return savedOrder;
   };
+
+  // Expose test handlers for automated testing verification
+  if (typeof window !== 'undefined') {
+    window.__appTestHandlers = {
+      handleRequestItem,
+      handleReserveItem,
+      handleConfirmGuestReservation,
+      handleProceedToCheckout,
+      setCartItems,
+      setIsCartOpen,
+      setActionStatus
+    };
+  }
 
   const handleSelectFilter = (filterObj, options = {}) => {
     setActiveFilter(prev => ({
@@ -893,6 +1032,63 @@ export default function App() {
           onNavigateToShop={() => navigate('/')}
           onNavigate={navigate}
         />
+      )}
+
+      {/* Global Status Banner (Confirmed Success Banner with Server Ref ID or Inline Error) */}
+      {actionStatus && (
+        <div
+          className="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-xl p-4 rounded-2xl shadow-2xl backdrop-blur-md flex items-start gap-3 text-white animate-in slide-in-from-top-4 duration-300 border-2"
+          style={{
+            backgroundColor: actionStatus.type === 'error' ? 'rgba(69, 10, 10, 0.95)' : 'rgba(15, 23, 42, 0.95)',
+            borderColor: actionStatus.type === 'error' ? '#ef4444' : '#10b981'
+          }}
+          role={actionStatus.type === 'error' ? 'alert' : 'status'}
+        >
+          {actionStatus.type === 'error' ? (
+            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+          ) : (
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+          )}
+          <div className="flex-1 min-w-0">
+            <h4 className={`text-sm font-bold font-display ${actionStatus.type === 'error' ? 'text-rose-300' : 'text-emerald-400'}`}>
+              {actionStatus.title || (actionStatus.type === 'error' ? 'Submission Failed' : 'Success')}
+            </h4>
+            <p className="text-xs text-slate-200 font-mono mt-0.5 leading-relaxed">
+              {actionStatus.message}
+            </p>
+            {actionStatus.referenceId && (
+              <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 bg-slate-950 border border-emerald-500/40 rounded-lg text-xs font-mono text-emerald-300">
+                <span>SERVER REFERENCE:</span>
+                <strong className="text-amber-400 font-bold">#{actionStatus.referenceId}</strong>
+              </div>
+            )}
+            {actionStatus.type === 'error' && (
+              <div className="mt-2 flex flex-wrap gap-2 text-xs items-center">
+                <a
+                  href="https://wa.me/19452879865"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-mono font-bold transition-colors"
+                >
+                  💬 WhatsApp Us
+                </a>
+                <a
+                  href="tel:19452879865"
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-mono font-bold transition-colors"
+                >
+                  📞 Call 1-945-287-9865
+                </a>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => setActionStatus(null)}
+            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 cursor-pointer"
+            aria-label="Dismiss banner"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       )}
 
       <main className={isDashboardView ? "pt-28 md:pt-36 min-h-screen pb-16 bg-[#0e0e0f]" : "pt-24 md:pt-28 min-h-[80vh]"}>
@@ -1098,94 +1294,137 @@ export default function App() {
               </div>
             </div>
 
-            <form onSubmit={handleConfirmGuestReservation} className="space-y-3">
-              <div>
-                <label className="block text-[11px] font-mono text-slate-400 mb-1">
-                  YOUR FULL NAME <span className="text-amber-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Michael Schmidt"
-                  value={guestResForm.name}
-                  onChange={(e) => setGuestResForm(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
-                />
+            {guestResSuccess ? (
+              <div className="text-center py-6 space-y-4 animate-in fade-in">
+                <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-9 h-9" />
+                </div>
+                <h3 className="text-lg font-bold font-display text-white">Reservation Confirmed!</h3>
+                <p className="text-xs text-slate-300 font-mono">
+                  Thank you, <strong>{guestResSuccess.name}</strong>. Your hold for "{guestResSuccess.title}" is confirmed.
+                </p>
+                <div className="bg-slate-950 p-3.5 rounded-xl border border-emerald-500/40 text-xs font-mono text-emerald-300">
+                  RESERVATION REFERENCE: <strong className="text-amber-400 font-bold">#{guestResSuccess.id}</strong>
+                </div>
+                <p className="text-[11px] text-slate-400 font-mono">
+                  Our master technicians have held this vintage part for you and will contact you via {guestResSuccess.contact || 'your email/phone'} shortly.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGuestResSuccess(null);
+                    setGuestReservationPart(null);
+                    setGuestResForm({ name: '', email: '', phone: '', city: '', notes: '' });
+                  }}
+                  className="w-full bg-[#ff7a1a] hover:bg-[#ffb68e] text-black font-bold py-3 rounded-xl uppercase tracking-wider text-xs font-mono shadow-xl transition-all cursor-pointer"
+                >
+                  Close & Continue Browsing
+                </button>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            ) : (
+              <form onSubmit={handleConfirmGuestReservation} className="space-y-3">
                 <div>
                   <label className="block text-[11px] font-mono text-slate-400 mb-1">
-                    EMAIL ADDRESS <span className="text-amber-400">*</span>
+                    YOUR FULL NAME <span className="text-amber-400">*</span>
                   </label>
                   <input
-                    type="email"
+                    type="text"
                     required
-                    placeholder="name@email.com"
-                    value={guestResForm.email}
-                    onChange={(e) => setGuestResForm(prev => ({ ...prev, email: e.target.value }))}
+                    name="name"
+                    placeholder="e.g. Michael Schmidt"
+                    value={guestResForm.name}
+                    onChange={(e) => setGuestResForm(prev => ({ ...prev, name: e.target.value }))}
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
                   />
                 </div>
-                <div>
-                  <label className="block text-[11px] font-mono text-slate-400 mb-1">
-                    PHONE / WHATSAPP <span className="text-amber-400">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="+1 (555) 019-2834"
-                    value={guestResForm.phone}
-                    onChange={(e) => setGuestResForm(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
-                  />
-                </div>
-              </div>
 
-              <div>
-                <label className="block text-[11px] font-mono text-slate-400 mb-1">
-                  DELIVERY CITY / STATE / COUNTRY
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Austin, Texas, USA"
-                  value={guestResForm.city}
-                  onChange={(e) => setGuestResForm(prev => ({ ...prev, city: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-mono text-slate-400 mb-1">
-                  NOTES / COMPATIBILITY QUESTIONS (OPTIONAL)
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="e.g. Need confirmation for 1971 Super Beetle dual port"
-                  value={guestResForm.notes}
-                  onChange={(e) => setGuestResForm(prev => ({ ...prev, notes: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
-                />
-              </div>
-
-              {guestResError && (
-                <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300 font-mono space-y-1 animate-in fade-in">
-                  <div className="font-bold text-rose-400">Reservation Notice</div>
-                  <p className="text-[11px] leading-relaxed">{guestResError}</p>
-                  <div className="text-[11px] pt-1">
-                    Call shop directly: <a href="tel:19452879865" className="text-amber-400 underline font-bold hover:text-amber-300">+1 (945) 287-9865</a>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-mono text-slate-400 mb-1">
+                      EMAIL ADDRESS <span className="text-amber-400">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      name="email"
+                      placeholder="name@email.com"
+                      value={guestResForm.email}
+                      onChange={(e) => setGuestResForm(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-mono text-slate-400 mb-1">
+                      PHONE / WHATSAPP <span className="text-amber-400">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      name="phone"
+                      placeholder="+1 (555) 019-2834"
+                      value={guestResForm.phone}
+                      onChange={(e) => setGuestResForm(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                    />
                   </div>
                 </div>
-              )}
 
-              <button
-                type="submit"
-                disabled={isSubmittingRes}
-                className="w-full min-h-[46px] bg-[#ff7a1a] hover:bg-[#ffb68e] text-black font-bold py-3 rounded-xl uppercase tracking-wider text-xs font-mono shadow-xl transition-all cursor-pointer disabled:opacity-50"
-              >
-                {isSubmittingRes ? 'Confirming Reservation...' : 'Confirm Reservation (Hold Item)'}
-              </button>
-            </form>
+                <div>
+                  <label className="block text-[11px] font-mono text-slate-400 mb-1">
+                    DELIVERY CITY / STATE / COUNTRY
+                  </label>
+                  <input
+                    type="text"
+                    name="city"
+                    placeholder="e.g. Austin, Texas, USA"
+                    value={guestResForm.city}
+                    onChange={(e) => setGuestResForm(prev => ({ ...prev, city: e.target.value }))}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-mono text-slate-400 mb-1">
+                    NOTES / COMPATIBILITY QUESTIONS (OPTIONAL)
+                  </label>
+                  <textarea
+                    rows={2}
+                    name="notes"
+                    placeholder="e.g. Need confirmation for 1971 Super Beetle dual port"
+                    value={guestResForm.notes}
+                    onChange={(e) => setGuestResForm(prev => ({ ...prev, notes: e.target.value }))}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                  />
+                </div>
+
+                {guestResError && (
+                  <div className="p-3.5 bg-rose-500/15 border border-rose-500/40 rounded-xl text-xs text-rose-200 font-mono space-y-2 animate-in fade-in" role="alert">
+                    <div className="flex items-center gap-1.5 font-bold text-rose-400">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>Submission Error</span>
+                    </div>
+                    <p className="text-[11px] leading-relaxed">{guestResError}</p>
+                    <div className="flex flex-wrap gap-2 pt-1 text-[11px] items-center">
+                      <a href="https://wa.me/19452879865" target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline font-bold hover:text-emerald-300">
+                        WhatsApp Us
+                      </a>
+                      <span className="text-slate-500">•</span>
+                      <a href="tel:19452879865" className="text-amber-400 underline font-bold hover:text-amber-300">
+                        Call 1-945-287-9865
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isSubmittingGuestRes}
+                  className="w-full min-h-[46px] bg-[#ff7a1a] hover:bg-[#ffb68e] text-black font-bold py-3 rounded-xl uppercase tracking-wider text-xs font-mono shadow-xl transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmittingGuestRes ? 'Confirming Reservation...' : 'Confirm Reservation (Hold Item)'}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       )}

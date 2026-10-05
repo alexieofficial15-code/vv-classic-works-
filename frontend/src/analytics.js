@@ -305,6 +305,29 @@ export function trackLead({ id, type = 'request', part = null, value = 0 }) {
 }
 
 /**
+ * Universal verified Google Ads conversion trigger.
+ * Dispatches to trackPurchase for purchases or trackLead for requests/reservations.
+ * MUST be invoked only after confirmed server response (res.ok && data.success && data.data?.id).
+ */
+export function triggerGoogleAdsConversion(payload = {}) {
+  if (!payload) return;
+  if (payload.type === 'purchase' || payload.orderId) {
+    trackPurchase({
+      orderId: payload.orderId || payload.id,
+      value: payload.value,
+      items: payload.items || []
+    });
+  } else {
+    trackLead({
+      id: payload.id,
+      type: payload.type || 'lead',
+      part: payload.part,
+      value: payload.value
+    });
+  }
+}
+
+/**
  * Track Contact Click event (Telephone tap or WhatsApp message)
  */
 export function trackContactClick(channel = 'phone') {

@@ -93,6 +93,16 @@ export async function getCatalogParts({ forceRefresh = false } = {}) {
 
       memoryCatalogCache = normalizedParts;
       return normalizedParts;
+    } catch (err) {
+      console.warn('API catalog fetch failed, using offline fallback parts:', err.message);
+      try {
+        const { SPARE_PARTS } = await import('./partsData.js');
+        const fallbackParts = (SPARE_PARTS || []).map(normalizeCatalogPart);
+        memoryCatalogCache = fallbackParts;
+        return fallbackParts;
+      } catch (importErr) {
+        throw err;
+      }
     } finally {
       clearTimeout(timeoutId);
       inFlightPromise = null;

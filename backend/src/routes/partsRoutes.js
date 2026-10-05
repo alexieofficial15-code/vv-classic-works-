@@ -66,36 +66,46 @@ router.get('/catalog', async (req, res) => {
   }
 });
 
-// GET /api/parts/:id/image/:key - Decodes stored base64 and serves real image
+// GET /api/parts/:id/image/:key - Decodes stored base64 or redirects to storage URL
 router.get('/parts/:id/image/:key', async (req, res) => {
   try {
     const { id, key } = req.params;
-    const partsList = await dbService.getParts();
-    const part = partsList.find(p => String(p.id) === String(id));
+    let imageStr = null;
 
-    if (!part) {
-      return res.status(404).send('Part not found');
+    if (isSupabaseConfigured) {
+      const partImg = await dbService.getPartImage(id);
+      if (partImg) {
+        if (key === 'main' || key === 'thumb') {
+          imageStr = partImg.image;
+        } else {
+          // Check specifications for additionalImages in __meta
+          const rawSpecs = Array.isArray(partImg.specifications) ? partImg.specifications : [];
+          let meta = {};
+          for (const s of rawSpecs) {
+            if (s && s.key === '__meta') {
+              try {
+                meta = typeof s.value === 'string' ? JSON.parse(s.value) : s.value;
+              } catch (_) {}
+            }
+          }
+          const addImages = Array.isArray(meta.additionalImages) ? meta.additionalImages : [];
+          const idx = parseInt(key.replace(/^a/, ''), 10);
+          if (!isNaN(idx) && addImages[idx]) {
+            imageStr = addImages[idx];
+          } else {
+            imageStr = partImg.image;
+          }
+        }
+      }
     }
 
-    let imageStr = null;
-    if (key === 'main' || key === 'thumb') {
-      imageStr = part.image;
-    } else if (key.startsWith('a')) {
-      const idx = parseInt(key.slice(1), 10);
-      if (Array.isArray(part.additionalImages) && !isNaN(idx) && part.additionalImages[idx]) {
-        imageStr = part.additionalImages[idx];
-      } else {
+    // Fallback across in-memory cache / static list if not found
+    if (!imageStr) {
+      const partsList = await dbService.getParts();
+      const part = partsList.find(p => String(p.id) === String(id));
+      if (part) {
         imageStr = part.image;
       }
-    } else if (!isNaN(parseInt(key, 10))) {
-      const idx = parseInt(key, 10);
-      if (Array.isArray(part.additionalImages) && part.additionalImages[idx]) {
-        imageStr = part.additionalImages[idx];
-      } else {
-        imageStr = part.image;
-      }
-    } else {
-      imageStr = part.image;
     }
 
     if (!imageStr || typeof imageStr !== 'string') {
@@ -222,15 +232,7 @@ router.get('/parts/:id', async (req, res) => {
     let part = null;
 
     if (isSupabaseConfigured) {
-      const { data, error } = await supabase
-        .from('spare_parts')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-
-      if (data) {
-        part = mapPartFromDb(data);
-      }
+      part = await dbService.getPartById(id);
     }
 
     // Fallback search across list if not found or Supabase not directly queried

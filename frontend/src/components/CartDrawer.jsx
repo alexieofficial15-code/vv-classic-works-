@@ -59,12 +59,12 @@ export default function CartDrawer({
           });
           setIsCheckingOut(false);
         } else {
-          throw new Error('Order could not be confirmed by the server. Please call our shop at +1 (945) 287-9865.');
+          throw new Error("We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
         }
       }
     } catch (err) {
       console.error('Checkout error:', err);
-      setSubmitError(err.message || 'Unable to submit your order. Please call us directly at +1 (945) 287-9865.');
+      setSubmitError(err.message || "We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
     } finally {
       setIsSubmitting(false);
     }
@@ -236,8 +236,10 @@ export default function CartDrawer({
                       <span>Order Submission Error</span>
                     </div>
                     <p className="text-[11px] leading-relaxed">{submitError}</p>
-                    <div className="text-[11px] pt-1">
-                      Direct Support: <a href="tel:19452879865" className="text-amber-400 underline font-bold hover:text-amber-300">+1 (945) 287-9865</a>
+                    <div className="text-[11px] pt-1 flex flex-wrap gap-2 items-center">
+                      <a href="https://wa.me/19452879865" target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline font-bold hover:text-emerald-300">WhatsApp Us</a>
+                      <span className="text-slate-500">•</span>
+                      <a href="tel:19452879865" className="text-amber-400 underline font-bold hover:text-amber-300">Call 1-945-287-9865</a>
                     </div>
                   </div>
                 )}

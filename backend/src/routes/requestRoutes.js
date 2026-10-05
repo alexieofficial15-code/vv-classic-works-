@@ -80,7 +80,7 @@ router.post('/requests', optionalAuthenticate, async (req, res) => {
       userName: finalUserName,
       userEmail: finalUserEmail,
       userPhone: userPhone || req.user?.phone || '',
-      userCity: userCity || req.user.city || '',
+      userCity: userCity || req.user?.city || '',
       partId: partId || '',
       partTitle: partTitle || 'Vintage Part',
       partImage: partImage || '',
