@@ -59,32 +59,12 @@ export async function getCatalogParts({ forceRefresh = false } = {}) {
 
   inFlightPromise = (async () => {
     try {
-      let response = null;
-      let useFallback = false;
-
-      try {
-        response = await fetch(`${API_BASE_URL}/api/catalog`, {
-          signal: controller.signal,
-          headers: { 'Accept': 'application/json' }
-        });
-        if (response.status === 404) {
-          useFallback = true;
-        }
-      } catch (err) {
-        if (err.name === 'AbortError') throw err;
-        useFallback = true;
-      }
-
-      // Fall back to /api/admin/parts if /api/catalog returns 404 or fails
-      if (useFallback || !response || !response.ok) {
-        const fallbackRes = await fetch(`${API_BASE_URL}/api/admin/parts`, {
-          signal: controller.signal,
-          headers: { 'Accept': 'application/json' }
-        });
-        if (!fallbackRes.ok) {
-          throw new Error(`Failed to load catalog (status ${fallbackRes.status})`);
-        }
-        response = fallbackRes;
+      const response = await fetch(`${API_BASE_URL}/api/catalog`, {
+        signal: controller.signal,
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to load catalog (status ${response.status})`);
       }
 
       const json = await response.json();

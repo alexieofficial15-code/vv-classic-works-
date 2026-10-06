@@ -150,6 +150,22 @@ export function mapLightPartFromDb(row) {
   const isHttpImage = typeof row.image === 'string' && row.image.startsWith('http');
   const imageUrl = isHttpImage ? row.image : `/api/parts/${row.id}/image/main`;
 
+  const imageCount = row.image_count !== undefined && row.image_count !== null 
+    ? Math.max(1, parseInt(row.image_count, 10) || 1) 
+    : 1;
+
+  // Build additionalImages dynamically from image_count only (no hardcoded a0/a1)
+  const additionalImages = [imageUrl];
+  for (let i = 0; i < imageCount - 1; i++) {
+    additionalImages.push(isHttpImage ? imageUrl : `/api/parts/${row.id}/image/a${i}`);
+  }
+
+  // Parse specifications if present (when SQL view or RPC is enabled)
+  let cleanedSpecs = [];
+  if (Array.isArray(row.specifications)) {
+    cleanedSpecs = row.specifications.filter(s => s && s.key !== '__meta');
+  }
+
   return {
     id: row.id,
     title: row.title || 'Untitled Part',
@@ -179,11 +195,8 @@ export function mapLightPartFromDb(row) {
     has_image: true,
     hasImage: true,
     image: imageUrl,
-    additionalImages: [
-      imageUrl,
-      isHttpImage ? imageUrl : `/api/parts/${row.id}/image/a0`,
-      isHttpImage ? imageUrl : `/api/parts/${row.id}/image/a1`
-    ],
+    additionalImages,
+    imageCount,
     videoUrl: '',
     material: '',
     finish: '',
@@ -206,7 +219,7 @@ export function mapLightPartFromDb(row) {
     castingCode: row.casting_code || '',
     provenance: '',
     description: '',
-    specifications: [],
+    specifications: cleanedSpecs,
     compatibleVehicles: [],
     compatibleModels: [row.car_model_name || 'Universal Air-Cooled VW'],
     compatibleEngineSizes: [],
@@ -467,21 +480,30 @@ export function mapMessageToDb(msg) {
  */
 let inMemoryMessages = loadDiskMessages();
 
-// 60-second in-memory cache for fast catalog responses
+// 60-second in-memory cache for full admin parts
 let partsCache = null;
 let partsCacheTime = 0;
 const PARTS_CACHE_TTL = 60 * 1000; // 60s
 
+// 60-second in-memory cache and single-flight in-flight promise for getPartsLite
+let partsLiteCache = null;
+let partsLiteCacheTime = 0;
+let partsLiteInFlight = null;
+const PARTS_LITE_CACHE_TTL = 60 * 1000; // 60s
+
 export function invalidatePartsCache() {
   partsCache = null;
   partsCacheTime = 0;
+  partsLiteCache = null;
+  partsLiteCacheTime = 0;
+  partsLiteInFlight = null;
 }
 
 /**
  * DB Data Access Abstraction Layer (100% Supabase Database)
  */
 export const dbService = {
-  // --- SPARE PARTS ---
+  // --- SPARE PARTS (FULL COLUMNS - ADMIN USE ONLY) ---
   async getParts() {
     const now = Date.now();
     if (partsCache && (now - partsCacheTime < PARTS_CACHE_TTL)) {
@@ -492,14 +514,14 @@ export const dbService = {
       throw new Error('Supabase credentials missing');
     }
 
-    // Select ONLY light columns (excludes heavy base64 image and specifications to prevent statement timeouts)
     const { data, error } = await supabase
       .from('spare_parts')
-      .select('id, title, price, category, car_model_id, car_model_name, era, engine_type, engine_size:engine_type, oem_number, casting_code, in_stock, stock, stock_count:stock, created_at, condition, rarity_score, rating, reviews_count')
-      .order('created_at', { ascending: false });
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200);
 
     if (error) {
-      console.error('Error fetching spare_parts from Supabase:', error.message);
+      console.error('Error fetching full spare_parts from Supabase:', error.message);
       if (partsCache) {
         console.warn('Returning stale cached parts after Supabase error');
         return partsCache;
@@ -507,20 +529,70 @@ export const dbService = {
       throw error;
     }
 
-    const result = data ? data.map(mapLightPartFromDb) : [];
+    const result = data ? data.map(mapPartFromDb) : [];
     partsCache = result;
     partsCacheTime = now;
     return result;
   },
 
-  async getPartImage(id) {
+  // --- SPARE PARTS (LIGHT COLUMNS - PUBLIC CATALOG & SEARCH, SINGLE-FLIGHT) ---
+  async getPartsLite() {
+    const now = Date.now();
+    if (partsLiteCache && (now - partsLiteCacheTime < PARTS_LITE_CACHE_TTL)) {
+      return partsLiteCache;
+    }
+    if (!isSupabaseConfigured) {
+      if (partsLiteCache) return partsLiteCache;
+      throw new Error('Supabase credentials missing');
+    }
+
+    // Single-flight: return existing in-flight promise for concurrent callers
+    if (partsLiteInFlight) {
+      return partsLiteInFlight;
+    }
+
+    partsLiteInFlight = (async () => {
+      try {
+        // Bounded list query with .limit(200); returns light columns with image_count = 1 until SQL view approved
+        const { data, error } = await supabase
+          .from('spare_parts')
+          .select('id, title, price, category, car_model_id, car_model_name, era, engine_type, engine_size:engine_type, oem_number, casting_code, in_stock, stock, stock_count:stock, created_at, condition, rarity_score, rating, reviews_count')
+          .order('created_at', { ascending: false })
+          .limit(200);
+
+        if (error) {
+          console.error('Error fetching spare_parts lite from Supabase:', error.message);
+          if (partsLiteCache) {
+            console.warn('Returning stale cached parts after Supabase error');
+            return partsLiteCache;
+          }
+          throw error;
+        }
+
+        const result = data ? data.map(r => mapLightPartFromDb({ ...r, image_count: 1 })) : [];
+        partsLiteCache = result;
+        partsLiteCacheTime = Date.now();
+        return result;
+      } finally {
+        partsLiteInFlight = null;
+      }
+    })();
+
+    return partsLiteInFlight;
+  },
+
+  async getPartImage(id, key = 'main') {
     if (!isSupabaseConfigured) return null;
     try {
+      const isMainOrThumb = key === 'main' || key === 'thumb';
+      const selectCols = isMainOrThumb ? 'id, image' : 'id, specifications';
+
       const { data, error } = await supabase
         .from('spare_parts')
-        .select('id, image, specifications')
+        .select(selectCols)
         .eq('id', id)
         .maybeSingle();
+
       if (error || !data) return null;
       return {
         id: data.id,

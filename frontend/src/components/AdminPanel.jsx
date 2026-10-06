@@ -322,8 +322,11 @@ export default function AdminPanel({
   const fetchAdminData = async () => {
     setIsLoading(true);
     let serverParts = null;
+    const activeToken = adminToken || localStorage.getItem('adminToken');
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/parts`);
+      const res = await fetch(`${API_BASE_URL}/api/admin/parts`, {
+        headers: activeToken ? { 'Authorization': `Bearer ${activeToken}` } : {}
+      });
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         serverParts = data.data;
