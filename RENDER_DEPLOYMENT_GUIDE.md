@@ -35,13 +35,14 @@ In the Render Dashboard under **Environment Variables**, add the following keys 
 
 | Key | Description | Example Value |
 |---|---|---|
-| `PORT` | Render internal port | `10000` (or leave default) |
+| `JWT_SECRET` | Secret key for JWT tokens (must be >= 32 characters) | `generate_random_32_plus_char_secret_string` |
+| `ADMIN_EMAIL` | Master Admin Email | `admin@classicaircooledvwworks.com` |
+| `ADMIN_PASSWORD_HASH` | Bcrypt hash generated via `node backend/scripts/hash-password.js <password>` | `$2b$10$...` |
+| `CLIENT_ORIGIN` | Allowed Frontend Origins (comma-separated for Vercel & custom domain) | `https://your-app.vercel.app,https://www.yourdomain.com` |
 | `SUPABASE_URL` | Your Supabase Project URL | `https://xyzcompany.supabase.co` |
-| `SUPABASE_ANON_KEY` | Your Supabase Public Anon Key | `eyJhbGciOi...` |
-| `JWT_SECRET` | Secret key for JWT tokens | `your_secret_jwt_key_here` |
-| `ADMIN_EMAIL` | Master Admin Email | `your_admin_email@example.com` |
-| `ADMIN_PASSWORD` | Master Admin Password | `your_strong_admin_password_here` |
-| `ADMIN_SECRET_KEY` | Admin Secret Auth Key | `your_optional_secret_key_here` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Service Role Key (secure backend queries) | `eyJhbGciOi...` |
+| `SUPABASE_ANON_KEY` | Supabase Public Anon Key | `eyJhbGciOi...` |
+| `ADMIN_SECRET_KEY` | Optional Admin Secret Auth Key | `optional_secret_key` |
 
 ---
 

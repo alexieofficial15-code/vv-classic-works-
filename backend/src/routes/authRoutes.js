@@ -23,56 +23,73 @@ function safeCompare(a, b) {
 }
 
 /**
- * In-memory IP rate limiter for auth endpoints (10 attempts / 15 min per IP)
+ * In-memory IP rate limiter for auth endpoints: 5 failed attempts per 15 minutes per IP
  */
-const authAttempts = new Map();
+const failedAuthAttempts = new Map();
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-const MAX_AUTH_ATTEMPTS = 10;
+const MAX_FAILED_AUTH_ATTEMPTS = 5;
 
 // Periodic cleanup of stale rate-limit records every 15 minutes
 setInterval(() => {
   const now = Date.now();
-  for (const [ip, record] of authAttempts.entries()) {
+  for (const [ip, record] of failedAuthAttempts.entries()) {
     if (now - record.startTime > RATE_LIMIT_WINDOW_MS) {
-      authAttempts.delete(ip);
+      failedAuthAttempts.delete(ip);
     }
   }
 }, RATE_LIMIT_WINDOW_MS).unref();
 
-export const authRateLimiter = (req, res, next) => {
+export function getClientIp(req) {
   const forwarded = req.headers['x-forwarded-for'];
-  const ip = (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : null) ||
+  return (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : null) ||
     req.ip ||
     req.socket?.remoteAddress ||
     'unknown';
+}
 
+export function recordFailedAuth(ip) {
   const now = Date.now();
-  const record = authAttempts.get(ip);
-
+  const record = failedAuthAttempts.get(ip);
   if (!record || now - record.startTime > RATE_LIMIT_WINDOW_MS) {
-    authAttempts.set(ip, { count: 1, startTime: now });
-    return next();
+    failedAuthAttempts.set(ip, { count: 1, startTime: now });
+  } else {
+    record.count += 1;
+  }
+}
+
+export function clearFailedAuth(ip) {
+  failedAuthAttempts.delete(ip);
+}
+
+export const authRateLimiter = (req, res, next) => {
+  const ip = getClientIp(req);
+  const now = Date.now();
+  const record = failedAuthAttempts.get(ip);
+
+  if (record) {
+    if (now - record.startTime > RATE_LIMIT_WINDOW_MS) {
+      failedAuthAttempts.delete(ip);
+    } else if (record.count >= MAX_FAILED_AUTH_ATTEMPTS) {
+      const retryAfter = Math.ceil((record.startTime + RATE_LIMIT_WINDOW_MS - now) / 1000);
+      res.set('Retry-After', String(retryAfter));
+      return res.status(429).json({
+        success: false,
+        message: 'Too many failed authentication attempts. Please try again in 15 minutes.'
+      });
+    }
   }
 
-  if (record.count >= MAX_AUTH_ATTEMPTS) {
-    const retryAfter = Math.ceil((record.startTime + RATE_LIMIT_WINDOW_MS - now) / 1000);
-    res.set('Retry-After', String(retryAfter));
-    return res.status(429).json({
-      success: false,
-      message: 'Too many authentication attempts. Please try again in 15 minutes.'
-    });
-  }
-
-  record.count += 1;
   next();
 };
 
 // POST /api/auth/register
 router.post('/register', authRateLimiter, async (req, res) => {
+  const ip = getClientIp(req);
   try {
     const { name, email, password } = req.body;
 
     if (!email || !password) {
+      recordFailedAuth(ip);
       return res.status(400).json({ success: false, message: 'Email and password are required' });
     }
 
@@ -80,6 +97,7 @@ router.post('/register', authRateLimiter, async (req, res) => {
 
     const existingUser = await dbService.getUserByEmail(cleanEmail);
     if (existingUser) {
+      recordFailedAuth(ip);
       return res.status(400).json({ success: false, message: 'An account with this email already exists' });
     }
 
@@ -92,6 +110,8 @@ router.post('/register', authRateLimiter, async (req, res) => {
       passwordHash,
       role: 'USER'
     });
+
+    clearFailedAuth(ip);
 
     const token = jwt.sign(
       { id: user.id, email: user.email, name: user.name, role: user.role },
@@ -106,6 +126,7 @@ router.post('/register', authRateLimiter, async (req, res) => {
       user: { id: user.id, name: user.name, email: user.email, role: user.role }
     });
   } catch (err) {
+    recordFailedAuth(ip);
     console.error('Registration Error:', err);
     res.status(500).json({ success: false, message: err.message || 'Server error during registration' });
   }
@@ -113,103 +134,99 @@ router.post('/register', authRateLimiter, async (req, res) => {
 
 // POST /api/auth/login
 router.post('/login', authRateLimiter, async (req, res) => {
+  const ip = getClientIp(req);
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
+      recordFailedAuth(ip);
       return res.status(400).json({ success: false, message: 'Email and password are required' });
     }
 
     const cleanEmail = String(email).replace(/\0/g, '').trim().toLowerCase();
     const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.trim().toLowerCase() : null;
-    const adminPassword = process.env.ADMIN_PASSWORD;
-
-    const isMasterAdmin = Boolean(
-      adminEmail &&
-      adminPassword &&
-      safeCompare(cleanEmail, adminEmail)
-    );
+    const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH ? process.env.ADMIN_PASSWORD_HASH.trim() : null;
 
     let user = await dbService.getUserByEmail(cleanEmail);
 
     if (!user) {
-      if (isMasterAdmin && safeCompare(password, adminPassword)) {
-        // Initial bootstrap for configured master admin if not in DB yet
-        const salt = await bcrypt.genSalt(10);
-        const passwordHash = await bcrypt.hash(adminPassword, salt);
-
-        user = await dbService.createUser({
-          name: 'Master Engineer',
-          email: cleanEmail,
-          passwordHash,
-          role: 'ADMIN'
-        });
-      } else {
-        return res.status(401).json({ success: false, message: 'Invalid email or password' });
-      }
-    } else {
-      if (isMasterAdmin) {
-        user.role = 'ADMIN';
-        if (user.passwordHash) {
-          const isMatch = await bcrypt.compare(password, user.passwordHash);
-          if (!isMatch) {
-            return res.status(401).json({ success: false, message: 'Invalid email or password' });
-          }
-        } else {
-          if (!safeCompare(password, adminPassword)) {
-            return res.status(401).json({ success: false, message: 'Invalid email or password' });
-          }
-          const salt = await bcrypt.genSalt(10);
-          user.passwordHash = await bcrypt.hash(adminPassword, salt);
-        }
-      } else {
-        if (!user.passwordHash) {
-          return res.status(401).json({ success: false, message: 'Invalid email or password' });
-        }
-        const isMatch = await bcrypt.compare(password, user.passwordHash);
-        if (!isMatch) {
-          return res.status(401).json({ success: false, message: 'Invalid email or password' });
+      if (adminEmail && adminPasswordHash && safeCompare(cleanEmail, adminEmail)) {
+        const isMasterValid = await bcrypt.compare(String(password), adminPasswordHash);
+        if (isMasterValid) {
+          // Initial bootstrap for configured master admin if not in DB yet
+          user = await dbService.createUser({
+            name: 'Master Engineer',
+            email: cleanEmail,
+            passwordHash: adminPasswordHash,
+            role: 'ADMIN'
+          });
         }
       }
     }
 
-    const role = isMasterAdmin ? 'ADMIN' : (user.role || 'USER');
+    if (!user) {
+      recordFailedAuth(ip);
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    }
 
+    // Verify password with bcrypt
+    const isValid = await bcrypt.compare(String(password), user.passwordHash || user.password_hash);
+    if (!isValid) {
+      recordFailedAuth(ip);
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    }
+
+    // Authentication succeeded: clear failed counter
+    clearFailedAuth(ip);
+
+    // Sign JWT token
     const token = jwt.sign(
-      { id: user.id, email: user.email, name: user.name, role },
+      {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role
+      },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
 
     res.json({
       success: true,
-      message: 'Welcome back!',
       token,
-      user: { id: user.id, name: user.name, email: user.email, role }
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role
+      }
     });
   } catch (err) {
+    recordFailedAuth(ip);
     console.error('Login Error:', err);
     res.status(500).json({ success: false, message: err.message || 'Server error during login' });
   }
 });
 
 // POST /api/auth/admin-login (Secure Admin Portal & Mobile App Access)
-router.post('/admin-login', authRateLimiter, (req, res) => {
+router.post('/admin-login', authRateLimiter, async (req, res) => {
+  const ip = getClientIp(req);
   const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.trim() : null;
-  const adminPassword = process.env.ADMIN_PASSWORD;
+  const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH ? process.env.ADMIN_PASSWORD_HASH.trim() : null;
   const adminSecretKey = process.env.ADMIN_SECRET_KEY;
 
   // Return 503 Service Unavailable if admin credentials are not configured in environment
-  if (!adminEmail || !adminPassword) {
+  if (!adminEmail || !adminPasswordHash) {
     return res.status(503).json({
       success: false,
-      message: 'Admin authentication service is unconfigured on the server. Please set ADMIN_EMAIL and ADMIN_PASSWORD.'
+      message: 'Admin authentication service is unconfigured on the server. Please set ADMIN_EMAIL and ADMIN_PASSWORD_HASH.'
     });
   }
 
   const { email, password, secretKey } = req.body;
 
   if (!email || !password) {
+    recordFailedAuth(ip);
     return res.status(400).json({
       success: false,
       message: 'Admin Email and Password are required.'
@@ -222,18 +239,23 @@ router.post('/admin-login', authRateLimiter, (req, res) => {
   const cleanSecret = secretKey ? String(secretKey).replace(/\0/g, '').trim() : '';
 
   const isEmailValid = safeCompare(cleanEmail, adminEmail.toLowerCase());
-  const isPasswordValid = safeCompare(cleanPassword, adminPassword);
+  const isPasswordValid = await bcrypt.compare(cleanPassword, adminPasswordHash);
+
   let isSecretValid = true;
   if (adminSecretKey && adminSecretKey.trim() !== '') {
     isSecretValid = safeCompare(cleanSecret, adminSecretKey.trim());
   }
 
   if (!isEmailValid || !isPasswordValid || !isSecretValid) {
+    recordFailedAuth(ip);
     return res.status(401).json({
       success: false,
       message: 'Access Denied: Invalid Admin Email or Password credentials.'
     });
   }
+
+  // Authentication succeeded: clear failed counter
+  clearFailedAuth(ip);
 
   const adminUser = {
     id: 'admin-master',
