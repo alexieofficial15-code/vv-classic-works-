@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Truck, ArrowLeft, Phone, MapPin, ShieldCheck, AlertCircle } from 'lucide-react';
 import { updateDocumentMeta } from '../utils/router';
+import { PHONE_NUMBER, PHONE_TEL } from '../config/contact.js';
 
 export default function ShippingPolicy({ onNavigate }) {
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function ShippingPolicy({ onNavigate }) {
           </p>
           <div className="bg-slate-950 p-4 rounded-lg border border-slate-800 text-xs space-y-1.5 font-mono">
             <div><strong>Dispatch Facility:</strong> 14826 Yarberry St, Houston, TX 77039, USA</div>
-            <div><strong>Dispatch Inquiries:</strong> <a href="tel:19452879865" className="text-amber-400 underline">+1 (945) 287-9865</a></div>
+            <div><strong>Dispatch Inquiries:</strong> <a href={PHONE_TEL} className="text-amber-400 underline">{PHONE_NUMBER}</a></div>
             <div><strong>Operational Hours:</strong> Monday – Friday 8:00 AM – 6:00 PM CST | Saturday 9:00 AM – 4:00 PM CST</div>
             <div><strong>Local Pickup:</strong> Workshop pickup available by appointment at our Houston location.</div>
           </div>
@@ -107,7 +108,7 @@ export default function ShippingPolicy({ onNavigate }) {
           <ol className="list-decimal pl-5 space-y-1.5 text-xs text-[#e5e2e3]">
             <li>Inspect the crate or box thoroughly for exterior damage prior to signing the delivery receipt.</li>
             <li>If external damage is noted, photograph the packaging immediately and note "Damaged upon delivery" on the Bill of Lading (BOL).</li>
-            <li>Notify Classic Aircooled VW Works within [OWNER: specify damage reporting window, e.g. 48 hours] at <a href="tel:19452879865" className="text-amber-400 underline font-bold">+1 (945) 287-9865</a> so we can initiate an insurance claim and arrange replacement parts.</li>
+            <li>Notify Classic Aircooled VW Works within [OWNER: specify damage reporting window, e.g. 48 hours] at <a href={PHONE_TEL} className="text-amber-400 underline font-bold">{PHONE_NUMBER}</a> so we can initiate an insurance claim and arrange replacement parts.</li>
           </ol>
         </section>
       </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, ShoppingBag, ShieldCheck, CheckCircle2, Award, Cpu, FileText, Wrench, ChevronLeft, ChevronRight } from 'lucide-react';
+import ContactButtons from './ContactButtons';
 
 export default function PartDetailModal({ part, onClose, onAddToCart, onRequestItem, onReserveItem }) {
   // 1. Gather all photos for this post (hooks placed at top level)
@@ -405,6 +406,10 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
                   <ShieldCheck className="w-4 h-4 text-[#83cffb]" />
                   <span>Reserve Product</span>
                 </button>
+              </div>
+
+              <div className="pt-1">
+                <ContactButtons part={part} stacked={false} />
               </div>
             </div>
 

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Phone, ShieldCheck, Wrench, ArrowRight, Hammer, CheckCircle2 } from 'lucide-react';
 import CatalogSection from '../components/CatalogSection';
 import { updateDocumentMeta } from '../utils/router';
+import { PHONE_NUMBER, PHONE_TEL } from '../config/contact.js';
 
 export default function RestorationPage({
   onAddToCart,
@@ -42,11 +43,11 @@ export default function RestorationPage({
 
           <div className="flex flex-wrap items-center gap-4 pt-2">
             <a
-              href="tel:19452879865"
+              href={PHONE_TEL}
               className="min-h-[48px] px-6 bg-[#ff7a1a] hover:bg-[#ff964d] text-slate-950 font-bold text-xs sm:text-sm font-mono uppercase tracking-wider rounded-xl flex items-center gap-2 shadow-xl transition-all"
             >
               <Phone className="w-4 h-4 fill-current shrink-0" />
-              <span>Discuss Your Build: +1 (945) 287-9865</span>
+              <span>Discuss Your Build: {PHONE_NUMBER}</span>
             </a>
 
             <a

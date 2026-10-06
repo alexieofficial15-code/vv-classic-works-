@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { FileText, ArrowLeft, Phone, ShieldCheck } from 'lucide-react';
 import { updateDocumentMeta } from '../utils/router';
+import { PHONE_NUMBER, PHONE_TEL } from '../config/contact.js';
 
 export default function TermsOfService({ onNavigate }) {
   useEffect(() => {
@@ -70,7 +71,7 @@ export default function TermsOfService({ onNavigate }) {
             Vintage air-cooled Volkswagen vehicles (Type 1 Beetle, Type 2 Bus / Transporter, Type 3, Karmann Ghia, and Porsche 356/912 conversions) have frequently undergone engine swaps, displacement modifications, and dual-port conversions throughout their service lives.
           </p>
           <p className="text-xs text-[#a78b7d]">
-            The customer is responsible for verifying engine case code, displacement, dual-port vs single-port cylinder heads, and electrical voltage (6V vs 12V) before installation. We encourage contacting our shop at <a href="tel:19452879865" className="text-amber-400 underline font-bold">+1 (945) 287-9865</a> with casting numbers for pre-purchase compatibility confirmation.
+            The customer is responsible for verifying engine case code, displacement, dual-port vs single-port cylinder heads, and electrical voltage (6V vs 12V) before installation. We encourage contacting our shop at <a href={PHONE_TEL} className="text-amber-400 underline font-bold">{PHONE_NUMBER}</a> with casting numbers for pre-purchase compatibility confirmation.
           </p>
         </section>
 
@@ -105,7 +106,7 @@ export default function TermsOfService({ onNavigate }) {
           <div className="bg-slate-950 p-4 rounded-lg border border-slate-800 text-xs space-y-1 font-mono">
             <div><strong>Company:</strong> Classic Aircooled VW Works</div>
             <div><strong>Location:</strong> 14826 Yarberry St, Houston, TX 77039, USA</div>
-            <div><strong>Phone:</strong> <a href="tel:19452879865" className="text-amber-400 underline">+1 (945) 287-9865</a></div>
+            <div><strong>Phone:</strong> <a href={PHONE_TEL} className="text-amber-400 underline">{PHONE_NUMBER}</a></div>
             <div><strong>Email:</strong> [OWNER: official support email address]</div>
           </div>
         </section>

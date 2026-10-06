@@ -6,6 +6,8 @@ import {
 import { API_BASE_URL } from '../config/api';
 import { getCatalogParts, getCachedCatalogParts, normalizeCatalogPart } from '../data/catalogStore';
 import { updateDocumentMeta, slugify } from '../utils/router';
+import { PHONE_NUMBER, PHONE_TEL } from '../config/contact.js';
+import ContactButtons from '../components/ContactButtons';
 
 export default function ProductDetailPage({
   productId,
@@ -195,11 +197,11 @@ export default function ProductDetailPage({
         </p>
         <div className="flex flex-wrap justify-center gap-3 pt-2">
           <a
-            href="tel:19452879865"
+            href={PHONE_TEL}
             className="min-h-[44px] px-5 bg-[#ff7a1a] hover:bg-[#ff964d] text-slate-950 font-bold text-xs font-mono uppercase tracking-wider rounded-xl flex items-center gap-2 transition-colors"
           >
             <Phone className="w-4 h-4 fill-current" />
-            <span>Call Shop: (945) 287-9865</span>
+            <span>Call Shop: {PHONE_NUMBER}</span>
           </a>
           <a
             href="/parts"
@@ -493,13 +495,9 @@ export default function ProductDetailPage({
               <span>Reserve &amp; Hold This Item</span>
             </button>
 
-            <a
-              href="tel:19452879865"
-              className="w-full min-h-[44px] bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold text-xs font-mono uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all"
-            >
-              <Phone className="w-4 h-4 text-amber-400" />
-              <span>Questions? Call Workshop: +1 (945) 287-9865</span>
-            </a>
+            <div className="pt-1">
+              <ContactButtons part={part} stacked={true} />
+            </div>
           </div>
 
         </div>

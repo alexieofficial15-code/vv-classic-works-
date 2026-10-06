@@ -1,11 +1,10 @@
 import React from 'react';
 import { MapPin, Phone, Clock, ExternalLink, Video, ShieldCheck } from 'lucide-react';
+import { PHONE_NUMBER, PHONE_TEL, FACEBOOK_PAGE_URL } from '../config/contact.js';
 
 export default function Footer({ onNavigate }) {
-  const FACEBOOK_URL = "https://www.facebook.com/share/1BwLuMhq42/";
+  const FACEBOOK_URL = FACEBOOK_PAGE_URL;
   const YOUTUBE_URL = "https://youtube.com/@classicaircooledvwworks?si=MUB5pYzgHnGiUR4I";
-  const PHONE_NUMBER = "1945-287-9865";
-  const PHONE_TEL = "tel:19452879865";
 
   const handleNav = (path) => (e) => {
     if (onNavigate && path.startsWith('/')) {

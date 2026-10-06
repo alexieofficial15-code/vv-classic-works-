@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { RotateCcw, ArrowLeft, Phone, AlertTriangle, CheckCircle } from 'lucide-react';
 import { updateDocumentMeta } from '../utils/router';
+import { PHONE_NUMBER, PHONE_TEL } from '../config/contact.js';
 
 export default function ReturnsPolicy({ onNavigate }) {
   useEffect(() => {
@@ -61,7 +62,7 @@ export default function ReturnsPolicy({ onNavigate }) {
             To ensure your return is received and inspected promptly by our mechanics, all returns must have an authorized RMA number:
           </p>
           <ol className="list-decimal pl-5 space-y-1.5 text-xs text-[#e5e2e3]">
-            <li>Call our workshop at <a href="tel:19452879865" className="text-amber-400 underline font-bold">+1 (945) 287-9865</a> (Mon-Fri 8am-6pm CST, Sat 9am-4pm) or email [OWNER: official support email address] with your original order reference.</li>
+            <li>Call our workshop at <a href={PHONE_TEL} className="text-amber-400 underline font-bold">{PHONE_NUMBER}</a> (Mon-Fri 8am-6pm CST, Sat 9am-4pm) or email [OWNER: official support email address] with your original order reference.</li>
             <li>Our team will issue an RMA number and return shipping instructions.</li>
             <li>Clearly mark the RMA number on the exterior of the return crate or package.</li>
           </ol>
@@ -97,7 +98,7 @@ export default function ReturnsPolicy({ onNavigate }) {
           <div className="flex items-center gap-2 text-xs font-mono text-white">
             <Phone className="w-4 h-4 text-amber-400" />
             <span>Call us directly: </span>
-            <a href="tel:19452879865" className="text-amber-400 font-bold underline">+1 (945) 287-9865</a>
+            <a href={PHONE_TEL} className="text-amber-400 font-bold underline">{PHONE_NUMBER}</a>
           </div>
         </section>
       </div>
