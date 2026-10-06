@@ -1,20 +1,15 @@
-import crypto from 'crypto';
-
 /**
  * Shared Secrets Configuration
  * Reads JWT_SECRET from environment.
- * If unset, generates a strong per-process secret and logs a loud security warning.
+ * If missing or shorter than 32 characters, throws and exits process with code 1.
  */
-let secret = process.env.JWT_SECRET;
+const secret = process.env.JWT_SECRET;
 
-if (!secret || secret.trim() === '') {
-  console.warn('\n================================================================');
-  console.warn('⚠️  [SECURITY WARNING] JWT_SECRET environment variable is NOT set!');
-  console.warn('⚠️  Generating a temporary random 256-bit secret for this process.');
-  console.warn('⚠️  All issued sessions will be invalidated when the server restarts.');
-  console.warn('⚠️  Please set JWT_SECRET in your Render environment variables.');
-  console.warn('================================================================\n');
-  secret = crypto.randomBytes(32).toString('hex');
+if (!secret || secret.trim().length < 32) {
+  const err = new Error('JWT_SECRET is missing or shorter than 32 characters.');
+  console.error(`❌ [FATAL SECURITY ERROR] ${err.message}`);
+  process.exit(1);
+  throw err;
 }
 
-export const JWT_SECRET = secret;
+export const JWT_SECRET = secret.trim();

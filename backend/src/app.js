@@ -16,11 +16,20 @@ const app = express();
 // Gzip/deflate compression for all API responses
 app.use(compression());
 
-// CORS Configuration: restricted if CLIENT_ORIGIN is set, else permissive with warning
+// CORS Configuration: restricted if CLIENT_ORIGIN is set, else refuse to start in production
 const clientOriginEnv = process.env.CLIENT_ORIGIN;
 let corsOrigin;
 
-if (clientOriginEnv && clientOriginEnv.trim() !== '') {
+if (!clientOriginEnv || clientOriginEnv.trim() === '') {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ [FATAL SECURITY ERROR] CLIENT_ORIGIN environment variable is required in production!');
+    console.error('❌ Server startup aborted. Please configure CLIENT_ORIGIN (e.g. comma-separated list of domains).');
+    process.exit(1);
+  } else {
+    console.warn('⚠️  [SECURITY WARNING] CLIENT_ORIGIN is not set in environment. Permissive CORS is currently active in development.');
+    corsOrigin = true;
+  }
+} else {
   const allowedOrigins = clientOriginEnv
     .split(',')
     .map(o => o.trim().replace(/\/+$/, ''))
@@ -40,9 +49,6 @@ if (clientOriginEnv && clientOriginEnv.trim() !== '') {
       callback(new Error(`CORS blocked: Origin ${origin} is not allowed`));
     }
   };
-} else {
-  console.warn('⚠️  [SECURITY WARNING] CLIENT_ORIGIN is not set in environment. Permissive CORS is currently active.');
-  corsOrigin = true;
 }
 
 app.use(cors({
