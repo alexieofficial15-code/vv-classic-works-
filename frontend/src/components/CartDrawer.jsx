@@ -246,7 +246,7 @@ export default function CartDrawer({
 
                 <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[10px] text-amber-300 font-mono flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>Verified Order: Workshop Invoice sent upon review. No card charged upfront! Final price & shipping confirmed by shop before payment.</span>
+                  <span>Order Review: Workshop Invoice sent upon review. No card charged upfront! Final price & shipping confirmed by shop before payment.</span>
                 </div>
 
                 <button
@@ -288,9 +288,11 @@ export default function CartDrawer({
                     <h4 className="text-xs font-bold text-white truncate font-display">
                       {item.title}
                     </h4>
-                    <div className="text-[10px] font-mono text-slate-400 truncate">
-                      OEM: {item.oemNumber || 'GENUINE'}
-                    </div>
+                    {item.oemNumber && (
+                      <div className="text-[10px] font-mono text-slate-400 truncate">
+                        OEM: {item.oemNumber}
+                      </div>
+                    )}
                     <div className="text-xs font-bold text-amber-400 font-display">
                       ${((item.price || 0) * item.quantity).toLocaleString()} USD
                     </div>

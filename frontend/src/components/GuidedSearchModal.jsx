@@ -74,7 +74,7 @@ export default function GuidedSearchModal({
             Find Parts For My <span className="text-[#ff7a1a]">Volkswagen</span>
           </h3>
           <p className="text-xs text-[#a78b7d] mt-1">
-            Follow the 4-step wizard to instantly locate guaranteed compatible air-cooled parts.
+            Follow the 4-step wizard to find compatible air-cooled parts.
           </p>
         </div>
 

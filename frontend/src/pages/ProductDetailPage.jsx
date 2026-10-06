@@ -147,7 +147,7 @@ export default function ProductDetailPage({
       '@type': 'Product',
       name: partTitle,
       image: imageUrl,
-      description: part.description || part.provenance || `Authentic aircooled VW part: ${partTitle}. OEM blueprint verified.`,
+      description: part.description || part.provenance || `Classic aircooled VW part: ${partTitle}. Aircooled engines, parts and restoration.`,
       sku: part.sku || part.oemNumber || String(part.id),
       offers: {
         '@type': 'Offer',
@@ -164,7 +164,7 @@ export default function ProductDetailPage({
 
     updateDocumentMeta({
       title: `${partTitle} | Classic Aircooled VW Works`,
-      description: `${partTitle} - OEM verified aircooled VW component. $${price.toLocaleString()} USD. Dispatched from Houston, TX.`,
+      description: `${partTitle} - Classic aircooled VW component. $${price.toLocaleString()} USD. Dispatched from Houston, TX.`,
       canonicalPath,
       ogType: 'product',
       ogImage: imageUrl,
@@ -306,21 +306,21 @@ export default function ProductDetailPage({
             </div>
           )}
 
-          {/* Inspection & Crating Guarantee */}
+          {/* Inspection & Crating */}
           <div className="p-3.5 bg-slate-950/80 rounded-xl border border-slate-800 text-[11px] text-[#a78b7d] space-y-1.5">
             <div className="flex items-center gap-1.5 text-white font-bold font-display">
               <Package className="w-3.5 h-3.5 text-amber-400" />
-              <span>Vintage Blueprint Inspection &amp; Crating</span>
+              <span>Workshop Inspection &amp; Crating</span>
             </div>
             <p className="leading-relaxed">
-              Every component is hand-checked against authentic Volkswagen factory blueprints and safely crated for domestic or international freight.
+              Components are inspected prior to shipment and packaged for domestic or international freight.
             </p>
           </div>
 
-          {/* Authenticity Certificate Badge */}
+          {/* Workshop Component Badge */}
           <div className="p-3 bg-amber-500/5 rounded-xl border border-amber-500/20 text-[11px] text-amber-300 flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>Guaranteed Authentic Classic Air-Cooled VW Works Component</span>
+            <span>Classic Aircooled VW Works Component</span>
           </div>
         </div>
 
@@ -355,9 +355,15 @@ export default function ProductDetailPage({
 
             {/* Part Identifier Pills */}
             <div className="flex flex-wrap gap-2 text-[11px] font-mono">
-              <span className="bg-slate-950 border border-slate-800 text-slate-300 px-2.5 py-1 rounded">
-                SKU / OEM: <strong className="text-white">{part.oemNumber || part.sku || 'NOS-GENUINE'}</strong>
-              </span>
+              {(part.oemNumber || part.sku) && (
+                <span className="bg-slate-950 border border-slate-800 text-slate-300 px-2.5 py-1 rounded">
+                  {part.oemNumber ? 'OEM: ' : 'SKU: '}
+                  <strong className="text-white">{part.oemNumber || part.sku}</strong>
+                  {part.oemNumber && part.sku && (
+                    <span className="text-slate-400 font-normal"> • SKU: <strong className="text-white">{part.sku}</strong></span>
+                  )}
+                </span>
+              )}
               {part.castingCode && (
                 <span className="bg-slate-950 border border-slate-800 text-slate-300 px-2.5 py-1 rounded">
                   CASTING: <strong className="text-amber-400">{part.castingCode}</strong>
@@ -377,7 +383,7 @@ export default function ProductDetailPage({
                 <span>Provenance &amp; Technical Description</span>
               </div>
               <p className="text-xs text-[#e0c0b1] leading-relaxed">
-                {part.description || part.provenance || 'Authentic precision component for classic air-cooled Volkswagen engines, transmissions, and chassis restorations. Verified against original mechanical blueprints.'}
+                {part.description || part.provenance || 'Precision component for classic air-cooled Volkswagen engines, transmissions, and chassis restorations.'}
               </p>
             </div>
 

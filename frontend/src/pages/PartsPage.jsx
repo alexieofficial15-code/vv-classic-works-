@@ -8,7 +8,7 @@ const CATEGORY_DETAILS = {
   'cylinder-heads': {
     title: 'Aircooled VW Cylinder Heads & Valvetrain',
     h1: 'Aircooled VW Cylinder Heads & Valvetrain',
-    desc: 'Genuine dual-port and single-port cylinder heads, stainless steel valves, dual valve springs, and rocker assemblies for 1600cc to 2276cc air-cooled engines.',
+    desc: 'Dual-port and single-port cylinder heads, stainless steel valves, dual valve springs, and rocker assemblies for 1600cc to 2276cc air-cooled engines.',
     filter: { subcatId: 'cylinder-heads', directPartId: 'cylinder-heads' }
   },
   'camshafts': {
@@ -65,7 +65,7 @@ export default function PartsPage({
 
   const pageDesc = catInfo 
     ? catInfo.desc 
-    : 'Explore verified OEM and performance components for classic Volkswagen Beetle, Super Beetle, Bus T1/T2, Type 3, and Karmann Ghia. Inspected in Houston, TX.';
+    : 'Explore replacement and performance components for classic Volkswagen Beetle, Super Beetle, Bus T1/T2, Type 3, and Karmann Ghia. Houston, TX.';
 
   const canonicalPath = catKey ? `/parts/${catKey}` : '/parts';
 
@@ -87,7 +87,7 @@ export default function PartsPage({
         <div className="max-w-5xl mx-auto space-y-5">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-full text-xs text-amber-400 font-mono">
             <PackageCheck className="w-3.5 h-3.5" />
-            <span>OEM Blueprinted Aircooled Volkswagen Components</span>
+            <span>Aircooled Volkswagen Components &amp; Spares</span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white font-display tracking-tight leading-tight">

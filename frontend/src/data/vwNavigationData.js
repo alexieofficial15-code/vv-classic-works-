@@ -105,7 +105,7 @@ export const ADMIN_FINISH_PRESETS = [
   'Zinc Plated (Gold/Clear)',
   'Polished Mirror Billet',
   'Ceramic Coated (Header Grade)',
-  'Vapor Blasted OEM Matte',
+  'Vapor Blasted Matte',
   'Anodized Orange',
   'Anodized Black',
   'Cast Natural'
@@ -113,7 +113,7 @@ export const ADMIN_FINISH_PRESETS = [
 
 export const ADMIN_CONDITION_PRESETS = [
   'NOS (New Old Stock - Rare Vintage)',
-  'New (Factory OEM / Reproduction)',
+  'New (Factory Spec / Reproduction)',
   'Factory Restored / Rebuilt (Bench Tested)',
   'Original Vintage Used (Inspected)',
   'Precision Remanufactured',
@@ -121,19 +121,19 @@ export const ADMIN_CONDITION_PRESETS = [
 ];
 
 export const ADMIN_PERFORMANCE_PRESETS = [
-  'Stock OEM Replacement',
+  'Stock Replacement',
   'Street Performance (Mild Road)',
   'Track & Competition Racing',
   'Turbocharged / Forced Induction',
   'Off-Road / Baja Extreme',
-  'Vintage Authentic Restoration'
+  'Vintage Restoration'
 ];
 
 export const ADMIN_STORAGE_PRESETS = [
   'Main Warehouse A (Bin 12-B)',
   'Restoration Bay 1 (Houston Garage)',
   'Cleanroom Engine Assembly Lab',
-  'Dyno Testing & Tuning Bay',
+  'Engine Tuning & Testing Bay',
   'Overflow Distribution Hub (Aisle 4)'
 ];
 
@@ -146,7 +146,7 @@ export const ADMIN_VEHICLE_CONDITION_PRESETS = [
 ];
 
 export const ADMIN_ENGINE_CONDITION_PRESETS = [
-  'Brand New Turnkey Crate Engine (Zero Miles - Dyno Tested)',
+  'Brand New Turnkey Crate Engine (Zero Miles - Bench Tested)',
   'Professionally Rebuilt Longblock (New Internals & Balanced)',
   'Good Running Tested Take-Out Engine',
   'Rebuildable Core Engine (Complete Longblock)'
@@ -236,17 +236,17 @@ export const POST_TYPES = [
 
 export const USAGE_TYPES = [
   { id: 'ALL', name: 'All Usages' },
-  { id: 'stock', name: 'Stock OEM' },
+  { id: 'stock', name: 'Stock / Standard' },
   { id: 'performance', name: 'Performance' },
   { id: 'off-road', name: 'Off-Road / Baja' },
   { id: 'restoration', name: 'Restoration' }
 ];
 
 export const DETAILED_ENGINES = [
-  { size: '1200cc', category: 'Stock OEM' },
-  { size: '1300cc', category: 'Stock OEM' },
-  { size: '1500cc', category: 'Stock OEM' },
-  { size: '1600cc', category: 'Stock OEM' },
+  { size: '1200cc', category: 'Stock' },
+  { size: '1300cc', category: 'Stock' },
+  { size: '1500cc', category: 'Stock' },
+  { size: '1600cc', category: 'Stock' },
   { size: '1776cc', category: 'Performance' },
   { size: '1914cc', category: 'Performance' },
   { size: '2110cc', category: 'Performance' },

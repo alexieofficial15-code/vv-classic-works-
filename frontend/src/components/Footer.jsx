@@ -33,7 +33,7 @@ export default function Footer({ onNavigate }) {
                 CLASSIC AIRCOOLED VW WORKS
               </div>
               <p className="font-technical-data text-xs text-[#a78b7d] max-w-xs leading-relaxed mt-1">
-                Precision OEM-grade components verified against original mechanical blueprints for air-cooled restorations.
+                Aircooled VW engines, replacement components, and restoration services.
               </p>
             </div>
           </div>
@@ -78,7 +78,7 @@ export default function Footer({ onNavigate }) {
             Official Channels & Social
           </span>
           <p className="text-[11px] text-[#a78b7d] leading-relaxed">
-            Follow our daily engine dyno builds, garage restorations, and technical guides:
+            Follow our workshop engine builds, garage restorations, and technical guides:
           </p>
 
           <div className="flex flex-col gap-2.5 pt-1">
@@ -150,7 +150,7 @@ export default function Footer({ onNavigate }) {
           </div>
 
           <div className="pt-2 border-t border-[#584236]/30 text-[11px] text-[#a78b7d] space-y-1">
-            <p>Houston Garage & Dyno Tuning Lab</p>
+            <p>Houston Workshop & Restoration Garage</p>
             <p>14826 Yarberry St, Houston, TX 77039</p>
           </div>
         </div>

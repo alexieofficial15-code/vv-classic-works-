@@ -166,7 +166,7 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
 
                 {/* Condition Badge */}
                 <span className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 bg-[#ff7a1a] text-slate-950 text-[10px] sm:text-xs font-mono font-bold px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-md shadow-md z-10 pointer-events-none">
-                  {part.condition || 'Certified'}
+                  {part.condition || 'Inspected'}
                 </span>
 
                 {/* Photo Counter Pill */}
@@ -235,9 +235,15 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
                   <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   <span>Rarity: {part.rarityScore || 'Specialist Grade'}</span>
                 </div>
-                <div className="text-slate-400 truncate">
-                  SKU / P/N: <span className="text-slate-200">{part.sku || part.oemNumber || 'NOS-GENUINE'}</span>
-                </div>
+                {(part.sku || part.oemNumber) && (
+                  <div className="text-slate-400 truncate">
+                    {part.oemNumber ? (
+                      <>OEM: <span className="text-slate-200">{part.oemNumber}</span>{part.sku ? ` • SKU: ${part.sku}` : ''}</>
+                    ) : (
+                      <>SKU: <span className="text-slate-200">{part.sku}</span></>
+                    )}
+                  </div>
+                )}
                 <div className="text-slate-400 truncate">
                   SYSTEM: <span className="text-slate-200">{part.partSubcategory || part.specificPartCategory || part.systemCategory || 'Engine System'}</span>
                 </div>
@@ -251,7 +257,7 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
 
             <div className="pt-3 sm:pt-4 border-t border-slate-800 text-[10px] sm:text-[11px] text-slate-400 flex items-center gap-1.5 mt-2 sm:mt-0">
               <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 flex-shrink-0" />
-              <span>Certified Vintage Authenticity Guarantee</span>
+              <span>Classic Aircooled VW Works Inspection</span>
             </div>
           </div>
 

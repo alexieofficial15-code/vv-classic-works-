@@ -43,7 +43,7 @@ export default function ReturnsPolicy({ onNavigate }) {
             1. Return Window & Eligibility
           </h2>
           <p>
-            We take pride in precision machining and verified authentic aircooled components. If you need to return an item, the following terms apply:
+            We take pride in our aircooled engines and parts. If you need to return an item, the following terms apply:
           </p>
           <ul className="list-disc pl-5 space-y-1.5 text-xs text-[#e5e2e3]">
             <li><strong>Return Window:</strong> Returns must be requested within [OWNER: set return window, e.g. 30 days of delivery date].</li>
@@ -74,7 +74,7 @@ export default function ReturnsPolicy({ onNavigate }) {
           <div className="bg-slate-950 p-4 rounded-lg border border-slate-800 text-xs space-y-2 font-mono">
             <div><strong>Restocking Fee:</strong> [OWNER: specify restocking fee, e.g. 15% restocking fee on returned parts to cover inspection and re-packaging, or No fee on unopened returns].</div>
             <div><strong>Return Freight Responsibility:</strong> [OWNER: specify whether customer is responsible for return shipping costs for non-defective returns].</div>
-            <div><strong>Defective or Incorrect Items:</strong> If you receive an incorrect or defective part verified against factory tolerances, Classic Aircooled VW Works covers 100% of return shipping and provides an immediate replacement or full refund.</div>
+            <div><strong>Defective or Incorrect Items:</strong> If you receive an incorrect or defective part, Classic Aircooled VW Works covers 100% of return shipping and provides an immediate replacement or full refund.</div>
           </div>
         </section>
 

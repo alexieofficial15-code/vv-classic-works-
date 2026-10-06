@@ -1,4 +1,4 @@
-// Vintage Cars & Authentic Air-Cooled Volkswagen Spare Parts Database
+// Vintage Cars & Air-Cooled Volkswagen Spare Parts Database
 
 export const VINTAGE_CARS = [
   {
@@ -29,7 +29,7 @@ export const VINTAGE_CARS = [
     engineImage: '/pictures/WhatsApp Image 2026-08-05 at 1.10.06 PM.jpeg',
     horsepower: '95 HP @ 5200 RPM',
     torque: '115 lb-ft @ 3400 RPM',
-    description: 'Iconic authentic patina finish with safari pop-out windshields, dropped straight-axle suspension, Vintage Speed exhaust, and roof-mounted spotlight.'
+    description: 'Patina finish with safari pop-out windshields, dropped straight-axle suspension, Vintage Speed exhaust, and roof-mounted spotlight.'
   },
   {
     id: 'vw-beetle-cal-look-1967',
@@ -222,7 +222,7 @@ export const SPARE_PARTS = [
   },
   {
     id: 'part-vw-weber-44-kit',
-    title: 'Genuine Weber 44 IDF Dual Carburetor Complete Kit with Hex-Bar Linkage',
+    title: 'Weber 44 IDF Dual Carburetor Complete Kit with Hex-Bar Linkage',
     oemNumber: '18990-035-KIT',
     sku: 'WEB-44IDF-KIT',
     carModelId: 'type-1',
@@ -241,7 +241,7 @@ export const SPARE_PARTS = [
     inStock: true,
     image: 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80',
     castingCode: 'WEBER-BOLOGNA-44',
-    provenance: 'Authentic matched pair of Weber 44 IDF carburetors with offset aluminum intake manifolds, aircraft-grade ball-joint hex-bar linkage, and mesh filters.',
+    provenance: 'Matched pair of Weber 44 IDF carburetors with offset aluminum intake manifolds, aircraft-grade ball-joint hex-bar linkage, and mesh filters.',
     specifications: [
       { key: 'Venturi Size', value: '36mm Main Venturis' },
       { key: 'Main Jet', value: '135' },
@@ -292,7 +292,7 @@ export const SPARE_PARTS = [
   },
   {
     id: 'part-vw-bosch-009-distributor',
-    title: 'Genuine Bosch 009 Centrifugal Advance Ignition Distributor Assembly',
+    title: 'Bosch 009 Centrifugal Advance Ignition Distributor Assembly',
     oemNumber: '0-231-178-009',
     sku: 'BOSCH-009-GER',
     carModelId: 'type-1',
@@ -311,7 +311,7 @@ export const SPARE_PARTS = [
     inStock: true,
     image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80',
     castingCode: 'BOSCH-JFU4-009',
-    provenance: 'Legendary genuine cast-iron Bosch Germany 009 mechanical advance distributor with original condenser, points, and phenolic cap.',
+    provenance: 'Cast-iron Bosch Germany 009 mechanical advance distributor with condenser, points, and phenolic cap.',
     specifications: [
       { key: 'Advance Type', value: 'All-Mechanical Centrifugal' },
       { key: 'Maximum Advance', value: '28° @ 3000 RPM' },
@@ -365,7 +365,7 @@ export const WORKSHOP_REELS = [
     id: 'dyno-2275cc-oval-beetle',
     title: '2275cc Dyno Run — 161 HP / 205 Nm Test',
     subtitle: 'Green Oval Beetle • Porsche Upright Shroud • Dual Webers',
-    description: 'Live chassis dyno pull of a custom 2275cc air-cooled engine in a classic forest green oval Beetle. Verified 161.0 hk @ 5821 RPM and 205.9 Nm of torque.',
+    description: 'Chassis run of a custom 2275cc air-cooled engine in a classic forest green oval Beetle. Recorded 161.0 hk @ 5821 RPM and 205.9 Nm of torque.',
     videoUrl: '/videos/dyno-2275cc-oval-beetle.mp4',
     badge: '161 HP DYNO TEST',
     category: 'Dyno & Sound Test',
@@ -398,7 +398,7 @@ export const WORKSHOP_REELS = [
     id: 'porsche-911-st-engine-build',
     title: 'Porsche 911 ST 2.5L Twin-Spark Engine Project',
     subtitle: '2.4L Base • 11:1 Compression • 46mm Webers • 270 HP Goal',
-    description: 'Preparing an authentic Porsche flat-six for a 2.5L 911 ST build with twin-spark ignition, 46mm Weber carbs, S-cams, followed by a walk through our showroom floor.',
+    description: 'Preparing a Porsche flat-six for a 2.5L 911 ST build with twin-spark ignition, 46mm Weber carbs, S-cams, followed by a walk through our showroom floor.',
     videoUrl: '/videos/porsche-911-st-engine-build.mp4',
     badge: 'PORSCHE 911 ST',
     category: 'Flat-Six Project',

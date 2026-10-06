@@ -95,8 +95,8 @@ export function sanitizeOrderItem(item) {
     title: item.title,
     price: Number(item.price || 0),
     quantity: Number(item.quantity || 1),
-    sku: item.sku || item.oemNumber || 'GENUINE',
-    oemNumber: item.oemNumber || item.sku || 'GENUINE',
+    sku: item.sku || '',
+    oemNumber: item.oemNumber || '',
     category: item.category || item.systemCategory || 'Spare Parts'
   };
   if (cleanImage) {

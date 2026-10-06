@@ -34,7 +34,7 @@ export default function VintageCarShowcase({ selectedCarModelId, onSelectCarMode
               Browse by <span className="text-[#ff7a1a]">Vintage Car Model</span>
             </h2>
             <p className="text-[#e0c0b1] text-xs md:text-sm mt-1">
-              Select your classic vehicle to inspect authentic engine configurations and filter OEM compatible spare parts.
+              Select your classic vehicle to inspect engine configurations and filter compatible spare parts.
             </p>
           </div>
 

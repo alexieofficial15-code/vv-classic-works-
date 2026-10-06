@@ -283,7 +283,7 @@ export default function AdminPanel({
 
     // Section 6: Engine-Specific (for listingType === 'engine' or engine spare part)
     engineSize: '1600cc',
-    performanceType: 'Stock OEM Replacement', // 'Stock OEM Replacement' | 'Street Performance' | etc.
+    performanceType: 'Stock Replacement', // 'Stock Replacement' | 'Street Performance' | etc.
     caseType: 'AS41 Magnesium Universal Dual Relief',
     inductionSetup: 'Single Solex 34-PICT-3',
     coolingShroud: 'Stock Type 1 Doghouse Shroud with Flaps',
@@ -379,7 +379,7 @@ export default function AdminPanel({
         newStock = '1';
       } else if (newType === 'engine') {
         if (!formData.condition || ADMIN_CONDITION_PRESETS.includes(formData.condition)) {
-          newCondition = 'Brand New Turnkey Crate Engine (Zero Miles - Dyno Tested)';
+          newCondition = 'Brand New Turnkey Crate Engine (Zero Miles - Bench Tested)';
         }
         if (formData.partName === 'Dual Port Cylinder Head 1600cc' || !formData.partName) {
           newPartName = '';
@@ -578,7 +578,7 @@ export default function AdminPanel({
       dimensions: '',
       finish: '',
       engineSize: '1600cc',
-      performanceType: 'Stock OEM Replacement',
+      performanceType: 'Stock Replacement',
       caseType: 'AS41 Magnesium Universal Dual Relief',
       inductionSetup: 'Single Solex 34-PICT-3',
       coolingShroud: 'Stock Type 1 Doghouse Shroud with Flaps',
@@ -639,12 +639,12 @@ export default function AdminPanel({
       dimensions: part.dimensions || '',
       finish: part.finish || '',
       engineSize: part.engineSize || '1600cc',
-      performanceType: part.performanceType || 'Stock OEM Replacement',
+      performanceType: part.performanceType || 'Stock Replacement',
       caseType: part.caseType || 'AS41 Magnesium Universal Dual Relief',
       inductionSetup: part.inductionSetup || 'Single Solex 34-PICT-3',
       coolingShroud: part.coolingShroud || 'Stock Type 1 Doghouse Shroud with Flaps',
       dynoHorsepower: part.dynoHorsepower || '',
-      condition: part.condition || (part.listingType === 'vehicle' ? 'Turnkey Daily Driver (Running & Registered)' : part.listingType === 'engine' ? 'Brand New Turnkey Crate Engine (Zero Miles - Dyno Tested)' : 'NOS (New Old Stock - Rare Vintage)'),
+      condition: part.condition || (part.listingType === 'vehicle' ? 'Turnkey Daily Driver (Running & Registered)' : part.listingType === 'engine' ? 'Brand New Turnkey Crate Engine (Zero Miles - Bench Tested)' : 'NOS (New Old Stock - Rare Vintage)'),
       status: part.status || 'Available',
       retailPrice: part.price ? part.price.toString() : '',
       wholesalePrice: part.wholesalePrice ? part.wholesalePrice.toString() : '',
@@ -1224,7 +1224,7 @@ export default function AdminPanel({
                         )}
                       </div>
                       <p className="text-[11px] text-[#e0c0b1] leading-relaxed">
-                        Turnkey crate engines, longblocks, dyno-tested builds, induction carbs & core exchange deposits.
+                        Turnkey crate engines, longblocks, rebuilt engines, induction carbs & core exchange deposits.
                       </p>
                     </button>
 
@@ -1445,7 +1445,7 @@ export default function AdminPanel({
                       <textarea
                         name="description"
                         rows="2"
-                        placeholder="e.g., Authentic Type 1 Beetle showcased for our spare parts inventory..."
+                        placeholder="e.g., Classic Type 1 Beetle showcased for our spare parts inventory..."
                         value={formData.description}
                         onChange={handleInputChange}
                         className="w-full bg-[#131314] border border-[#584236]/60 p-3 text-xs text-white focus:outline-none focus:border-[#ff7a1a] rounded-xs font-mono"
@@ -2783,7 +2783,7 @@ export default function AdminPanel({
                     <div className="text-xs font-mono font-bold text-[#ff7a1a] uppercase tracking-wider border-b border-[#262426] pb-2 flex items-center justify-between">
                       <span>Customer Contact Profile</span>
                       <span className="text-[10px] bg-[#ff7a1a]/20 text-[#ff7a1a] px-2 py-0.5 rounded-xs border border-[#ff7a1a]/40">
-                        VERIFIED MEMBER
+                        REGISTERED MEMBER
                       </span>
                     </div>
 

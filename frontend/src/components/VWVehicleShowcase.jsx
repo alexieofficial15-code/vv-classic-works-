@@ -382,7 +382,7 @@ export default function VWVehicleShowcase({
               We Sell Quality Spare Parts For All <span className="text-[#ff7a1a]">Classic VW Categories</span>
             </h2>
             <p className="text-[#e0c0b1] text-xs sm:text-sm mt-1.5 max-w-2xl leading-relaxed">
-              We specialize in genuine OEM replacement parts, performance upgrades, and restoration components for each classic air-cooled Volkswagen platform. Select your vehicle category below to explore compatible spare parts.
+              We specialize in replacement parts, performance upgrades, and restoration components for each classic air-cooled Volkswagen platform. Select your vehicle category below to explore compatible spare parts.
             </p>
           </div>
 

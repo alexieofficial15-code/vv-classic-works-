@@ -318,7 +318,7 @@ export default function App() {
 
       updateDocumentMeta({
         title: 'Classic Aircooled VW Works | Aircooled VW Engines, Parts & Restoration',
-        description: 'Classic Aircooled VW Works — High Performance Aircooled VW Engines, Authentic Spare Parts, Type 1 Beetle, Type 2 Bus, Type 3, and Karmann Ghia Restoration.',
+        description: 'Classic Aircooled VW Works — Aircooled VW engines, parts and restoration for Type 1 Beetle, Type 2 Bus, Type 3, and Karmann Ghia.',
         canonicalPath: '/',
         ogType: 'website',
         jsonLd: homeJsonLd
@@ -1221,7 +1221,7 @@ export default function App() {
             {/* Live Engine Workshop & Restoration Video Showcase */}
             <VideoShowcase />
 
-            {/* Verified Customer Reviews */}
+            {/* Customer Reviews */}
             <ReviewsSection />
 
             {/* Houston Workshop & Interactive Google Map Location Section */}
@@ -1285,9 +1285,13 @@ export default function App() {
               )}
               <div className="flex-1 min-w-0">
                 <h4 className="text-xs font-bold text-white truncate font-display">{guestReservationPart.title}</h4>
-                <div className="text-[10px] text-slate-400 font-mono">
-                  OEM: {guestReservationPart.oemNumber || 'GENUINE'} • SKU: {guestReservationPart.sku || 'NOS'}
-                </div>
+                {(guestReservationPart.oemNumber || guestReservationPart.sku) && (
+                  <div className="text-[10px] text-slate-400 font-mono">
+                    {guestReservationPart.oemNumber && `OEM: ${guestReservationPart.oemNumber}`}
+                    {guestReservationPart.oemNumber && guestReservationPart.sku && ' • '}
+                    {guestReservationPart.sku && `SKU: ${guestReservationPart.sku}`}
+                  </div>
+                )}
                 <div className="text-xs font-bold text-amber-400 font-mono">
                   ${(guestReservationPart.price || 0).toLocaleString()} USD
                 </div>

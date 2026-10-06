@@ -140,7 +140,7 @@ export default function VideoShowcase() {
           </h2>
 
           <p className="text-[#a78b7d] text-sm md:text-base max-w-2xl mx-auto font-sans leading-relaxed">
-            Raw dyno runs, precision machine work, and hand-built boxer engine turn-keys directly from our workshop floor.
+            Engine sound tests, precision machine work, and hand-built boxer engine turn-keys directly from our workshop floor.
           </p>
         </div>
 

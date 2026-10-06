@@ -56,7 +56,7 @@ export default function TermsOfService({ onNavigate }) {
           </p>
           <ul className="list-disc pl-5 space-y-1.5 text-xs text-[#e5e2e3]">
             <li>No payment card is charged automatically at the time of website order placement.</li>
-            <li>A verified workshop invoice is issued to your email after technical verification and shipping calculation.</li>
+            <li>A workshop invoice is issued to your email after technical review and shipping calculation.</li>
             <li>Accepted payment methods: [OWNER: specify accepted payment methods, e.g. ACH / Bank Wire, Debit/Credit Card via telephone confirmation, Invoiced payment].</li>
             <li>All prices are quoted in United States Dollars (USD). We reserve the right to correct pricing or inventory typographical errors prior to invoice settlement.</li>
           </ul>
@@ -79,7 +79,7 @@ export default function TermsOfService({ onNavigate }) {
             4. Engine Warranty & Disclaimers
           </h2>
           <p>
-            Turn-key longblocks, dyno-tested engines, and machined components are backed by [OWNER: specify engine warranty duration and conditions, e.g. 12-month / 12,000-mile limited warranty against defects in machining and assembly, provided professional installation and proper break-in procedures are followed].
+            Turn-key longblocks, rebuilt engines, and machined components are backed by [OWNER: specify engine warranty duration and conditions, e.g. 12-month / 12,000-mile limited warranty against defects in machining and assembly, provided professional installation and proper break-in procedures are followed].
           </p>
           <p className="text-xs text-[#a78b7d]">
             Warranty does not cover failure resulting from competition/racing use, oil starvation, improper ignition timing, overheating due to missing cooling tinware/shrouds, or unauthorized disassembly.

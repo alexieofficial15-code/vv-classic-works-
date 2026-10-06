@@ -22,7 +22,7 @@ import {
 
 const WORKSHOP_INFO = {
   name: 'CLASSIC AIRCOOLED VW WORKS',
-  tagline: 'Main Restoration Garage, Engine Dyno Lab & Parts Distribution Hub',
+  tagline: 'Main Restoration Garage, Engine Rebuild & Parts Distribution Hub',
   address: '14826 Yarberry St',
   cityStateZip: 'Houston, TX 77039',
   country: 'United States',
@@ -36,29 +36,29 @@ const WORKSHOP_INFO = {
   },
   hours: [
     { days: 'Monday – Friday', time: '8:00 AM – 6:00 PM CST', note: 'Full Workshop & Parts Counter' },
-    { days: 'Saturday', time: '9:00 AM – 4:00 PM CST', note: 'Dyno Testing & Order Pickups' },
+    { days: 'Saturday', time: '9:00 AM – 4:00 PM CST', note: 'Engine Consultations & Order Pickups' },
     { days: 'Sunday', time: 'Closed', note: 'Restoration Appointments Only' }
   ],
   services: [
     {
       icon: Wrench,
       title: 'Engine Rebuild Bays',
-      desc: 'Aircooled 1200cc–2332cc precision assembly and blueprinting.'
+      desc: 'Aircooled 1200cc–2332cc precision assembly and rebuilds.'
     },
     {
       icon: Package,
       title: 'Same-Day Parts Counter',
-      desc: 'Local pickup for verified OEM, CB Performance, and NOS components.'
+      desc: 'Local pickup for replacement, performance, and vintage components.'
     },
     {
       icon: ShieldCheck,
-      title: 'Casting & Spec Verification',
+      title: 'Casting & Spec Inspection',
       desc: 'Bring your core engine case or cylinder heads for microscopic inspection.'
     },
     {
       icon: Sparkles,
-      title: 'Dyno Tuning Lab',
-      desc: 'Live dual-port Weber carburetor synchronization and exhaust gas analysis.'
+      title: 'Engine Tuning Bay',
+      desc: 'Dual-port Weber carburetor synchronization and tuning adjustments.'
     }
   ]
 };
@@ -133,7 +133,7 @@ export default function LocationMapSection() {
           </h2>
 
           <p className="text-[#e0c0b1] text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed px-2">
-            Experience authentic aircooled restorations in person. Inspect blueprint engine castings, consult with master VW mechanics, or pick up your reserved parts directly from our Houston facility.
+            Experience aircooled restorations in person. Inspect engine castings, consult with VW mechanics, or pick up your reserved parts directly from our Houston facility.
           </p>
         </div>
 

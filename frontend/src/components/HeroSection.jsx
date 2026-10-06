@@ -95,7 +95,7 @@ export default function HeroSection({ onSelectCarModel }) {
       </div>
 
       {/* ========================================================================= */}
-      {/* Hero Central Content (High Contrast, Bold, Authentic)                     */}
+      {/* Hero Central Content (High Contrast, Bold, Technical)                     */}
       {/* ========================================================================= */}
       <div className="relative z-10 text-center px-4 sm:px-6 md:px-12 max-w-4xl mx-auto flex flex-col items-center pt-2 sm:pt-6">
         
@@ -107,19 +107,19 @@ export default function HeroSection({ onSelectCarModel }) {
           </span>
           <span className="font-semibold text-white/95">CLASSIC AIRCOOLED VW WORKS</span>
           <span className="text-[#584236]">•</span>
-          <span className="text-[#ff7a1a] hidden sm:inline">HAND-BUILT ENGINES & OEM PARTS</span>
+          <span className="text-[#ff7a1a] hidden sm:inline">ENGINES, PARTS & RESTORATION</span>
         </div>
 
         {/* Main H1 Heading - Inspired by Reference Style with High Impact */}
         <h1 className="font-h1 text-2xl min-[380px]:text-3xl sm:text-5xl md:text-6xl lg:text-7xl text-white font-extrabold mb-4 sm:mb-6 tracking-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)] leading-[1.15] sm:leading-[1.08]">
           Classic Aircooled VW Works.<br />
-          <span className="text-white/95">Authentic Engines.</span><br />
+          <span className="text-white/95">Aircooled Engines.</span><br />
           <span className="text-[#ff7a1a] drop-shadow-[0_0_25px_rgba(255,122,26,0.45)]">Precision Spare Parts.</span>
         </h1>
 
         {/* Value Proposition Description */}
         <p className="font-body-lg text-xs sm:text-base md:text-lg text-[#f0e3db] mb-7 sm:mb-9 max-w-2xl leading-relaxed px-2 font-normal drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-          Discover hand-crafted turn-key boxer engines, precision dual-port carburetors, factory OEM casting numbers, and hard-to-find restoration components.
+          Discover turn-key boxer engines, dual-port carburetors, replacement parts, and restoration components.
         </p>
 
         {/* Action Buttons */}
@@ -144,7 +144,7 @@ export default function HeroSection({ onSelectCarModel }) {
       </div>
 
       {/* ========================================================================= */}
-      {/* Authentic VW Models Ribbon at Bottom (Clean, Technical, Trust-Building)   */}
+      {/* Classic VW Models Ribbon at Bottom (Clean, Technical, Trust-Building)     */}
       {/* ========================================================================= */}
       <div className="absolute bottom-0 left-0 w-full bg-[#0a0a0c]/90 backdrop-blur-md border-t border-[#584236]/30 py-2.5 sm:py-3 z-20 overflow-x-auto no-scrollbar">
         <div className="max-w-[1440px] mx-auto px-4 flex flex-nowrap justify-start lg:justify-center items-center opacity-85 font-technical-data text-[10px] sm:text-xs text-[#e0c0b1] gap-4 sm:gap-6 whitespace-nowrap">

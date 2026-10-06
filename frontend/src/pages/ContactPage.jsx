@@ -88,7 +88,7 @@ export default function ContactPage({ onNavigate }) {
                 <div className="font-bold text-white uppercase text-[11px] font-mono">Workshop Location</div>
                 <div className="text-white font-mono">14826 Yarberry St</div>
                 <div className="text-[#a78b7d]">Houston, TX 77039, USA</div>
-                <p className="text-[#a78b7d] text-[11px] mt-0.5">Customer pickups & dyno consultations by appointment</p>
+                <p className="text-[#a78b7d] text-[11px] mt-0.5">Customer pickups & workshop consultations by appointment</p>
               </div>
             </div>
 
@@ -148,10 +148,10 @@ export default function ContactPage({ onNavigate }) {
           <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-300 font-mono space-y-1">
             <div className="font-bold flex items-center gap-1.5 text-emerald-400">
               <ShieldCheck className="w-4 h-4" />
-              <span>Blueprinted OEM Inspection</span>
+              <span>Workshop Inspection</span>
             </div>
             <p className="text-[11px]">
-              Every precision component is micrometer-tested and verified against genuine Volkswagen factory tolerances before crating.
+              Components are inspected and prepared before packaging and crating.
             </p>
           </div>
         </div>

@@ -79,7 +79,7 @@ export default function ShippingPolicy({ onNavigate }) {
           </h2>
           <ul className="list-disc pl-5 space-y-1.5 text-xs text-[#e5e2e3]">
             <li><strong>In-Stock Small Parts & Components:</strong> [OWNER: specify dispatch preparation time for in-stock parts, e.g. 1-2 business days].</li>
-            <li><strong>Machined Heads, Cases & Engine Assemblies:</strong> Custom longblocks and inspected turn-key engines undergo dyno-verification and secure wooden crating before dispatch ([OWNER: specify custom build / crate preparation lead time, e.g. 5-10 business days]).</li>
+            <li><strong>Machined Heads, Cases & Engine Assemblies:</strong> Custom longblocks and inspected turn-key engines undergo workshop inspection and secure wooden crating before dispatch ([OWNER: specify custom build / crate preparation lead time, e.g. 5-10 business days]).</li>
           </ul>
         </section>
 

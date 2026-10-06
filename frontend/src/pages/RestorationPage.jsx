@@ -37,7 +37,7 @@ export default function RestorationPage({
           </h1>
 
           <p className="text-sm sm:text-base text-[#e0c0b1] max-w-3xl leading-relaxed">
-            Authentic mechanical and structural restorations for classic Volkswagen models. Our Houston workshop specializes in period-correct engine rebuilds, Freeway Flyer transaxle setup, dual-carburetor synchronization, and chassis preservation for Type 1 Beetles, T1/T2 Westfalia Campers, Karmann Ghias, and Type 3 variants.
+            Mechanical and structural restorations for classic Volkswagen models. Our Houston workshop specializes in period-correct engine rebuilds, Freeway Flyer transaxle setup, dual-carburetor synchronization, and chassis preservation for Type 1 Beetles, T1/T2 Westfalia Campers, Karmann Ghias, and Type 3 variants.
           </p>
 
           <div className="flex flex-wrap items-center gap-4 pt-2">
@@ -75,7 +75,7 @@ export default function RestorationPage({
             </div>
             <div className="flex items-center gap-2 text-slate-300">
               <Wrench className="w-4 h-4 text-cyan-400 shrink-0" />
-              <span>In-House Engine Dyno Testing</span>
+              <span>Engine Assembly &amp; Testing</span>
             </div>
           </div>
         </div>

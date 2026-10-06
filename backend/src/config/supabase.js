@@ -554,8 +554,8 @@ export const dbService = {
     const rawPart = {
       id: partData.id || `part-${Date.now()}`,
       title: partData.title || 'Untitled Part',
-      sku: partData.sku || partData.oemNumber || '',
-      oemNumber: partData.oemNumber || partData.sku || 'NOS-GENUINE',
+      sku: partData.sku || '',
+      oemNumber: partData.oemNumber || '',
       listingType: partData.listingType || 'spare-part',
       vehicleCategory: partData.vehicleCategory || 'type-1',
       modelYearRange: partData.modelYearRange || 'Beetle 1968–1979',

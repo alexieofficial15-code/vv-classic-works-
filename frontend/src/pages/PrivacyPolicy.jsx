@@ -77,7 +77,7 @@ export default function PrivacyPolicy({ onNavigate }) {
             Our website uses modern web analytics and advertising measurement tags to analyze traffic patterns and assess marketing performance:
           </p>
           <ul className="list-disc pl-5 space-y-1.5 text-xs text-[#e5e2e3]">
-            <li><strong>Google Ads Tag (AW-18481077913):</strong> Used to measure advertising conversions (such as add-to-cart actions, customer inquiries, and verified order submissions) from Google Search campaigns.</li>
+            <li><strong>Google Ads Tag (AW-18481077913):</strong> Used to measure advertising conversions (such as add-to-cart actions, customer inquiries, and completed order submissions) from Google Search campaigns.</li>
             <li><strong>Google Analytics (GA4):</strong> Collects aggregated, non-personally identifiable telemetry regarding page views, session duration, and referral sources.</li>
             <li><strong>Local Browser Storage (localStorage):</strong> We use browser localStorage to preserve your shopping cart, saved restoration vehicle configurations, and session tokens between visits. No sensitive credit card details are ever stored in localStorage.</li>
           </ul>
@@ -91,7 +91,7 @@ export default function PrivacyPolicy({ onNavigate }) {
             Your information is used exclusively to:
           </p>
           <ul className="list-disc pl-5 space-y-1.5 text-xs text-[#e5e2e3]">
-            <li>Fulfill parts inquiries, verify OEM engine tolerances, and hold rare items in our Houston shop.</li>
+            <li>Fulfill parts inquiries, check engine compatibility, and hold items in our Houston shop.</li>
             <li>Issue direct workshop invoices and calculate accurate freight crating quotes.</li>
             <li>Contact you via telephone, WhatsApp, or email regarding order status or mechanical compatibility.</li>
             <li>Prevent fraudulent transactions and secure our web systems.</li>
