@@ -19,6 +19,7 @@ import {
   Sparkles,
   Phone
 } from 'lucide-react';
+import { PHONE_NUMBER, PHONE_TEL } from '../config/contact.js';
 
 const WORKSHOP_INFO = {
   name: 'CLASSIC AIRCOOLED VW WORKS',
@@ -27,9 +28,9 @@ const WORKSHOP_INFO = {
   cityStateZip: 'Houston, TX 77039',
   country: 'United States',
   fullAddress: '14826 Yarberry St, Houston, TX 77039, USA',
-  phone: '1945-287-9865',
-  phoneFormatted: '+1 (945) 287-9865',
-  phoneTel: 'tel:19452879865',
+  phone: PHONE_NUMBER,
+  phoneFormatted: `+1 (${PHONE_NUMBER.slice(2, 5)}) ${PHONE_NUMBER.slice(6)}`,
+  phoneTel: PHONE_TEL,
   coordinates: {
     lat: 29.9045,
     lng: -95.3341

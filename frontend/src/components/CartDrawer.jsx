@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, Trash2, Plus, Minus, ShoppingBag, ShieldCheck, ArrowRight, Lock, CheckCircle2, User, Mail, Phone, MapPin, FileText, AlertCircle } from 'lucide-react';
 import { trackBeginCheckout } from '../analytics';
+import { PHONE_NUMBER, PHONE_TEL, whatsappLink } from '../config/contact.js';
+import ContactButtons from './ContactButtons';
 
 export default function CartDrawer({ 
   isOpen, 
@@ -59,12 +61,12 @@ export default function CartDrawer({
           });
           setIsCheckingOut(false);
         } else {
-          throw new Error("We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
+          throw new Error(`We couldn't send your request. Please try again or contact us on WhatsApp / call ${PHONE_NUMBER}.`);
         }
       }
     } catch (err) {
       console.error('Checkout error:', err);
-      setSubmitError(err.message || "We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
+      setSubmitError(err.message || `We couldn't send your request. Please try again or contact us on WhatsApp / call ${PHONE_NUMBER}.`);
     } finally {
       setIsSubmitting(false);
     }
@@ -235,11 +237,8 @@ export default function CartDrawer({
                       <AlertCircle className="w-4 h-4 shrink-0" />
                       <span>Order Submission Error</span>
                     </div>
-                    <p className="text-[11px] leading-relaxed">{submitError}</p>
-                    <div className="text-[11px] pt-1 flex flex-wrap gap-2 items-center">
-                      <a href="https://wa.me/19452879865" target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline font-bold hover:text-emerald-300">WhatsApp Us</a>
-                      <span className="text-slate-500">•</span>
-                      <a href="tel:19452879865" className="text-amber-400 underline font-bold hover:text-amber-300">Call 1-945-287-9865</a>
+                    <div className="pt-2">
+                      <ContactButtons stacked={false} buttonClassName="!min-h-[44px] !text-[11px]" />
                     </div>
                   </div>
                 )}
@@ -370,6 +369,11 @@ export default function CartDrawer({
                 <span>Proceed To Guest Checkout</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
+
+              <div className="pt-2 border-t border-slate-800/80">
+                <div className="text-[10px] font-mono text-slate-400 mb-2 uppercase text-center">Need fitment assistance or phone order?</div>
+                <ContactButtons stacked={false} className="justify-center" />
+              </div>
             </div>
           )}
 

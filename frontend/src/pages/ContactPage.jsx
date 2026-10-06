@@ -1,22 +1,20 @@
 import React, { useEffect } from 'react';
 import { Phone, MapPin, Clock, Mail, MessageCircle, ArrowLeft, Wrench, ShieldCheck } from 'lucide-react';
 import { updateDocumentMeta } from '../utils/router';
+import { PHONE_NUMBER, PHONE_TEL, WHATSAPP_NUMBER, whatsappLink } from '../config/contact.js';
 
 export default function ContactPage({ onNavigate }) {
   useEffect(() => {
     updateDocumentMeta({
       title: 'Contact Workshop & Garage | Classic Aircooled VW Works',
-      description: 'Contact Classic Aircooled VW Works in Houston, TX. Phone: +1 (945) 287-9865. Address: 14826 Yarberry St.',
+      description: `Contact Classic Aircooled VW Works in Houston, TX. Phone: ${PHONE_NUMBER}. Address: 14826 Yarberry St.`,
       canonicalPath: '/contact',
       ogType: 'website'
     });
   }, []);
-  const rawWhatsapp = import.meta.env.VITE_WHATSAPP_NUMBER;
-  const whatsappNumber = rawWhatsapp ? String(rawWhatsapp).replace(/\D/g, '') : null;
-  const hasWhatsapp = Boolean(whatsappNumber && whatsappNumber.length >= 7);
-
+  const hasWhatsapp = Boolean(WHATSAPP_NUMBER && WHATSAPP_NUMBER.length >= 7);
   const whatsappUrl = hasWhatsapp
-    ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hi, I'm contacting Classic Aircooled VW Works regarding engine parts / restoration.")}`
+    ? whatsappLink("Hi, I'm contacting Classic Aircooled VW Works regarding engine parts / restoration.")
     : null;
 
   return (
@@ -57,8 +55,8 @@ export default function ContactPage({ onNavigate }) {
               <Phone className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
               <div>
                 <div className="font-bold text-white uppercase text-[11px] font-mono">Telephone Support</div>
-                <a href="tel:19452879865" className="text-amber-400 font-bold font-mono text-base hover:underline">
-                  +1 (945) 287-9865
+                <a href={PHONE_TEL} className="text-amber-400 font-bold font-mono text-base hover:underline">
+                  {PHONE_NUMBER}
                 </a>
                 <p className="text-[#a78b7d] text-[11px] mt-0.5">Direct line to engine machinists & technicians</p>
               </div>
@@ -113,7 +111,7 @@ export default function ContactPage({ onNavigate }) {
 
           <div className="pt-2">
             <a
-              href="tel:19452879865"
+              href={PHONE_TEL}
               className="w-full min-h-[46px] flex items-center justify-center gap-2 bg-[#ff7a1a] hover:bg-[#ff964d] text-slate-950 font-bold text-xs font-mono uppercase tracking-wider rounded-xl shadow-lg transition-colors"
             >
               <Phone className="w-4 h-4 fill-current" />

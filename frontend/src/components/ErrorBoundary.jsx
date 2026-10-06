@@ -1,4 +1,5 @@
 import React from 'react';
+import { PHONE_NUMBER, PHONE_TEL } from '../config/contact.js';
 
 // Root Error Boundary to catch render crashes and prevent the white/blank screen
 export default class ErrorBoundary extends React.Component {
@@ -43,10 +44,10 @@ export default class ErrorBoundary extends React.Component {
               </button>
 
               <a
-                href="tel:19452879865"
+                href={PHONE_TEL}
                 className="w-full sm:w-auto px-5 py-2.5 bg-[#2a292b] hover:bg-[#38373a] text-[#ffb68e] border border-[#584236]/50 font-bold uppercase tracking-wider text-xs rounded-sm transition-colors text-center inline-block"
               >
-                Call: +1 (945) 287-9865
+                Call: {PHONE_NUMBER}
               </a>
             </div>
           </div>

@@ -1,23 +1,20 @@
 import React from 'react';
 import { Phone, MessageCircle } from 'lucide-react';
+import { PHONE_NUMBER, PHONE_TEL, WHATSAPP_NUMBER, whatsappLink } from '../config/contact.js';
 
 /**
  * Sticky bottom "Call now" bar on mobile only (max-width 767px).
  * - 48px high with safe-area-inset padding
- * - tel:19452879865
  * - High contrast styling
  * - Hidden when cart drawer, auth modal, or any other modal is open
- * - Displays WhatsApp button only if VITE_WHATSAPP_NUMBER is set (never invents a number)
+ * - Displays WhatsApp button only if WHATSAPP_NUMBER is set
  */
 export default function StickyCallBar({ isModalOpen }) {
   if (isModalOpen) return null;
 
-  const rawWhatsapp = import.meta.env.VITE_WHATSAPP_NUMBER;
-  const whatsappNumber = rawWhatsapp ? String(rawWhatsapp).replace(/\D/g, '') : null;
-  const hasWhatsapp = Boolean(whatsappNumber && whatsappNumber.length >= 7);
-
+  const hasWhatsapp = Boolean(WHATSAPP_NUMBER && WHATSAPP_NUMBER.length >= 7);
   const whatsappUrl = hasWhatsapp
-    ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hi, I'm interested in vintage aircooled VW parts and restoration services.")}`
+    ? whatsappLink("Hi, I'm interested in vintage aircooled VW parts and restoration services.")
     : null;
 
   return (
@@ -28,12 +25,12 @@ export default function StickyCallBar({ isModalOpen }) {
     >
       <div className="h-12 max-w-lg mx-auto px-3 flex items-center gap-2">
         <a
-          href="tel:19452879865"
+          href={PHONE_TEL}
           className="flex-1 h-9 px-3 bg-[#ff7a1a] hover:bg-[#ff964d] text-slate-950 font-bold text-xs font-mono uppercase tracking-wider rounded-lg flex items-center justify-center gap-2 shadow-md transition-colors"
-          aria-label="Call Classic Aircooled VW Works at +1 (945) 287-9865"
+          aria-label={`Call Classic Aircooled VW Works at ${PHONE_NUMBER}`}
         >
           <Phone className="w-4 h-4 fill-current shrink-0" />
-          <span className="truncate">Call Now (945) 287-9865</span>
+          <span className="truncate">Call Now ({PHONE_NUMBER})</span>
         </a>
 
         {hasWhatsapp && (

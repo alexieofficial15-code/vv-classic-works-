@@ -5,6 +5,8 @@ import { updateDocumentMeta } from '../utils/router';
 import { API_BASE_URL } from '../config/api';
 import { triggerGoogleAdsConversion, trackLead } from '../analytics';
 import { getCachedCatalogParts } from '../data/catalogStore';
+import { PHONE_NUMBER, PHONE_TEL, whatsappLink } from '../config/contact.js';
+import ContactButtons from '../components/ContactButtons';
 
 export default function EnginesPage({
   onAddToCart,
@@ -25,10 +27,7 @@ export default function EnginesPage({
     });
   }, []);
 
-  // WhatsApp and Telephone contact configuration
-  const rawWhatsapp = import.meta.env.VITE_WHATSAPP_NUMBER || '19452879865';
-  const whatsappNumber = String(rawWhatsapp).replace(/\D/g, '');
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hi, I'm contacting Classic Aircooled VW Works regarding an aircooled VW engine build.")}`;
+
 
   // Engine size filter chips derived from catalog data and target displacements
   const [selectedEngineFilter, setSelectedEngineFilter] = useState('ALL');
@@ -118,7 +117,7 @@ export default function EnginesPage({
 
       // Honest error handling: treat success ONLY when server responds ok with valid data.id
       if (!res.ok || !data?.success || !data?.data?.id) {
-        throw new Error("We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
+        throw new Error(`We couldn't send your request. Please try again or contact us on WhatsApp / call ${PHONE_NUMBER}.`);
       }
 
       const record = data.data;
@@ -154,7 +153,7 @@ export default function EnginesPage({
       clearTimeout(timeoutId);
       console.error('API engine reservation request failed:', err);
       // Keep form inputs intact, do NOT fire conversion, show inline red error
-      setSubmitError("We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
+      setSubmitError(`We couldn't send your request. Please try again or contact us on WhatsApp / call ${PHONE_NUMBER}.`);
     } finally {
       setIsSubmitting(false);
     }
@@ -184,29 +183,11 @@ export default function EnginesPage({
 
               {/* Above-The-Fold WhatsApp, Call & Inventory Buttons */}
               <div className="flex flex-wrap items-center gap-3 pt-2">
-                <a
-                  href="tel:19452879865"
-                  className="min-h-[46px] px-5 bg-[#ff7a1a] hover:bg-[#ff964d] text-slate-950 font-bold text-xs sm:text-sm font-mono uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10 transition-all"
-                  aria-label="Call Workshop at +1 (945) 287-9865"
-                >
-                  <Phone className="w-4 h-4 fill-current shrink-0" />
-                  <span>Call Shop: +1 (945) 287-9865</span>
-                </a>
-
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="min-h-[46px] px-5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm font-mono uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all"
-                  aria-label="Chat on WhatsApp"
-                >
-                  <MessageCircle className="w-4 h-4 shrink-0" />
-                  <span>WhatsApp Us</span>
-                </a>
+                <ContactButtons text="Hi, I'm contacting Classic Aircooled VW Works regarding an aircooled VW engine build." />
 
                 <a
                   href="#catalog"
-                  className="min-h-[46px] px-5 bg-[#181719] hover:bg-[#252426] border border-[#584236] text-[#e5e2e3] font-bold text-xs sm:text-sm font-mono uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all"
+                  className="min-h-[44px] px-4 bg-[#181719] hover:bg-[#252426] border border-[#584236] text-[#e5e2e3] font-bold text-xs sm:text-sm font-mono uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
                   <span>Explore Catalog</span>
                   <ArrowRight className="w-4 h-4" />

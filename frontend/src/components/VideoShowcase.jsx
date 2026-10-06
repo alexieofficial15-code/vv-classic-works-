@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { FACEBOOK_PAGE_URL } from '../config/contact.js';
 import {
   Play,
   Pause,
@@ -455,7 +456,7 @@ export default function VideoShowcase() {
                 </a>
 
                 <a
-                  href="https://www.facebook.com/share/1BwLuMhq42/"
+                  href={FACEBOOK_PAGE_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2 bg-[#1877F2]/10 hover:bg-[#1877F2] border border-[#1877F2]/40 text-white text-xs font-bold font-mono rounded-xs transition-all shadow-sm group"

@@ -3,6 +3,7 @@ import { Phone, ShieldCheck, Wrench, ArrowRight, PackageCheck, CheckCircle2 } fr
 import CatalogSection from '../components/CatalogSection';
 import { updateDocumentMeta } from '../utils/router';
 import { DIRECT_PART_CATEGORIES } from '../data/vwNavigationData';
+import { PHONE_NUMBER, PHONE_TEL } from '../config/contact.js';
 
 const CATEGORY_DETAILS = {
   'cylinder-heads': {
@@ -100,11 +101,11 @@ export default function PartsPage({
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <a
-              href="tel:19452879865"
+              href={PHONE_TEL}
               className="min-h-[44px] px-5 bg-[#ff7a1a] hover:bg-[#ff964d] text-slate-950 font-bold text-xs font-mono uppercase tracking-wider rounded-xl flex items-center gap-2 shadow-lg transition-all"
             >
               <Phone className="w-4 h-4 fill-current shrink-0" />
-              <span>Call For Parts Fitment: +1 (945) 287-9865</span>
+              <span>Call For Parts Fitment: {PHONE_NUMBER}</span>
             </a>
 
             <a

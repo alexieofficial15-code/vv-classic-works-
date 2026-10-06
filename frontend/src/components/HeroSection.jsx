@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Car, Wrench } from 'lucide-react';
+import ContactButtons from './ContactButtons';
 
 const ENGINE_IMAGES = [
   '/hero_engine_1.jpg',
@@ -139,6 +140,11 @@ export default function HeroSection({ onSelectCarModel }) {
             <Wrench className="w-4 h-4 text-[#83cffb]" />
             Browse Full Parts Catalog
           </button>
+        </div>
+
+        {/* Quick Contact & Dispatch Access */}
+        <div className="mt-5 w-full flex justify-center">
+          <ContactButtons text="Hi, I'm contacting Classic Aircooled VW Works regarding engines & vintage VW parts." className="justify-center" />
         </div>
 
       </div>

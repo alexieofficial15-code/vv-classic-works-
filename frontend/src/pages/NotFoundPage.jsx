@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Phone, ArrowLeft, Wrench, ArrowRight, AlertTriangle } from 'lucide-react';
 import { updateDocumentMeta } from '../utils/router';
+import { PHONE_NUMBER, PHONE_TEL } from '../config/contact.js';
 
 export default function NotFoundPage({ onNavigate }) {
   useEffect(() => {
@@ -60,11 +61,11 @@ export default function NotFoundPage({ onNavigate }) {
         </a>
 
         <a
-          href="tel:19452879865"
+          href={PHONE_TEL}
           className="min-h-[46px] px-6 bg-slate-950 hover:bg-slate-900 border border-amber-500/40 text-amber-400 font-bold text-xs font-mono uppercase tracking-wider rounded-xl flex items-center gap-2 transition-colors"
         >
           <Phone className="w-4 h-4" />
-          <span>Call Shop: +1 (945) 287-9865</span>
+          <span>Call Shop: {PHONE_NUMBER}</span>
         </a>
       </div>
     </div>

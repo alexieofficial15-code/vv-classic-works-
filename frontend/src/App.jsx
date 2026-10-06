@@ -11,6 +11,7 @@ import {
 } from './analytics';
 import { AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { useRouter, updateDocumentMeta, slugify } from './utils/router';
+import { PHONE_NUMBER, PHONE_TEL, WHATSAPP_NUMBER, whatsappLink } from './config/contact.js';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import FindPartsWizard from './components/FindPartsWizard';
@@ -284,7 +285,7 @@ export default function App() {
         '@type': 'AutoPartsStore',
         name: 'Classic Aircooled VW Works',
         image: 'https://www.classicaircooledvwworks.com/logo.png',
-        telephone: '+19452879865',
+        telephone: `+${WHATSAPP_NUMBER}`,
         url: 'https://www.classicaircooledvwworks.com',
         address: {
           '@type': 'PostalAddress',
@@ -596,7 +597,7 @@ export default function App() {
 
       // Treat success ONLY when res.ok && data.success && data.data?.id
       if (!res.ok || !data?.success || !data?.data?.id) {
-        throw new Error("We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
+        throw new Error(`We couldn't send your request. Please try again or contact us on WhatsApp / call ${PHONE_NUMBER}.`);
       }
 
       const record = data.data;
@@ -640,7 +641,7 @@ export default function App() {
       setActionStatus({
         type: 'error',
         title: 'Request Submission Failed',
-        message: "We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865."
+        message: `We couldn't send your request. Please try again or contact us on WhatsApp / call ${PHONE_NUMBER}.`
       });
     } finally {
       setIsSubmittingRequest(false);
@@ -707,7 +708,7 @@ export default function App() {
 
       // Treat success ONLY when res.ok && data.success && data.data?.id
       if (!res.ok || !data?.success || !data?.data?.id) {
-        throw new Error("We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
+        throw new Error(`We couldn't send your request. Please try again or contact us on WhatsApp / call ${PHONE_NUMBER}.`);
       }
 
       const record = data.data;
@@ -751,7 +752,7 @@ export default function App() {
       setActionStatus({
         type: 'error',
         title: 'Reservation Failed',
-        message: "We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865."
+        message: `We couldn't send your request. Please try again or contact us on WhatsApp / call ${PHONE_NUMBER}.`
       });
     } finally {
       setIsSubmittingReserve(false);
@@ -800,7 +801,7 @@ export default function App() {
 
       // Treat success ONLY when res.ok && data.success && data.data?.id
       if (!res.ok || !data?.success || !data?.data?.id) {
-        throw new Error("We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
+        throw new Error(`We couldn't send your request. Please try again or contact us on WhatsApp / call ${PHONE_NUMBER}.`);
       }
 
       const record = data.data;
@@ -834,7 +835,7 @@ export default function App() {
       clearTimeout(timeoutId);
       console.error('API guest reservation failed:', err);
       // Keep form data, keep modal, do NOT fire conversion, show inline red error
-      setGuestResError("We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
+      setGuestResError(`We couldn't send your request. Please try again or contact us on WhatsApp / call ${PHONE_NUMBER}.`);
     } finally {
       setIsSubmittingGuestRes(false);
     }
@@ -934,7 +935,7 @@ export default function App() {
 
       // Treat success ONLY when res.ok && data.success && data.data?.id
       if (!res.ok || !data?.success || !data?.data?.id) {
-        throw new Error("We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
+        throw new Error(`We couldn't send your request. Please try again or contact us on WhatsApp / call ${PHONE_NUMBER}.`);
       }
 
       const savedOrder = data.data;
@@ -972,7 +973,7 @@ export default function App() {
     } catch (err) {
       clearTimeout(timeoutId);
       console.error('API order placement failed:', err);
-      throw new Error("We couldn't send your request. Please try again or contact us on WhatsApp / call 1-945-287-9865.");
+      throw new Error(`We couldn't send your request. Please try again or contact us on WhatsApp / call ${PHONE_NUMBER}.`);
     } finally {
       setIsSubmittingCheckout(false);
     }
@@ -1065,18 +1066,18 @@ export default function App() {
             {actionStatus.type === 'error' && (
               <div className="mt-2 flex flex-wrap gap-2 text-xs items-center">
                 <a
-                  href="https://wa.me/19452879865"
+                  href={whatsappLink()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-mono font-bold transition-colors"
+                  className="inline-flex items-center gap-1 px-3 py-1 min-h-[44px] bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-mono font-bold transition-colors"
                 >
                   💬 WhatsApp Us
                 </a>
                 <a
-                  href="tel:19452879865"
-                  className="inline-flex items-center gap-1 px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-mono font-bold transition-colors"
+                  href={PHONE_TEL}
+                  className="inline-flex items-center gap-1 px-3 py-1 min-h-[44px] bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-mono font-bold transition-colors"
                 >
-                  📞 Call 1-945-287-9865
+                  📞 Call {PHONE_NUMBER}
                 </a>
               </div>
             )}
@@ -1409,12 +1410,12 @@ export default function App() {
                     </div>
                     <p className="text-[11px] leading-relaxed">{guestResError}</p>
                     <div className="flex flex-wrap gap-2 pt-1 text-[11px] items-center">
-                      <a href="https://wa.me/19452879865" target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline font-bold hover:text-emerald-300">
+                      <a href={whatsappLink()} target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline font-bold hover:text-emerald-300">
                         WhatsApp Us
                       </a>
                       <span className="text-slate-500">•</span>
-                      <a href="tel:19452879865" className="text-amber-400 underline font-bold hover:text-amber-300">
-                        Call 1-945-287-9865
+                      <a href={PHONE_TEL} className="text-amber-400 underline font-bold hover:text-amber-300">
+                        Call {PHONE_NUMBER}
                       </a>
                     </div>
                   </div>
