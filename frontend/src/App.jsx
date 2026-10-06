@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { API_BASE_URL } from './config/api';
-import { getCatalogParts, invalidateCatalogCache } from './data/catalogStore';
+import { getCatalogParts, invalidateCatalogCache, normalizeCatalogPart } from './data/catalogStore';
 import {
   trackAddToCart,
   trackPurchase,
@@ -134,10 +134,26 @@ export default function App() {
     }
   };
 
+  // The public catalog list is intentionally lite (no specs text / extra photos).
+  // Open the modal instantly with the lite part, then merge in the full part detail.
+  const hydratePartDetails = (part) => {
+    if (!part || part.__fullDetail) return;
+    fetch(`${API_BASE_URL}/api/parts/${encodeURIComponent(part.id)}`, { headers: { Accept: 'application/json' } })
+      .then(res => (res.ok ? res.json() : null))
+      .then(json => {
+        if (!json || !json.success || !json.data) return;
+        const full = { ...part, ...normalizeCatalogPart(json.data), __fullDetail: true };
+        partsCacheRef.current.set(String(full.id), full);
+        setActiveModalPart(current => (current && String(current.id) === String(full.id) ? full : current));
+      })
+      .catch(() => {});
+  };
+
   const handleViewPartDetails = (part) => {
     if (!part) return;
     partsCacheRef.current.set(String(part.id), part);
     setActiveModalPart(part);
+    hydratePartDetails(part);
   };
 
   const handleClosePartDetails = () => {
@@ -263,6 +279,7 @@ export default function App() {
       const cached = partsCacheRef.current.get(String(partId));
       if (cached) {
         setActiveModalPart(cached);
+        hydratePartDetails(cached);
       } else {
         getCatalogParts().then(parts => {
           if (Array.isArray(parts)) {
@@ -270,6 +287,7 @@ export default function App() {
             if (found) {
               partsCacheRef.current.set(String(found.id), found);
               setActiveModalPart(found);
+              hydratePartDetails(found);
             }
           }
         }).catch(() => {});

@@ -490,6 +490,9 @@ let partsLiteCache = null;
 let partsLiteCacheTime = 0;
 let partsLiteInFlight = null;
 const PARTS_LITE_CACHE_TTL = 60 * 1000; // 60s
+let partsLiteViewAvailable = false;
+let partsLiteViewCheckedAt = 0;
+const PARTS_LITE_VIEW_RECHECK_MS = 10 * 60 * 1000; // re-check for the SQL view every 10 minutes
 
 export function invalidatePartsCache() {
   partsCache = null;
@@ -553,12 +556,37 @@ export const dbService = {
 
     partsLiteInFlight = (async () => {
       try {
-        // Bounded list query with .limit(200); returns light columns with image_count = 1 until SQL view approved
-        const { data, error } = await supabase
-          .from('spare_parts')
-          .select('id, title, price, category, car_model_id, car_model_name, era, engine_type, engine_size:engine_type, oem_number, casting_code, in_stock, stock, stock_count:stock, created_at, condition, rarity_score, rating, reviews_count')
-          .order('created_at', { ascending: false })
-          .limit(200);
+        let data = null;
+        let error = null;
+
+        // 1. Preferred: parts_lite_view (backend/sql/get_parts_lite.sql) returns specifications text
+        //    (without __meta) and a real image_count without sending any base64 photo data.
+        //    Used automatically once the view exists; re-checked every 10 minutes while it does not.
+        if (partsLiteViewAvailable || Date.now() - partsLiteViewCheckedAt > PARTS_LITE_VIEW_RECHECK_MS) {
+          partsLiteViewCheckedAt = Date.now();
+          const viewRes = await supabase
+            .from('parts_lite_view')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(200);
+          if (!viewRes.error && Array.isArray(viewRes.data)) {
+            partsLiteViewAvailable = true;
+            data = viewRes.data;
+          } else {
+            partsLiteViewAvailable = false;
+          }
+        }
+
+        // 2. Fallback: bounded light-column query (image_count defaults to 1, no specs text)
+        if (data === null) {
+          const tableRes = await supabase
+            .from('spare_parts')
+            .select('id, title, price, category, car_model_id, car_model_name, era, engine_type, engine_size:engine_type, oem_number, casting_code, in_stock, stock, stock_count:stock, created_at, condition, rarity_score, rating, reviews_count')
+            .order('created_at', { ascending: false })
+            .limit(200);
+          data = tableRes.data;
+          error = tableRes.error;
+        }
 
         if (error) {
           console.error('Error fetching spare_parts lite from Supabase:', error.message);
@@ -569,7 +597,7 @@ export const dbService = {
           throw error;
         }
 
-        const result = data ? data.map(r => mapLightPartFromDb({ ...r, image_count: 1 })) : [];
+        const result = data ? data.map(r => mapLightPartFromDb(r)) : [];
         partsLiteCache = result;
         partsLiteCacheTime = Date.now();
         return result;

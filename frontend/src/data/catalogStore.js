@@ -6,7 +6,7 @@ import { API_BASE_URL } from '../config/api';
  * - Fetches /api/catalog ONCE and caches the result in memory
  * - De-duplicates simultaneous in-flight requests
  * - Prefixes relative /api/ image URLs with API_BASE_URL
- * - Automatically falls back to /api/admin/parts if /api/catalog returns 404
+ * - Public catalog only: never calls the admin endpoints
  * - Uses a 45-second AbortController timeout for network resilience
  */
 

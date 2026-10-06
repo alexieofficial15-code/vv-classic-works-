@@ -227,17 +227,23 @@ router.get('/parts/:id', async (req, res) => {
       part = await dbService.getPartById(id);
     }
 
-    // Fallback search across list if not found or Supabase not directly queried
+    // Fallback: resolve "<id>-<slug>" style ids against the cached LITE list.
+    // Never fall back to getParts() here (full rows incl. base64 photos) or random ids could hammer the database.
     if (!part) {
-      const partsList = await dbService.getParts();
-      part = partsList.find(p => String(p.id) === String(id) || String(id).startsWith(`${p.id}-`));
+      const partsList = await dbService.getPartsLite();
+      const match = partsList.find(p => String(p.id) === String(id) || String(id).startsWith(`${p.id}-`));
+      if (match && String(match.id) !== String(id) && isSupabaseConfigured) {
+        part = await dbService.getPartById(match.id);
+      }
+      part = part || match || null;
     }
 
     if (!part) {
       return res.status(404).json({ success: false, message: 'Spare part not found' });
     }
 
-    res.json({ success: true, data: part });
+    // Replace inline base64 photos with cacheable /api/parts/:id/image/... URLs
+    res.json({ success: true, data: transformPartForCatalog(part) });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

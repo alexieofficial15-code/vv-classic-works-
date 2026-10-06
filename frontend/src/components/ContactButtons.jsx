@@ -66,7 +66,8 @@ export default function ContactButtons({
         {showLabels && <span>WhatsApp Us</span>}
       </a>
 
-      {/* 3. Facebook Messenger Button */}
+      {/* 3. Facebook Messenger Button (only rendered when a real Messenger URL is configured) */}
+      {FACEBOOK_MESSENGER_URL && (
       <a
         href={FACEBOOK_MESSENGER_URL}
         target="_blank"
@@ -78,6 +79,7 @@ export default function ContactButtons({
         <MessageSquare className="w-4 h-4 shrink-0 text-[#83cffb]" aria-hidden="true" />
         {showLabels && <span>FB Message</span>}
       </a>
+      )}
     </div>
   );
 }

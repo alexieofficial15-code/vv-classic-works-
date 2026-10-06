@@ -7,7 +7,8 @@ export const PHONE_NUMBER = '1-945-287-9865';
 export const PHONE_TEL = 'tel:+19452879865';
 
 export const FACEBOOK_PAGE_URL = import.meta.env.VITE_FACEBOOK_URL || 'https://www.facebook.com/share/1BwLuMhq42/';
-export const FACEBOOK_MESSENGER_URL = import.meta.env.VITE_FACEBOOK_MESSENGER_URL || 'https://m.me/classicaircooledvw';
+// No guessed default: the Messenger button is hidden until VITE_FACEBOOK_MESSENGER_URL (https://m.me/<page-username>) is set
+export const FACEBOOK_MESSENGER_URL = (import.meta.env.VITE_FACEBOOK_MESSENGER_URL || '').trim();
 
 /**
  * Generate a WhatsApp click-to-chat URL with an optional prefilled message

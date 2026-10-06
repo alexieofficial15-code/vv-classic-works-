@@ -33,10 +33,12 @@ const getHeaders = () => ({
 /**
  * Secure Admin Login - returns 7-day session token
  */
-export const loginAdmin = async ({ email, password, serverUrl }) => {
+export const loginAdmin = async ({ email, password, secretKey, serverUrl }) => {
   const targetBaseUrl = (serverUrl || currentBaseUrl).replace(/\/+$/, '');
   const cleanEmail = sanitizeClientInput(email).toLowerCase();
   const cleanPassword = sanitizeClientInput(password);
+  // Optional: required by the server only when ADMIN_SECRET_KEY is configured there
+  const cleanSecretKey = secretKey ? sanitizeClientInput(secretKey) : '';
 
   try {
     const res = await fetch(`${targetBaseUrl}/api/auth/admin-login`, {
@@ -47,6 +49,7 @@ export const loginAdmin = async ({ email, password, serverUrl }) => {
       body: JSON.stringify({
         email: cleanEmail,
         password: cleanPassword,
+        secretKey: cleanSecretKey,
       }),
     });
 

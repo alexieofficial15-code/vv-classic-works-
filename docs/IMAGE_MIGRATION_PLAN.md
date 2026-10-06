@@ -23,23 +23,13 @@ COMMENT ON TABLE spare_parts_backup_20261006 IS 'Pre-migration snapshot of spare
 ```
 
 ### 1.2 Off-Database JSON Dump
-An offline, local JSON export containing all rows and raw base64 payloads:
+An offline, local JSON Lines export containing every row and its raw base64 payloads, read **one row per request** (never one `select('*')` over the whole table, which is the query shape that times out):
 
-- **Destination Path:** `backend/backups/spare_parts_backup_YYYYMMDD.json`
-- **Execution Command (Shown Not Run):**
+- **Script:** `backend/scripts/backup-spare-parts.js` (created, not run)
+- **Destination Path:** `backend/backups/spare_parts_backup_YYYYMMDD.jsonl` (git-ignored; contains raw photos)
+- **Execution Command (run only after approval):**
   ```bash
-  node -e "
-    import('dotenv/config');
-    import('@supabase/supabase-js').then(async ({ createClient }) => {
-      const client = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-      const { data, error } = await client.from('spare_parts').select('*');
-      if (error) throw error;
-      const fs = await import('fs');
-      if (!fs.existsSync('backend/backups')) fs.mkdirSync('backend/backups', { recursive: true });
-      fs.writeFileSync('backend/backups/spare_parts_backup_20261006.json', JSON.stringify(data, null, 2));
-      console.log('Saved', data.length, 'records to backup JSON.');
-    });
-  "
+  cd backend && node scripts/backup-spare-parts.js
   ```
 
 ### 1.3 Backup Verification Checklist

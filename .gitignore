@@ -23,3 +23,6 @@ backend/src/data/messages.json
 messages.json
 .expo/
 *.tsbuildinfo
+
+# Database backups (contain raw base64 photos)
+backend/backups/

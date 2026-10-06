@@ -3,13 +3,13 @@ import { Car, Wrench } from 'lucide-react';
 import ContactButtons from './ContactButtons';
 
 const ENGINE_IMAGES = [
-  '/hero_engine_1.jpg',
-  '/hero_engine_2.jpg',
-  '/hero_engine_3.jpg',
-  '/hero_engine_4.jpg',
-  '/hero_engine_5.jpg',
-  '/hero_engine_6.jpg',
-  '/hero_engine_7.jpg'
+  '/hero_engine_1.webp',
+  '/hero_engine_2.webp',
+  '/hero_engine_3.webp',
+  '/hero_engine_4.webp',
+  '/hero_engine_5.webp',
+  '/hero_engine_6.webp',
+  '/hero_engine_7.webp'
 ];
 
 export default function HeroSection({ onSelectCarModel }) {
@@ -75,8 +75,8 @@ export default function HeroSection({ onSelectCarModel }) {
             muted
             playsInline
             preload="metadata"
-            poster="/hero_engine_1.jpg"
-            style={{ backgroundImage: 'url(/hero_engine_1.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
+            poster="/hero_engine_1.webp"
+            style={{ backgroundImage: 'url(/hero_engine_1.webp)', backgroundSize: 'cover', backgroundPosition: 'center' }}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
               useLiveVideo ? 'opacity-85 scale-[1.01]' : 'opacity-0 pointer-events-none'
             }`}
@@ -90,7 +90,7 @@ export default function HeroSection({ onSelectCarModel }) {
         {!useLiveVideo && (
           <div className="absolute inset-0 w-full h-full">
             <img
-              src="/hero_engine_1.jpg"
+              src="/hero_engine_1.webp"
               alt="Classic Aircooled VW Performance Engine"
               width="1920"
               height="1080"

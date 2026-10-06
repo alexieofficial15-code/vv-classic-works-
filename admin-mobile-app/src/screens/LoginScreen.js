@@ -17,6 +17,7 @@ import { saveAdminSession } from '../services/session';
 export default function LoginScreen({ onLoginSuccess, isSessionExpired = false }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [secretKey, setSecretKey] = useState('');
   const [serverUrl, setServerUrl] = useState(DEFAULT_API_BASE);
   const [useTokenMode, setUseTokenMode] = useState(false);
   const [tokenInput, setTokenInput] = useState('');
@@ -80,6 +81,7 @@ export default function LoginScreen({ onLoginSuccess, isSessionExpired = false }
       const loginResult = await loginAdmin({
         email: cleanEmail,
         password: cleanPassword,
+        secretKey,
         serverUrl: cleanUrl,
       });
 
@@ -186,6 +188,22 @@ export default function LoginScreen({ onLoginSuccess, isSessionExpired = false }
                     color="#a78b7d"
                   />
                 </TouchableOpacity>
+              </View>
+
+              {/* Secret Security Key (only needed if the server has ADMIN_SECRET_KEY set) */}
+              <Text style={styles.inputLabel}>SECRET SECURITY KEY (IF REQUIRED)</Text>
+              <View style={styles.inputRow}>
+                <MaterialCommunityIcons name="key-variant" size={18} color="#ff7a1a" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Leave blank if not configured"
+                  placeholderTextColor="#786154"
+                  value={secretKey}
+                  onChangeText={setSecretKey}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
               </View>
             </>
           ) : (
