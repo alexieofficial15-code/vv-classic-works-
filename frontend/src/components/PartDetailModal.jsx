@@ -159,6 +159,8 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
                   key={activeImageIndex}
                   src={allImages[activeImageIndex]}
                   alt={`${part.title || 'Part'} - photo ${activeImageIndex + 1}`}
+                  width="600"
+                  height="400"
                   loading="lazy"
                   decoding="async"
                   className="w-full h-full object-cover transition-opacity duration-300 animate-in fade-in"
@@ -221,6 +223,8 @@ export default function PartDetailModal({ part, onClose, onAddToCart, onRequestI
                       <img 
                         src={thumbUrl} 
                         alt={`Thumbnail ${idx + 1}`} 
+                        width="64"
+                        height="64"
                         loading="lazy" 
                         decoding="async" 
                         className="w-full h-full object-cover" 

@@ -1,6 +1,21 @@
 import { useState, useEffect } from 'react';
-import { SPARE_PARTS, VINTAGE_CARS } from '../data/partsData';
 import { getCachedCatalogParts } from '../data/catalogStore';
+
+// Static fallback IDs to parse product URLs without loading the full data module
+const KNOWN_STATIC_IDS = [
+  'part-vw-turbo-engine-2276',
+  'part-vw-crossbar-breather',
+  'part-vw-velocity-stack-hat',
+  'part-vw-cylinder-heads-dualport',
+  'part-vw-weber-44-kit',
+  'part-vw-forged-crankshaft-69',
+  'part-vw-bosch-009-distributor',
+  'part-vw-vintage-speed-exhaust',
+  'rogue-super-beetle-1979',
+  'vw-bus-t1-patina-1964',
+  'vw-beetle-cal-look-1967',
+  'karmann-ghia-coupe-1969'
+];
 
 /**
  * Slugify a title for URL-safe representation
@@ -36,31 +51,14 @@ export function parseProductSlug(param) {
     }
   } catch (_) {}
 
-  // 2. Check static spare parts database
-  try {
-    if (Array.isArray(SPARE_PARTS)) {
-      const match = SPARE_PARTS.find(p => p.id === param || param.startsWith(`${p.id}-`));
-      if (match) {
-        return {
-          id: match.id,
-          slug: param === match.id ? '' : param.slice(match.id.length + 1)
-        };
-      }
-    }
-  } catch (_) {}
-
-  // 3. Check vintage cars database
-  try {
-    if (Array.isArray(VINTAGE_CARS)) {
-      const match = VINTAGE_CARS.find(c => c.id === param || param.startsWith(`${c.id}-`));
-      if (match) {
-        return {
-          id: match.id,
-          slug: param === match.id ? '' : param.slice(match.id.length + 1)
-        };
-      }
-    }
-  } catch (_) {}
+  // 2. Check known static catalog IDs without importing heavy dataset
+  const knownId = KNOWN_STATIC_IDS.find(id => id === param || param.startsWith(`${id}-`));
+  if (knownId) {
+    return {
+      id: knownId,
+      slug: param === knownId ? '' : param.slice(knownId.length + 1)
+    };
+  }
 
   // 4. Fallback for numeric IDs (e.g. "42-carburetor-kit")
   const numericMatch = param.match(/^(\d+)-(.*)$/);

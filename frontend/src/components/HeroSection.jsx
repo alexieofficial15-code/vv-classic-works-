@@ -13,7 +13,30 @@ const ENGINE_IMAGES = [
 
 export default function HeroSection({ onSelectCarModel }) {
   const [activeEngineIndex, setActiveEngineIndex] = useState(0);
-  const [useLiveVideo, setUseLiveVideo] = useState(true);
+  const [useLiveVideo, setUseLiveVideo] = useState(false);
+  const [canLoadVideo, setCanLoadVideo] = useState(false);
+
+  // Skip video on mobile; on desktop (>=768px), load video only after window load
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const isDesktop = window.matchMedia && window.matchMedia('(min-width: 768px)').matches;
+    if (!isDesktop) return;
+
+    const enableVideo = () => {
+      // Delay slightly after window load to let critical resources render
+      setTimeout(() => {
+        setCanLoadVideo(true);
+        setUseLiveVideo(true);
+      }, 300);
+    };
+
+    if (document.readyState === 'complete') {
+      enableVideo();
+    } else {
+      window.addEventListener('load', enableVideo, { once: true });
+      return () => window.removeEventListener('load', enableVideo);
+    }
+  }, []);
 
   // Automatic smooth crossfade cycle through all 7 images as fallback or ambient sequence
   useEffect(() => {
@@ -43,32 +66,44 @@ export default function HeroSection({ onSelectCarModel }) {
       {/* ========================================================================= */}
       {/* Dynamic Video & Fading Image Showcase Background                         */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        {/* Autoplaying Hero Video with metadata preload and instant poster display */}
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="metadata"
-          poster="/hero_engine_1.jpg"
-          style={{ backgroundImage: 'url(/hero_engine_1.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
-            useLiveVideo ? 'opacity-85 scale-[1.01]' : 'opacity-0 pointer-events-none'
-          }`}
-          onError={() => setUseLiveVideo(false)}
-        >
-          <source src="/hero_engine_video.webm" type="video/webm" />
-          <source src="/hero_engine_video.mp4" type="video/mp4" />
-        </video>
+        {/* Desktop-only Hero Video loaded after window load; poster displayed first */}
+        {canLoadVideo && (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            poster="/hero_engine_1.jpg"
+            style={{ backgroundImage: 'url(/hero_engine_1.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+              useLiveVideo ? 'opacity-85 scale-[1.01]' : 'opacity-0 pointer-events-none'
+            }`}
+            onError={() => setUseLiveVideo(false)}
+          >
+            <source src="/hero_engine_video.webm" type="video/webm" />
+          </video>
+        )}
 
         {/* High-Resolution Fading Image Layer (All 7 Custom Aircooled Engines) */}
         {!useLiveVideo && (
           <div className="absolute inset-0 w-full h-full">
-            {ENGINE_IMAGES.map((imgSrc, idx) => (
+            <img
+              src="/hero_engine_1.jpg"
+              alt="Classic Aircooled VW Performance Engine"
+              width="1920"
+              height="1080"
+              fetchPriority="high"
+              decoding="async"
+              className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 transform ${
+                activeEngineIndex === 0 ? 'opacity-90 scale-105' : 'opacity-0 scale-100 pointer-events-none'
+              }`}
+            />
+            {ENGINE_IMAGES.slice(1).map((imgSrc, idx) => (
               <div
                 key={imgSrc}
                 className={`absolute inset-0 bg-cover bg-center transition-all duration-1000 transform ${
-                  idx === activeEngineIndex ? 'opacity-90 scale-105' : 'opacity-0 scale-100 pointer-events-none'
+                  idx + 1 === activeEngineIndex ? 'opacity-90 scale-105' : 'opacity-0 scale-100 pointer-events-none'
                 }`}
                 style={{
                   backgroundImage: `url(${imgSrc})`,

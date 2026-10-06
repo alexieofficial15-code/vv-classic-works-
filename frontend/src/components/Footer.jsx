@@ -23,8 +23,10 @@ export default function Footer({ onNavigate }) {
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xs overflow-hidden border border-[#ff7a1a]/60 shadow-[0_0_12px_rgba(255,122,26,0.35)] bg-[#141416] flex items-center justify-center shrink-0 mt-0.5">
               <img 
-                src="/logo.png" 
+                src="/logo.webp" 
                 alt="Classic Aircooled VW Works Emblem" 
+                width="40"
+                height="40"
                 className="w-full h-full object-cover"
               />
             </div>

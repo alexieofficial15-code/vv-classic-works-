@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import { API_BASE_URL } from '../config/api';
 import { getCatalogParts, getCachedCatalogParts, normalizeCatalogPart } from '../data/catalogStore';
-import { SPARE_PARTS, VINTAGE_CARS } from '../data/partsData';
 import { updateDocumentMeta, slugify } from '../utils/router';
 
 export default function ProductDetailPage({
@@ -45,22 +44,25 @@ export default function ProductDetailPage({
           );
         }
 
-        // 2. Try static SPARE_PARTS database
-        if (!resolvedPart && Array.isArray(SPARE_PARTS)) {
-          resolvedPart = SPARE_PARTS.find(p => 
-            String(p.id) === String(productId) ||
-            String(p.id) === String(searchTarget) ||
-            (searchTarget && searchTarget.startsWith(`${p.id}-`))
-          );
-        }
-
-        // 3. Try static VINTAGE_CARS database
-        if (!resolvedPart && Array.isArray(VINTAGE_CARS)) {
-          resolvedPart = VINTAGE_CARS.find(c => 
-            String(c.id) === String(productId) ||
-            String(c.id) === String(searchTarget) ||
-            (searchTarget && searchTarget.startsWith(`${c.id}-`))
-          );
+        // 2. Try static fallback database dynamically if not in memory
+        if (!resolvedPart) {
+          try {
+            const { SPARE_PARTS, VINTAGE_CARS } = await import('../data/partsData.js');
+            if (Array.isArray(SPARE_PARTS)) {
+              resolvedPart = SPARE_PARTS.find(p => 
+                String(p.id) === String(productId) ||
+                String(p.id) === String(searchTarget) ||
+                (searchTarget && searchTarget.startsWith(`${p.id}-`))
+              );
+            }
+            if (!resolvedPart && Array.isArray(VINTAGE_CARS)) {
+              resolvedPart = VINTAGE_CARS.find(c => 
+                String(c.id) === String(productId) ||
+                String(c.id) === String(searchTarget) ||
+                (searchTarget && searchTarget.startsWith(`${c.id}-`))
+              );
+            }
+          } catch (_) {}
         }
 
         if (resolvedPart && isMounted) {
@@ -258,6 +260,9 @@ export default function ProductDetailPage({
               <img
                 src={currentDisplayImage}
                 alt={part.title || part.name}
+                width="600"
+                height="600"
+                decoding="async"
                 className="w-full h-full object-cover transition-all duration-300"
               />
             ) : (
@@ -298,7 +303,10 @@ export default function ProductDetailPage({
                   <img
                     src={thumbUrl}
                     alt={`Thumbnail ${idx + 1}`}
+                    width="64"
+                    height="64"
                     loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover"
                   />
                 </button>

@@ -454,7 +454,7 @@ export default function EnginesPage({
           searchTerm={searchTerm}
           activeFilter={{
             systemId: 'engine-system',
-            categoryId: 'engines',
+            categoryId: 'ALL',
             engineSize: selectedEngineFilter
           }}
         />

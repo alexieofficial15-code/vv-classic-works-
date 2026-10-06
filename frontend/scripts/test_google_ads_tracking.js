@@ -153,8 +153,9 @@ async function testTracking() {
     }
   });
 
-  console.log('\n[TEST 1] Loading website homepage (http://localhost:5173/)...');
-  await page.goto('http://localhost:5173/', { waitUntil: 'networkidle2' });
+  const targetUrl = process.env.TARGET_URL || 'http://localhost:5173/';
+  console.log(`\n[TEST 1] Loading website homepage (${targetUrl})...`);
+  await page.goto(targetUrl, { waitUntil: 'networkidle2' });
 
   // 1. Assert: No conversion on initial load
   const initialConversionCount = await page.evaluate(() => {

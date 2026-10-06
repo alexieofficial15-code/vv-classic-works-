@@ -281,6 +281,8 @@ export default function CartDrawer({
                   <img
                     src={item.image}
                     alt={item.title}
+                    width="64"
+                    height="64"
                     className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover border border-slate-800 shrink-0"
                   />
 

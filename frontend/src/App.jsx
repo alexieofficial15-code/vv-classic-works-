@@ -24,8 +24,6 @@ import PartDetailModal from './components/PartDetailModal';
 import CartDrawer from './components/CartDrawer';
 import AuthModal from './components/AuthModal';
 import AdminLoginModal from './components/AdminLoginModal';
-import AdminPanel from './components/AdminPanel';
-import UserDashboard from './components/UserDashboard';
 import StickyCallBar from './components/StickyCallBar';
 import Footer from './components/Footer';
 
@@ -34,12 +32,16 @@ import EnginesPage from './pages/EnginesPage';
 import PartsPage from './pages/PartsPage';
 import RestorationPage from './pages/RestorationPage';
 import ProductDetailPage from './pages/ProductDetailPage';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import ShippingPolicy from './pages/ShippingPolicy';
-import ReturnsPolicy from './pages/ReturnsPolicy';
-import TermsOfService from './pages/TermsOfService';
 import ContactPage from './pages/ContactPage';
 import NotFoundPage from './pages/NotFoundPage';
+
+// Lazy-Loaded Heavy Components & Policy Pages
+const AdminPanel = React.lazy(() => import('./components/AdminPanel'));
+const UserDashboard = React.lazy(() => import('./components/UserDashboard'));
+const PrivacyPolicy = React.lazy(() => import('./pages/PrivacyPolicy'));
+const ShippingPolicy = React.lazy(() => import('./pages/ShippingPolicy'));
+const ReturnsPolicy = React.lazy(() => import('./pages/ReturnsPolicy'));
+const TermsOfService = React.lazy(() => import('./pages/TermsOfService'));
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -1092,6 +1094,7 @@ export default function App() {
       )}
 
       <main className={isDashboardView ? "pt-28 md:pt-36 min-h-screen pb-16 bg-[#0e0e0f]" : "pt-24 md:pt-28 min-h-[80vh]"}>
+        <React.Suspense fallback={<div className="min-h-[50vh] flex items-center justify-center text-slate-400 font-mono text-xs">Loading...</div>}>
         {isDashboardView ? (
           <UserDashboard
             isOpen={true}
@@ -1230,6 +1233,7 @@ export default function App() {
         ) : (
           <NotFoundPage onNavigate={navigate} />
         )}
+        </React.Suspense>
       </main>
 
       {/* Footer */}
@@ -1280,6 +1284,8 @@ export default function App() {
                 <img
                   src={guestReservationPart.image}
                   alt={guestReservationPart.title}
+                  width="56"
+                  height="56"
                   className="w-14 h-14 object-cover rounded-lg border border-slate-800 shrink-0"
                 />
               )}
@@ -1487,15 +1493,17 @@ export default function App() {
 
       {/* Admin Dashboard Control Panel */}
       {isAdminPanelOpen && (
-        <AdminPanel
-          isOpen={isAdminPanelOpen}
-          onClose={handleCloseAdminPanel}
-          onLogout={handleLogout}
-          onRefreshCatalog={handleRefreshCatalog}
-          userRequests={adminRequests}
-          onUpdateUserRequestStatus={handleUpdateUserRequestStatus}
-          adminToken={adminToken}
-        />
+        <React.Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 text-white font-mono text-xs">Loading Admin Panel...</div>}>
+          <AdminPanel
+            isOpen={isAdminPanelOpen}
+            onClose={handleCloseAdminPanel}
+            onLogout={handleLogout}
+            onRefreshCatalog={handleRefreshCatalog}
+            userRequests={adminRequests}
+            onUpdateUserRequestStatus={handleUpdateUserRequestStatus}
+            adminToken={adminToken}
+          />
+        </React.Suspense>
       )}
 
       {/* Sticky Mobile "Call Now" & WhatsApp Bar */}

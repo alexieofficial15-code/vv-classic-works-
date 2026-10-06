@@ -81,8 +81,5 @@ ${allRoutes.map(r => `  <url>
   }
 }
 
-generateSitemap().then(() => {
-  process.exit(0);
-}).catch(() => {
-  process.exit(0);
-});
+await generateSitemap();
+

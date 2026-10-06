@@ -150,6 +150,8 @@ function RotatingPartCardImage({ part, onClickImage }) {
         key={currentIndex}
         src={currentImage}
         alt={`${part.title} photo ${currentIndex + 1}`}
+        width="360"
+        height="240"
         loading="lazy"
         decoding="async"
         onLoad={() => setImageLoaded(true)}
@@ -471,7 +473,7 @@ export default function CatalogSection({
         </div>
         {isLoadingParts && catalogItems.length === 0 ? (
           <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4 md:gap-6 animate-pulse">
-            {Array.from({ length: 24 }).map((_, idx) => (
+            {Array.from({ length: 4 }).map((_, idx) => (
               <div key={idx} className="bg-[#201f20]/60 border border-[#584236]/30 p-3 sm:p-4 rounded-xs flex flex-col justify-between space-y-3">
                 <div className="h-40 sm:h-44 md:h-48 bg-[#141415] rounded-xs flex items-center justify-center text-[#a78b7d] text-xs font-mono border border-[#584236]/30">
                   <div className="flex items-center gap-1.5 opacity-60">

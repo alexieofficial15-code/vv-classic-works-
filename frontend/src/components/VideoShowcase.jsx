@@ -14,7 +14,7 @@ import {
   Wrench,
   Flame
 } from 'lucide-react';
-import { WORKSHOP_REELS } from '../data/partsData';
+import { WORKSHOP_REELS } from '../data/workshopReels';
 
 export default function VideoShowcase() {
   const [activeIdx, setActiveIdx] = useState(0);

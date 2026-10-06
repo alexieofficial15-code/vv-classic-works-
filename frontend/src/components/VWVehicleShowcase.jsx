@@ -86,6 +86,8 @@ function CategoryImageRotator({ images, categoryName, onOpenGallery, activeVehic
         key={currentIndex}
         src={currentImage} 
         alt={`${categoryName} photo ${currentIndex + 1}`} 
+        width="400"
+        height="208"
         loading="lazy"
         decoding="async"
         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100 animate-in fade-in duration-500" 
@@ -580,7 +582,7 @@ export default function VWVehicleShowcase({
                       <div className="space-y-3 sm:space-y-4">
                         <div className="h-28 sm:h-36 bg-[#131314] border border-[#584236]/40 rounded-xs overflow-hidden flex items-center justify-center group-hover:border-[#ff7a1a]/60 transition-colors relative">
                           {model.image ? (
-                            <img src={model.image} alt={model.name} className="w-full h-full object-cover" />
+                            <img src={model.image} alt={model.name} width="320" height="144" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                           ) : (
                             <div className="text-center text-[#584236] group-hover:text-[#ff7a1a] transition-colors p-3">
                               <Car className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-1" />
