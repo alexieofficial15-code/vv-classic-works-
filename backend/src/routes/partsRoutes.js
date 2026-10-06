@@ -38,7 +38,7 @@ export function transformPartForCatalog(part) {
 // GET /api/catalog - Full Catalog with image URLs (Gzip, ETag, In-Memory Cached)
 router.get('/catalog', async (req, res) => {
   try {
-    const rawParts = await dbService.getParts();
+    const rawParts = await dbService.getPartsLite();
     const catalogParts = rawParts.map(transformPartForCatalog);
     const bodyStr = JSON.stringify({
       success: true,
@@ -73,7 +73,7 @@ router.get('/parts/:id/image/:key', async (req, res) => {
     let imageStr = null;
 
     if (isSupabaseConfigured) {
-      const partImg = await dbService.getPartImage(id);
+      const partImg = await dbService.getPartImage(id, key);
       if (partImg) {
         if (key === 'main' || key === 'thumb') {
           imageStr = partImg.image;
@@ -93,18 +93,9 @@ router.get('/parts/:id/image/:key', async (req, res) => {
           if (!isNaN(idx) && addImages[idx]) {
             imageStr = addImages[idx];
           } else {
-            imageStr = partImg.image;
+            imageStr = null;
           }
         }
-      }
-    }
-
-    // Fallback across in-memory cache / static list if not found
-    if (!imageStr) {
-      const partsList = await dbService.getParts();
-      const part = partsList.find(p => String(p.id) === String(id));
-      if (part) {
-        imageStr = part.image;
       }
     }
 
@@ -114,6 +105,7 @@ router.get('/parts/:id/image/:key', async (req, res) => {
 
     // Redirect if it is an external HTTP URL
     if (imageStr.startsWith('http://') || imageStr.startsWith('https://')) {
+      res.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
       return res.redirect(302, imageStr);
     }
 
@@ -138,7 +130,7 @@ router.get('/parts/:id/image/:key', async (req, res) => {
 
       const imageBuffer = Buffer.from(base64Data, 'base64');
       res.set('Content-Type', mimeType);
-      res.set('Cache-Control', 'public, max-age=86400, immutable');
+      res.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
       return res.send(imageBuffer);
     }
 
@@ -153,7 +145,7 @@ router.get('/parts/:id/image/:key', async (req, res) => {
 router.get('/parts', async (req, res) => {
   try {
     const { search, era, category, carModelId, sortBy } = req.query;
-    let partsList = await dbService.getParts();
+    let partsList = await dbService.getPartsLite();
     let results = [...partsList];
 
     if (search) {

@@ -29,8 +29,8 @@ const authenticateAdmin = (req, res, next) => {
 
 // --- SPARE PARTS CRUD ---
 
-// 1. GET ALL PARTS (Public)
-router.get('/admin/parts', async (req, res) => {
+// 1. GET ALL PARTS (Admin Protected)
+router.get('/admin/parts', authenticateAdmin, async (req, res) => {
   try {
     const parts = await dbService.getParts();
     res.json({ success: true, data: parts });
@@ -82,8 +82,8 @@ router.delete('/admin/parts/:id', authenticateAdmin, async (req, res) => {
 
 // --- VINTAGE CARS CRUD ---
 
-// 5. GET ALL CARS (Public)
-router.get('/admin/cars', async (req, res) => {
+// 5. GET ALL CARS (Admin Protected)
+router.get('/admin/cars', authenticateAdmin, async (req, res) => {
   try {
     const cars = await dbService.getCars();
     res.json({ success: true, data: cars });
