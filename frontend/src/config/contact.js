@@ -6,6 +6,10 @@ export const WHATSAPP_NUMBER = rawWhatsapp.replace(/\D/g, '') || '19452879865';
 export const PHONE_NUMBER = '1-945-287-9865';
 export const PHONE_TEL = 'tel:+19452879865';
 
+// Public support email shown on the policy and contact pages. No guessed default:
+// the email lines stay hidden until VITE_SUPPORT_EMAIL is set (in Vercel).
+export const SUPPORT_EMAIL = (import.meta.env.VITE_SUPPORT_EMAIL || '').trim();
+
 export const FACEBOOK_PAGE_URL = import.meta.env.VITE_FACEBOOK_URL || 'https://www.facebook.com/share/1BwLuMhq42/';
 // No guessed default: the Messenger button is hidden until VITE_FACEBOOK_MESSENGER_URL (https://m.me/<page-username>) is set
 export const FACEBOOK_MESSENGER_URL = (import.meta.env.VITE_FACEBOOK_MESSENGER_URL || '').trim();

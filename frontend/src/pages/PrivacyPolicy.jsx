@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Shield, ArrowLeft, Phone, MapPin, Clock, Mail } from 'lucide-react';
 import { updateDocumentMeta } from '../utils/router';
-import { PHONE_NUMBER, PHONE_TEL } from '../config/contact.js';
+import { PHONE_NUMBER, PHONE_TEL, SUPPORT_EMAIL } from '../config/contact.js';
 
 export default function PrivacyPolicy({ onNavigate }) {
   useEffect(() => {
@@ -51,7 +51,7 @@ export default function PrivacyPolicy({ onNavigate }) {
             <div><strong>Physical Address:</strong> 14826 Yarberry St, Houston, TX 77039, USA</div>
             <div><strong>Telephone:</strong> <a href={PHONE_TEL} className="text-amber-400 underline">{PHONE_NUMBER}</a></div>
             <div><strong>Business Hours:</strong> Monday – Friday 8:00 AM – 6:00 PM CST | Saturday 9:00 AM – 4:00 PM CST</div>
-            <div><strong>Contact Email:</strong> [OWNER: official support email address]</div>
+            {SUPPORT_EMAIL ? <div><strong>Contact Email:</strong> <a href={`mailto:${SUPPORT_EMAIL}`} className="text-amber-400 underline font-bold">{SUPPORT_EMAIL}</a></div> : null}
           </div>
         </section>
 
@@ -108,7 +108,7 @@ export default function PrivacyPolicy({ onNavigate }) {
           </p>
           <ul className="list-disc pl-5 space-y-1.5 text-xs text-[#e5e2e3]">
             <li><strong>Hosting & Backend Infrastructure:</strong> Vercel (frontend deployment) and Render / Supabase (database storage).</li>
-            <li><strong>Freight & Delivery Couriers:</strong> [OWNER: list specific freight carriers e.g., UPS Freight, R+L Carriers, Freightways].</li>
+            <li><strong>Freight & Delivery Couriers:</strong> Our team and the shipping carriers that deliver your order, such as UPS.</li>
             <li><strong>Legal Obligations:</strong> We may disclose information if required by applicable state or federal law.</li>
           </ul>
         </section>
@@ -118,7 +118,7 @@ export default function PrivacyPolicy({ onNavigate }) {
             6. Data Retention & Your Rights
           </h2>
           <p>
-            You have the right to request access to the personal data we hold about you, request corrections, or ask for the deletion of your account and customer records. To exercise these rights, call our workshop directly at <a href={PHONE_TEL} className="text-amber-400 underline font-bold">{PHONE_NUMBER}</a> or email [OWNER: official support email address].
+            You have the right to request access to the personal data we hold about you, request corrections, or ask for the deletion of your account and customer records. To exercise these rights, call our workshop directly at <a href={PHONE_TEL} className="text-amber-400 underline font-bold">{PHONE_NUMBER}</a>{SUPPORT_EMAIL ? <> or email <a href={`mailto:${SUPPORT_EMAIL}`} className="text-amber-400 underline font-bold">{SUPPORT_EMAIL}</a></> : null}.
           </p>
         </section>
       </div>

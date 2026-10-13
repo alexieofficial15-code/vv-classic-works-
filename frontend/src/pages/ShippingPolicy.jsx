@@ -79,8 +79,8 @@ export default function ShippingPolicy({ onNavigate }) {
             3. Processing & Handling Times
           </h2>
           <ul className="list-disc pl-5 space-y-1.5 text-xs text-[#e5e2e3]">
-            <li><strong>In-Stock Small Parts & Components:</strong> [OWNER: specify dispatch preparation time for in-stock parts, e.g. 1-2 business days].</li>
-            <li><strong>Machined Heads, Cases & Engine Assemblies:</strong> Custom longblocks and inspected turn-key engines undergo workshop inspection and secure wooden crating before dispatch ([OWNER: specify custom build / crate preparation lead time, e.g. 5-10 business days]).</li>
+            <li><strong>In-Stock Small Parts & Components:</strong> Ships within 1-3 business days.</li>
+            <li><strong>Machined Heads, Cases & Engine Assemblies:</strong> Custom longblocks and inspected turn-key engines undergo workshop inspection and secure wooden crating before dispatch (lead time is confirmed with you when your request is accepted).</li>
           </ul>
         </section>
 
@@ -92,9 +92,9 @@ export default function ShippingPolicy({ onNavigate }) {
             Couriers and carriers utilized:
           </p>
           <ul className="list-disc pl-5 space-y-1 text-xs text-[#e5e2e3]">
-            <li><strong>Standard Parcel Shipments:</strong> [OWNER: specify standard parcel carriers, e.g. UPS Ground or FedEx Ground]. Typical transit time: [OWNER: specify domestic transit time window, e.g. 3-7 business days].</li>
-            <li><strong>Heavy Freight & Complete Engines:</strong> [OWNER: specify LTL freight carriers, e.g. R+L Carriers, TForce Freight, or Freightways].</li>
-            <li><strong>International Orders:</strong> [OWNER: specify international shipping availability, customs responsibility, and terms].</li>
+            <li><strong>Standard Parcel Shipments:</strong> UPS. Typical transit time: 1-3 business days.</li>
+            <li><strong>Heavy Freight & Complete Engines:</strong> Shipped by freight carrier, arranged for each order. We confirm the carrier and the cost with you before dispatch.</li>
+            <li><strong>International Orders:</strong> We ship internationally. Customs duties, import taxes and brokerage fees are the responsibility of the customer unless otherwise agreed in writing before shipment. Contact us for a shipping quote to your country..</li>
           </ul>
         </section>
 
@@ -108,7 +108,7 @@ export default function ShippingPolicy({ onNavigate }) {
           <ol className="list-decimal pl-5 space-y-1.5 text-xs text-[#e5e2e3]">
             <li>Inspect the crate or box thoroughly for exterior damage prior to signing the delivery receipt.</li>
             <li>If external damage is noted, photograph the packaging immediately and note "Damaged upon delivery" on the Bill of Lading (BOL).</li>
-            <li>Notify Classic Aircooled VW Works within [OWNER: specify damage reporting window, e.g. 48 hours] at <a href={PHONE_TEL} className="text-amber-400 underline font-bold">{PHONE_NUMBER}</a> so we can initiate an insurance claim and arrange replacement parts.</li>
+            <li>Notify Classic Aircooled VW Works within 7 days of delivery at <a href={PHONE_TEL} className="text-amber-400 underline font-bold">{PHONE_NUMBER}</a> so we can initiate an insurance claim and arrange replacement parts.</li>
           </ol>
         </section>
       </div>

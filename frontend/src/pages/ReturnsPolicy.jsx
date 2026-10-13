@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { RotateCcw, ArrowLeft, Phone, AlertTriangle, CheckCircle } from 'lucide-react';
 import { updateDocumentMeta } from '../utils/router';
-import { PHONE_NUMBER, PHONE_TEL } from '../config/contact.js';
+import { PHONE_NUMBER, PHONE_TEL, SUPPORT_EMAIL } from '../config/contact.js';
 
 export default function ReturnsPolicy({ onNavigate }) {
   useEffect(() => {
@@ -47,10 +47,10 @@ export default function ReturnsPolicy({ onNavigate }) {
             We take pride in our aircooled engines and parts. If you need to return an item, the following terms apply:
           </p>
           <ul className="list-disc pl-5 space-y-1.5 text-xs text-[#e5e2e3]">
-            <li><strong>Return Window:</strong> Returns must be requested within [OWNER: set return window, e.g. 30 days of delivery date].</li>
+            <li><strong>Return Window:</strong> Returns must be requested within 3 days of the delivery date.</li>
             <li><strong>Condition:</strong> Parts must be in brand new, uninstalled, unpainted condition, with all original hardware, gaskets, and factory packaging.</li>
-            <li><strong>Electrical Components:</strong> [OWNER: specify electrical parts return policy, e.g. electrical items such as distributors, alternators, and ignition coils are non-returnable once installed].</li>
-            <li><strong>Custom Machined Engines & Cases:</strong> Custom built-to-order longblocks and custom line-bored engine cases are subject to [OWNER: specify custom engine order cancellation/return policy].</li>
+            <li><strong>Electrical Components:</strong> Electrical components are non-returnable.</li>
+            <li><strong>Custom Machined Engines & Cases:</strong> Custom built-to-order longblocks and custom line-bored engine cases are handled case by case. Contact us before ordering and we will confirm the terms in writing.</li>
           </ul>
         </section>
 
@@ -62,7 +62,7 @@ export default function ReturnsPolicy({ onNavigate }) {
             To ensure your return is received and inspected promptly by our mechanics, all returns must have an authorized RMA number:
           </p>
           <ol className="list-decimal pl-5 space-y-1.5 text-xs text-[#e5e2e3]">
-            <li>Call our workshop at <a href={PHONE_TEL} className="text-amber-400 underline font-bold">{PHONE_NUMBER}</a> (Mon-Fri 8am-6pm CST, Sat 9am-4pm) or email [OWNER: official support email address] with your original order reference.</li>
+            <li>Call our workshop at <a href={PHONE_TEL} className="text-amber-400 underline font-bold">{PHONE_NUMBER}</a> (Mon-Fri 8am-6pm CST, Sat 9am-4pm) {SUPPORT_EMAIL ? <>or email <a href={`mailto:${SUPPORT_EMAIL}`} className="text-amber-400 underline font-bold">{SUPPORT_EMAIL}</a> </> : null}with your original order reference.</li>
             <li>Our team will issue an RMA number and return shipping instructions.</li>
             <li>Clearly mark the RMA number on the exterior of the return crate or package.</li>
           </ol>
@@ -73,8 +73,8 @@ export default function ReturnsPolicy({ onNavigate }) {
             3. Restocking Fees & Shipping Costs
           </h2>
           <div className="bg-slate-950 p-4 rounded-lg border border-slate-800 text-xs space-y-2 font-mono">
-            <div><strong>Restocking Fee:</strong> [OWNER: specify restocking fee, e.g. 15% restocking fee on returned parts to cover inspection and re-packaging, or No fee on unopened returns].</div>
-            <div><strong>Return Freight Responsibility:</strong> [OWNER: specify whether customer is responsible for return shipping costs for non-defective returns].</div>
+            <div><strong>Restocking Fee:</strong> No restocking fee.</div>
+            <div><strong>Return Freight Responsibility:</strong> For non-defective returns, return shipping costs are confirmed when your RMA is issued.</div>
             <div><strong>Defective or Incorrect Items:</strong> If you receive an incorrect or defective part, Classic Aircooled VW Works covers 100% of return shipping and provides an immediate replacement or full refund.</div>
           </div>
         </section>
@@ -84,7 +84,7 @@ export default function ReturnsPolicy({ onNavigate }) {
             4. Refund Processing
           </h2>
           <p>
-            Once our mechanics receive and inspect your returned part at our Houston workshop (14826 Yarberry St, Houston, TX 77039), refunds are processed via [OWNER: specify refund payment methods and timeline, e.g. original payment method within 5-7 business days].
+            Once our mechanics receive and inspect your returned part at our Houston workshop (14826 Yarberry St, Houston, TX 77039), refunds are processed via the original payment method within 1-7 business days.
           </p>
         </section>
 

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Phone, MapPin, Clock, Mail, MessageCircle, ArrowLeft, Wrench, ShieldCheck } from 'lucide-react';
 import { updateDocumentMeta } from '../utils/router';
-import { PHONE_NUMBER, PHONE_TEL, WHATSAPP_NUMBER, whatsappLink } from '../config/contact.js';
+import { PHONE_NUMBER, PHONE_TEL, WHATSAPP_NUMBER, whatsappLink, SUPPORT_EMAIL } from '../config/contact.js';
 
 export default function ContactPage({ onNavigate }) {
   useEffect(() => {
@@ -100,13 +100,15 @@ export default function ContactPage({ onNavigate }) {
               </div>
             </div>
 
-            <div className="flex items-start gap-3">
-              <Mail className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <div className="font-bold text-white uppercase text-[11px] font-mono">Official Email</div>
-                <div className="text-slate-300 font-mono">[OWNER: official support email address]</div>
+            {SUPPORT_EMAIL ? (
+              <div className="flex items-start gap-3">
+                <Mail className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-bold text-white uppercase text-[11px] font-mono">Official Email</div>
+                  <div className="text-slate-300 font-mono"><a href={`mailto:${SUPPORT_EMAIL}`} className="text-amber-400 underline font-bold">{SUPPORT_EMAIL}</a></div>
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
 
           <div className="pt-2">
