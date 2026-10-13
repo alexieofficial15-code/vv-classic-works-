@@ -20,6 +20,7 @@ import GuidedSearchModal from './components/GuidedSearchModal';
 import CatalogSection from './components/CatalogSection';
 import ReviewsSection from './components/ReviewsSection';
 import VideoShowcase from './components/VideoShowcase';
+import LazyMount from './components/LazyMount';
 import LocationMapSection from './components/LocationMapSection';
 import PartDetailModal from './components/PartDetailModal';
 import CartDrawer from './components/CartDrawer';
@@ -1241,7 +1242,9 @@ export default function App() {
             />
 
             {/* Live Engine Workshop & Restoration Video Showcase */}
-            <VideoShowcase />
+            <LazyMount minHeight={720}>
+              <VideoShowcase />
+            </LazyMount>
 
             {/* Customer Reviews */}
             <ReviewsSection />

@@ -161,6 +161,7 @@ export default function VideoShowcase() {
                 <video
                   ref={videoRef}
                   src={activeReel.videoUrl}
+                  preload="metadata"
                   playsInline
                   loop={isLooping}
                   muted={isMuted}
