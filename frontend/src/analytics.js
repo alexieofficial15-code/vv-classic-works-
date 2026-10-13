@@ -51,7 +51,18 @@ const rawLeadConfig =
 export const ADS_LABEL_LEAD = rawLeadConfig ? resolveGoogleAdsSendTo(rawLeadConfig, '') : null;
 
 // 4. Call Conversion Label (Optional - for phone taps)
-export const ADS_LABEL_CALL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ADS_LABEL_CALL) || null;
+const rawCallConfig = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ADS_LABEL_CALL) || '';
+export const ADS_LABEL_CALL = rawCallConfig ? resolveGoogleAdsSendTo(rawCallConfig, '') : null;
+
+// 5. WhatsApp click conversion label (Optional)
+const rawWhatsappConfig =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ADS_LABEL_WHATSAPP) || '';
+export const ADS_LABEL_WHATSAPP = rawWhatsappConfig ? resolveGoogleAdsSendTo(rawWhatsappConfig, '') : null;
+
+// 6. "Message sent" (customer chat message accepted by the server) conversion label (Optional)
+const rawMessageConfig =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ADS_LABEL_MESSAGE) || '';
+export const ADS_LABEL_MESSAGE = rawMessageConfig ? resolveGoogleAdsSendTo(rawMessageConfig, '') : null;
 
 /**
  * Safe invocation of Google gtag function.
@@ -338,10 +349,34 @@ export function trackContactClick(channel = 'phone') {
     event_label: channel
   });
 
-  // 2. Google Ads Conversion for Calls (only if explicitly configured with valid label)
+  // 2. Google Ads conversions for call taps and WhatsApp clicks (only when a label is configured)
   if (channel === 'phone' && ADS_LABEL_CALL && ADS_LABEL_CALL.trim() !== '') {
     safeGtag('event', 'conversion', {
       send_to: ADS_LABEL_CALL.trim()
+    });
+  }
+  if (channel === 'whatsapp' && ADS_LABEL_WHATSAPP && ADS_LABEL_WHATSAPP.trim() !== '') {
+    safeGtag('event', 'conversion', {
+      send_to: ADS_LABEL_WHATSAPP.trim()
+    });
+  }
+}
+
+/**
+ * Track "message sent": a customer chat message that the SERVER confirmed (HTTP ok).
+ * Call this only after a successful response, never for queued/failed messages.
+ */
+export function trackMessageSent(messageId = '') {
+  safeGtag('event', 'contact', {
+    method: 'chat',
+    event_category: 'engagement',
+    event_label: 'chat_message_sent'
+  });
+
+  if (ADS_LABEL_MESSAGE && ADS_LABEL_MESSAGE.trim() !== '') {
+    safeGtag('event', 'conversion', {
+      send_to: ADS_LABEL_MESSAGE.trim(),
+      ...(messageId ? { transaction_id: String(messageId) } : {})
     });
   }
 }

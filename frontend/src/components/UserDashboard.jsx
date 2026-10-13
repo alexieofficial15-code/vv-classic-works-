@@ -6,6 +6,7 @@ import {
   ArrowUpRight, RefreshCw, Layers, Wrench, Check, LogOut, Send, Bot, Mail
 } from 'lucide-react';
 import { API_BASE_URL } from '../config/api';
+import { trackMessageSent } from '../analytics';
 
 export default function UserDashboard({ 
   isOpen, 
@@ -161,7 +162,7 @@ export default function UserDashboard({
 
     const activeToken = authToken || localStorage.getItem('authToken');
     try {
-      await fetch(`${API_BASE_URL}/api/chat/send`, {
+      const sendRes = await fetch(`${API_BASE_URL}/api/chat/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -174,6 +175,12 @@ export default function UserDashboard({
           userEmail: currentUser.email || userProfile?.email || ''
         })
       });
+      // Count the conversion only when the server actually accepted the message
+      if (sendRes.ok) {
+        trackMessageSent(tempMsg.id);
+      } else {
+        console.warn('Message not accepted by server, status', sendRes.status);
+      }
       fetchUserChatMessages();
     } catch (err) {
       console.warn('Message queued locally:', err.message);
