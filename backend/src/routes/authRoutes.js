@@ -95,6 +95,13 @@ router.post('/register', authRateLimiter, async (req, res) => {
 
     const cleanEmail = String(email).replace(/\0/g, '').trim().toLowerCase();
 
+    // The admin email is reserved: nobody can register it as a customer account
+    const reservedAdminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.trim().toLowerCase() : null;
+    if (reservedAdminEmail && safeCompare(cleanEmail, reservedAdminEmail)) {
+      recordFailedAuth(ip);
+      return res.status(400).json({ success: false, message: 'An account with this email already exists' });
+    }
+
     const existingUser = await dbService.getUserByEmail(cleanEmail);
     if (existingUser) {
       recordFailedAuth(ip);
@@ -147,22 +154,24 @@ router.post('/login', authRateLimiter, async (req, res) => {
     const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.trim().toLowerCase() : null;
     const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH ? process.env.ADMIN_PASSWORD_HASH.trim() : null;
 
-    let user = await dbService.getUserByEmail(cleanEmail);
-
-    if (!user) {
-      if (adminEmail && adminPasswordHash && safeCompare(cleanEmail, adminEmail)) {
-        const isMasterValid = await bcrypt.compare(String(password), adminPasswordHash);
-        if (isMasterValid) {
-          // Initial bootstrap for configured master admin if not in DB yet
-          user = await dbService.createUser({
-            name: 'Master Engineer',
-            email: cleanEmail,
-            passwordHash: adminPasswordHash,
-            role: 'ADMIN'
-          });
-        }
+    // ADMIN LOGIN THROUGH THE NORMAL SIGN-IN FORM
+    // The admin identity lives ONLY in the server environment (ADMIN_EMAIL + ADMIN_PASSWORD_HASH).
+    // If the email matches, the users table is never consulted, so a customer row with the same
+    // email can neither block the admin nor be used to become admin.
+    if (adminEmail && adminPasswordHash && safeCompare(cleanEmail, adminEmail)) {
+      const isMasterValid = await bcrypt.compare(String(password), adminPasswordHash);
+      if (!isMasterValid) {
+        recordFailedAuth(ip);
+        return res.status(401).json({ success: false, message: 'Invalid email or password' });
       }
+
+      clearFailedAuth(ip);
+      const adminUser = { id: 'admin-master', name: 'Master Admin Engineer', email: cleanEmail, role: 'ADMIN' };
+      const adminToken = jwt.sign(adminUser, JWT_SECRET, { expiresIn: '7d' });
+      return res.json({ success: true, token: adminToken, user: adminUser });
     }
+
+    const user = await dbService.getUserByEmail(cleanEmail);
 
     if (!user) {
       recordFailedAuth(ip);
@@ -179,13 +188,14 @@ router.post('/login', authRateLimiter, async (req, res) => {
     // Authentication succeeded: clear failed counter
     clearFailedAuth(ip);
 
-    // Sign JWT token
+    // Customers are always plain USERs. Admin rights come only from ADMIN_EMAIL / ADMIN_PASSWORD_HASH above,
+    // never from a role value stored in the users table.
     const token = jwt.sign(
       {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role
+        role: 'USER'
       },
       JWT_SECRET,
       { expiresIn: '7d' }
@@ -198,7 +208,7 @@ router.post('/login', authRateLimiter, async (req, res) => {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role
+        role: 'USER'
       }
     });
   } catch (err) {
