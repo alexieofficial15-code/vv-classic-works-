@@ -484,13 +484,21 @@ let inMemoryMessages = loadDiskMessages();
 // 60-second in-memory cache for full admin parts
 let partsCache = null;
 let partsCacheTime = 0;
-const PARTS_CACHE_TTL = 60 * 1000; // 60s
+const PARTS_CACHE_TTL = 5 * 60 * 1000; // 5 min (cleared immediately whenever a part is added/edited/deleted)
 
-// 60-second in-memory cache and single-flight in-flight promise for getPartsLite
+// In-memory cache and single-flight in-flight promise for getPartsLite
 let partsLiteCache = null;
 let partsLiteCacheTime = 0;
 let partsLiteInFlight = null;
-const PARTS_LITE_CACHE_TTL = 60 * 1000; // 60s
+const PARTS_LITE_CACHE_TTL = 5 * 60 * 1000; // 5 min (cleared immediately whenever a part is added/edited/deleted)
+
+// Cache for single-part detail reads (see getPartById)
+const partDetailCache = new Map();
+const partDetailInFlight = new Map();
+let partDetailGeneration = 0;
+const PART_DETAIL_TTL = 30 * 60 * 1000;      // 30 min
+const PART_DETAIL_MISS_TTL = 60 * 1000;      // 1 min for "not found"
+const PART_DETAIL_MAX_ENTRIES = 100;
 let partsLiteViewAvailable = false;
 let partsLiteViewCheckedAt = 0;
 const PARTS_LITE_VIEW_RECHECK_MS = 10 * 60 * 1000; // re-check for the SQL view every 10 minutes
@@ -501,6 +509,9 @@ export function invalidatePartsCache() {
   partsLiteCache = null;
   partsLiteCacheTime = 0;
   partsLiteInFlight = null;
+  partDetailGeneration++;
+  partDetailCache.clear();
+  partDetailInFlight.clear();
   clearImageCache();
 }
 
@@ -637,20 +648,49 @@ export const dbService = {
     }
   },
 
+  // One full part (includes its photos, so ~400 KB from the database).
+  // Cached + single-flight so a post is read from Supabase at most once per PART_DETAIL_TTL, however many visitors open it.
   async getPartById(id) {
     if (!isSupabaseConfigured) return null;
-    try {
-      const { data, error } = await supabase
-        .from('spare_parts')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-      if (error || !data) return null;
-      return mapPartFromDb(data);
-    } catch (err) {
-      console.error(`Error fetching part ${id}:`, err.message);
-      return null;
+    const key = String(id);
+    if (key.length > 120) return null;
+
+    const hit = partDetailCache.get(key);
+    if (hit && hit.expires > Date.now()) {
+      partDetailCache.delete(key);   // refresh LRU position
+      partDetailCache.set(key, hit);
+      return hit.value;
     }
+    if (hit) partDetailCache.delete(key);
+    if (partDetailInFlight.has(key)) return partDetailInFlight.get(key);
+
+    const generation = partDetailGeneration;
+    const promise = (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('spare_parts')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
+        if (error) throw error;
+        const value = data ? mapPartFromDb(data) : null;
+        // Do not keep results if a part was edited while we were loading; "not found" is only remembered briefly
+        if (generation === partDetailGeneration) {
+          partDetailCache.set(key, { value, expires: Date.now() + (value ? PART_DETAIL_TTL : PART_DETAIL_MISS_TTL) });
+          while (partDetailCache.size > PART_DETAIL_MAX_ENTRIES) {
+            partDetailCache.delete(partDetailCache.keys().next().value);
+          }
+        }
+        return value;
+      } catch (err) {
+        console.error(`Error fetching part ${id}:`, err.message);
+        return null;   // errors are never cached
+      } finally {
+        partDetailInFlight.delete(key);
+      }
+    })();
+    partDetailInFlight.set(key, promise);
+    return promise;
   },
 
   async addPart(partData) {
