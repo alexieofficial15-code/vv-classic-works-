@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { clearImageCache } from '../services/imageCache.js';
 
 dotenv.config();
 
@@ -500,6 +501,7 @@ export function invalidatePartsCache() {
   partsLiteCache = null;
   partsLiteCacheTime = 0;
   partsLiteInFlight = null;
+  clearImageCache();
 }
 
 /**
@@ -621,7 +623,9 @@ export const dbService = {
         .eq('id', id)
         .maybeSingle();
 
-      if (error || !data) return null;
+      // A real database error must NOT look like "photo not found" (the caller caches "not found")
+      if (error) throw error;
+      if (!data) return null;
       return {
         id: data.id,
         image: data.image || '',
@@ -629,7 +633,7 @@ export const dbService = {
       };
     } catch (err) {
       console.error(`Error fetching image for part ${id}:`, err.message);
-      return null;
+      throw err;
     }
   },
 

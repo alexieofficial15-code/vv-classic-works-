@@ -2,6 +2,7 @@ import express from 'express';
 import crypto from 'crypto';
 import { dbService, supabase, isSupabaseConfigured, mapPartFromDb } from '../config/supabase.js';
 import { ENGINE_HOTSPOTS, YOUTUBE_SHOWCASE } from '../data/db.js';
+import { getOrLoadImage } from '../services/imageCache.js';
 
 const router = express.Router();
 
@@ -66,77 +67,95 @@ router.get('/catalog', async (req, res) => {
   }
 });
 
-// GET /api/parts/:id/image/:key - Decodes stored base64 or redirects to storage URL
-router.get('/parts/:id/image/:key', async (req, res) => {
-  try {
-    const { id, key } = req.params;
-    let imageStr = null;
+// Reads one photo for (id, key) from the database and turns it into something servable.
+// Runs at most once per photo per cache lifetime (see services/imageCache.js).
+async function loadPartImage(id, key) {
+  const partImg = await dbService.getPartImage(id, key);
+  if (!partImg) return { type: 'missing' };
 
-    if (isSupabaseConfigured) {
-      const partImg = await dbService.getPartImage(id, key);
-      if (partImg) {
-        if (key === 'main' || key === 'thumb') {
-          imageStr = partImg.image;
-        } else {
-          // Check specifications for additionalImages in __meta
-          const rawSpecs = Array.isArray(partImg.specifications) ? partImg.specifications : [];
-          let meta = {};
-          for (const s of rawSpecs) {
-            if (s && s.key === '__meta') {
-              try {
-                meta = typeof s.value === 'string' ? JSON.parse(s.value) : s.value;
-              } catch (_) {}
-            }
-          }
-          const addImages = Array.isArray(meta.additionalImages) ? meta.additionalImages : [];
-          const idx = parseInt(key.replace(/^a/, ''), 10);
-          if (!isNaN(idx) && addImages[idx]) {
-            imageStr = addImages[idx];
-          } else {
-            imageStr = null;
-          }
-        }
+  let imageStr = null;
+  if (key === 'main') {
+    imageStr = partImg.image;
+  } else {
+    // Extra photos live in specifications.__meta.additionalImages
+    const rawSpecs = Array.isArray(partImg.specifications) ? partImg.specifications : [];
+    let meta = {};
+    for (const s of rawSpecs) {
+      if (s && s.key === '__meta') {
+        try {
+          meta = typeof s.value === 'string' ? JSON.parse(s.value) : s.value;
+        } catch (_) {}
       }
     }
+    const addImages = Array.isArray(meta.additionalImages) ? meta.additionalImages : [];
+    const idx = parseInt(key.replace(/^a/, ''), 10);
+    imageStr = !isNaN(idx) ? addImages[idx] : null;
+  }
 
-    if (!imageStr || typeof imageStr !== 'string') {
+  if (!imageStr || typeof imageStr !== 'string') return { type: 'missing' };
+
+  // External URL: just redirect
+  if (imageStr.startsWith('http://') || imageStr.startsWith('https://')) {
+    return { type: 'redirect', url: imageStr };
+  }
+
+  // Inline base64 data URI: decode once
+  if (imageStr.startsWith('data:')) {
+    const commaIdx = imageStr.indexOf(',');
+    if (commaIdx === -1) return { type: 'missing' };
+
+    const header = imageStr.slice(0, commaIdx);
+    const mimeMatch = header.match(/^data:([^;]+)/);
+    let mimeType = mimeMatch ? mimeMatch[1].toLowerCase().trim() : 'image/jpeg';
+    if (mimeType === 'image/jpg') mimeType = 'image/jpeg';
+
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
+    if (!allowedMimes.includes(mimeType)) return { type: 'missing' };
+
+    return { type: 'image', mime: mimeType, buffer: Buffer.from(imageStr.slice(commaIdx + 1), 'base64') };
+  }
+
+  return { type: 'missing' };
+}
+
+// GET /api/parts/:id/image/:key - Serves a part photo (memory-cached, ETag/304 aware)
+router.get('/parts/:id/image/:key', async (req, res) => {
+  try {
+    const { id } = req.params;
+    let key = req.params.key;
+
+    // Only accept the photo keys the site actually uses; anything else cannot exist
+    if (!/^(main|thumb|a?\d{1,3})$/.test(key) || id.length > 120) {
+      return res.status(404).send('Image not found');
+    }
+    // "thumb" and "main" are the same photo, "3" means "a3": share one cache entry
+    if (key === 'thumb') key = 'main';
+    if (/^\d+$/.test(key)) key = `a${key}`;
+
+    if (!isSupabaseConfigured) {
       return res.status(404).send('Image not found');
     }
 
-    // Redirect if it is an external HTTP URL
-    if (imageStr.startsWith('http://') || imageStr.startsWith('https://')) {
-      res.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
-      return res.redirect(302, imageStr);
+    const entry = await getOrLoadImage(`${id}:${key}`, () => loadPartImage(id, key));
+
+    if (entry.type === 'missing') {
+      return res.status(404).send('Image not found');
     }
 
-    // Decode inline base64 data URI
-    if (imageStr.startsWith('data:')) {
-      const commaIdx = imageStr.indexOf(',');
-      if (commaIdx === -1) {
-        return res.status(404).send('Invalid data URI');
-      }
+    res.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
 
-      const header = imageStr.slice(0, commaIdx);
-      const base64Data = imageStr.slice(commaIdx + 1);
-
-      const mimeMatch = header.match(/^data:([^;]+)/);
-      let mimeType = mimeMatch ? mimeMatch[1].toLowerCase().trim() : 'image/jpeg';
-      if (mimeType === 'image/jpg') mimeType = 'image/jpeg';
-
-      const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
-      if (!allowedMimes.includes(mimeType)) {
-        return res.status(404).send('Unsupported image format');
-      }
-
-      const imageBuffer = Buffer.from(base64Data, 'base64');
-      res.set('Content-Type', mimeType);
-      res.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
-      return res.send(imageBuffer);
+    if (entry.type === 'redirect') {
+      return res.redirect(302, entry.url);
     }
 
-    return res.status(404).send('Image format not supported');
+    res.set('ETag', entry.etag);
+    if (req.headers['if-none-match'] === entry.etag) {
+      return res.status(304).end();
+    }
+    res.set('Content-Type', entry.mime);
+    return res.send(entry.buffer);
   } catch (err) {
-    console.error('Error serving part image:', err);
+    console.error('Error serving part image:', err.message);
     res.status(500).send('Error serving image');
   }
 });
