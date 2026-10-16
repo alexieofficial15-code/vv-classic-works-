@@ -115,13 +115,19 @@ export default function App() {
   // Cache of parts for fast lookup during browser Back / Forward navigation
   const partsCacheRef = useRef(new Map());
 
+  // Goes to the dashboard view. Uses the router's navigate() so the screen actually updates
+  // (a bare history.pushState does not notify the router, which is why clicking Dashboard did nothing).
+  const goToDashboard = (options = {}) => {
+    if (window.location.hash !== '#dashboard') {
+      navigate(window.location.pathname + window.location.search + '#dashboard', options);
+    }
+  };
+
   const handleOpenUserDashboard = () => {
     if (!currentUser) {
       handleOpenAuth();
     } else {
-      if (window.location.hash !== '#dashboard') {
-        window.history.pushState(null, '', window.location.pathname + window.location.search + '#dashboard');
-      }
+      goToDashboard();
     }
   };
 
@@ -1492,7 +1498,9 @@ export default function App() {
             localStorage.setItem('adminToken', token);
             handleOpenAdminPanel();
           } else {
-            handleOpenUserDashboard();
+            // Not routed through handleOpenUserDashboard: its "is a user signed in?" check would still
+            // see the old (signed-out) state here. Replace the #auth history entry so Back skips the login.
+            goToDashboard({ replace: window.location.hash === '#auth' });
           }
         }}
         cartTotal={cartTotal}
