@@ -139,6 +139,32 @@ router.post('/register', authRateLimiter, async (req, res) => {
   }
 });
 
+const BCRYPT_SHAPE = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/;
+
+// GET /api/auth/admin-status
+// Diagnostic only: says whether the admin login is configured sensibly on THIS server.
+// It never returns the password, the hash, or the full email.
+router.get('/admin-status', (req, res) => {
+  const rawEmail = process.env.ADMIN_EMAIL || '';
+  const email = rawEmail.trim();
+  const rawHash = process.env.ADMIN_PASSWORD_HASH || '';
+  const hash = rawHash.trim();
+  const [local = '', domain = ''] = email.split('@');
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    adminEmailSet: email.length > 0,
+    adminEmailMasked: email ? `${local.slice(0, 1)}${'*'.repeat(Math.max(local.length - 1, 0))}@${domain}` : null,
+    adminEmailHasOuterWhitespace: rawEmail !== email,
+    adminEmailLooksValid: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+    passwordHashSet: hash.length > 0,
+    passwordHashLength: hash.length,
+    passwordHashLooksValid: BCRYPT_SHAPE.test(hash),
+    passwordHashHasOuterWhitespaceOrQuotes: rawHash !== hash || /^["']|["']$/.test(hash),
+    legacyPlainAdminPasswordStillSet: Boolean(process.env.ADMIN_PASSWORD),
+    secretKeyRequiredOnGatewayForm: Boolean((process.env.ADMIN_SECRET_KEY || '').trim())
+  });
+});
+
 // POST /api/auth/login
 router.post('/login', authRateLimiter, async (req, res) => {
   const ip = getClientIp(req);
@@ -161,6 +187,8 @@ router.post('/login', authRateLimiter, async (req, res) => {
     if (adminEmail && adminPasswordHash && safeCompare(cleanEmail, adminEmail)) {
       const isMasterValid = await bcrypt.compare(String(password), adminPasswordHash);
       if (!isMasterValid) {
+        // Server log only (never shown to the client, never includes the password or hash)
+        console.warn(`[auth] Admin login FAILED: email matched ADMIN_EMAIL but the password did not match ADMIN_PASSWORD_HASH (hash ${BCRYPT_SHAPE.test(adminPasswordHash) ? 'is' : 'is NOT'} a valid bcrypt hash)`);
         recordFailedAuth(ip);
         return res.status(401).json({ success: false, message: 'Invalid email or password' });
       }
