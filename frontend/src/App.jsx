@@ -1050,6 +1050,8 @@ export default function App() {
             handleSelectFilter(filterObj, options);
           }}
           currentUser={currentUser}
+          isAdmin={Boolean(adminToken) && String(currentUser?.role || '').toLowerCase() === 'admin'}
+          onOpenAdminPanel={handleOpenAdminPanel}
           onLogout={handleLogout}
           onNavigateToShop={() => navigate('/')}
           onNavigate={navigate}

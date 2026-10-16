@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Heart, Search, User, Menu, X, Wrench, ChevronDown, ChevronRight, Layers, Sparkles, Lock, LogOut, MapPin, Phone } from 'lucide-react';
+import { ShoppingBag, Heart, Search, User, Menu, X, Wrench, ChevronDown, ChevronRight, Layers, Sparkles, Lock, LogOut, MapPin, Phone, ShieldCheck } from 'lucide-react';
 import { VW_NAV_CATEGORIES } from '../data/vwNavigationData';
 import MegaMenu from './MegaMenu';
 import { PHONE_NUMBER, PHONE_TEL } from '../config/contact.js';
@@ -17,6 +17,8 @@ export default function Navbar({
   activeFilter,
   onSelectFilter,
   currentUser,
+  isAdmin = false,
+  onOpenAdminPanel,
   onLogout,
   onNavigateToShop,
   onNavigate
@@ -196,8 +198,20 @@ export default function Navbar({
 
           {currentUser ? (
             <>
+              {/* Admin Panel shortcut: shown only when the server confirmed an ADMIN login */}
+              {isAdmin && onOpenAdminPanel && (
+                <button
+                  onClick={onOpenAdminPanel}
+                  className="min-h-[40px] sm:min-h-[44px] flex items-center gap-1.5 sm:gap-2 bg-[#181719] hover:bg-[#252426] text-[#ff7a1a] border border-[#ff7a1a] px-2.5 py-1.5 sm:px-3.5 sm:py-2 transition-all rounded-xs font-bold text-xs cursor-pointer shadow-sm"
+                  title="Open the Admin Control Panel"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="font-label-caps text-xs uppercase tracking-wider">Admin Panel</span>
+                </button>
+              )}
+
               {/* User Dashboard & Requests Trigger */}
-              <button 
+              <button
                 onClick={onOpenUserDashboard}
                 className="relative min-h-[40px] sm:min-h-[44px] flex items-center gap-1.5 sm:gap-2 bg-[#ff7a1a] hover:bg-[#ffb68e] text-black border border-[#ff7a1a] px-2.5 py-1.5 sm:px-3.5 sm:py-2 transition-all rounded-xs font-bold text-xs cursor-pointer shadow-sm"
                 title="User Dashboard & Garage"
@@ -537,7 +551,16 @@ export default function Navbar({
 
           {currentUser ? (
             <div className="space-y-2 pt-2">
-              <button 
+              {isAdmin && onOpenAdminPanel && (
+                <button
+                  onClick={() => { setMobileMenuOpen(false); onOpenAdminPanel(); }}
+                  className="w-full min-h-[44px] font-label-caps text-xs text-[#ff7a1a] bg-[#181719] hover:bg-[#252426] border border-[#ff7a1a] py-3 px-3 uppercase font-bold tracking-wider flex items-center justify-center gap-2 rounded-xs transition-all cursor-pointer"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Admin Panel</span>
+                </button>
+              )}
+              <button
                 onClick={() => { setMobileMenuOpen(false); onOpenUserDashboard(); }}
                 className="w-full min-h-[44px] font-label-caps text-xs text-black bg-[#ff7a1a] hover:bg-[#ffb68e] py-3 px-3 uppercase font-bold tracking-wider flex items-center justify-center gap-2 rounded-xs transition-all cursor-pointer shadow-md"
               >
